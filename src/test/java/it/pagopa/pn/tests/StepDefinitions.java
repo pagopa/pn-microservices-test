@@ -1,4 +1,4 @@
-package it.pagopa.pn.cucumber.steps;
+package it.pagopa.pn.tests;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -50,16 +50,13 @@ public class StepDefinitions {
 	private String status = null;
 	private String retentionUntil = "";
 	private Date retentionDate = null;
-	UpdateFileMetadataRequest requestBody = new UpdateFileMetadataRequest();
 
+	UpdateFileMetadataRequest requestBody = new UpdateFileMetadataRequest();
 	
 	@Given("{string} authenticated by {string} try to upload a document of type {string} with content type {string} using {string}")
 	public void a_file_to_upload(String sPNClient, String sPNClient_AK, String sDocumentType, String sMimeType, String sFileName) throws NoSuchAlgorithmException, FileNotFoundException, IOException {
 
 		Path pathFile = Paths.get(sFileName).toAbsolutePath();
-
-		log.info("Timestamp: " + OffsetDateTime.now().withOffsetSameInstant(ZoneOffset.UTC).truncatedTo(ChronoUnit.MILLIS));
-		log.debug("filePath: " + pathFile);
 
 		this.sPNClient = sPNClient;
 		this.sPNClient_AK = sPNClient_AK;
@@ -84,7 +81,6 @@ public class StepDefinitions {
 	@Given("{string} authenticated by {string} try to update the document using {string} and {string} but has invalid or null {string}")
 	public void no_file_to_update (String sPNClientUp, String sPNClient_AKUp, String status, String retentionUntil, String fileKey) {
 
-		log.info("Timestamp: " + OffsetDateTime.now().withOffsetSameInstant(ZoneOffset.UTC).truncatedTo(ChronoUnit.MILLIS));
 		this.status = status;
 		this.retentionUntil = retentionUntil;
 		this.sPNClientUp = sPNClientUp;
@@ -100,11 +96,11 @@ public class StepDefinitions {
 		Response oResp;
 
 		if (retentionUntil != null && !retentionUntil.isEmpty()) {
-			requestBody.setRetentionUntil(Date.from(Instant.parse(retentionUntil)));
+			requestBody.setRetentionUntil(OffsetDateTime.from(Instant.parse(retentionUntil)));
 		}
 		requestBody.setStatus(status);
 
-		CommonUtils.checkDump(oResp= SafeStorageUtils.updateObjectMetadata(sPNClientUp, sPNClient_AKUp, fileKey, requestBody), true);
+		CommonUtils.checkDump(oResp=SafeStorageUtils.updateObjectMetadata(sPNClientUp, sPNClient_AKUp, fileKey, requestBody), true);
 		iRC = oResp.getStatusCode();
 		log.debug("FILE KEY: " + fileKey);
 		log.debug("NEW STATUS: " + status);
@@ -124,7 +120,7 @@ public class StepDefinitions {
 		Response oResp;
 
 		if (retentionUntil != null && !retentionUntil.isEmpty()) {
-			requestBody.setRetentionUntil(Date.from(Instant.parse(retentionUntil)));
+			requestBody.setRetentionUntil(OffsetDateTime.from(Instant.parse(retentionUntil)));
 		}
 		requestBody.setStatus(status);
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>it.pagopa.pn</groupId>
 	<artifactId>pn-microservices-test</artifactId>
@@ -11,6 +11,9 @@
 	<properties>
 		<java.version>17</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	<!--	<logbackjackson.version>0.1.5</logbackjackson.version> -->
+		<open.api.version>develop</open.api.version>
+		<open.api>3.0.3</open.api>
 	</properties>
 
 	<dependencyManagement>
@@ -34,83 +37,107 @@
 
 	<dependencies>
 
-	<dependency>
-		<groupId>it.pagopa.pn</groupId>
-		<artifactId>pn-ss</artifactId>
-		<version>2.4.0-SNAPSHOT</version>
-	</dependency>
+		<dependency>
+			<groupId>it.pagopa.pn</groupId>
+			<artifactId>pn-ss</artifactId>
+			<version>2.4.0-SNAPSHOT</version>
+		</dependency>
 
-	<dependency>
-		<groupId>io.cucumber</groupId>
-		<artifactId>cucumber-java</artifactId>
-		<scope>test</scope>
-	</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-core</artifactId>
+			<version>1.1.3</version>
+		</dependency>
 
-	<dependency>
-		<groupId>io.cucumber</groupId>
-		<artifactId>cucumber-junit-platform-engine</artifactId>
-		<scope>test</scope>
-	</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>1.2.3</version>
+			<scope>compile</scope>
+		</dependency>
 
-	<dependency>
-		<groupId>org.junit.platform</groupId>
-		<artifactId>junit-platform-suite</artifactId>
-		<scope>test</scope>
-	</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-core</artifactId>
+			<version>1.2.3</version>
+			<scope>compile</scope>
+		</dependency>
 
-	<dependency>
-		<groupId>org.junit.jupiter</groupId>
-		<artifactId>junit-jupiter</artifactId>
-		<scope>test</scope>
-	</dependency>
 
-	<dependency>
-		<groupId>io.rest-assured</groupId>
-		<artifactId>rest-assured</artifactId>
-		<version>5.3.0</version>
-	</dependency>
-	<dependency>
-		<groupId>software.amazon.awssdk</groupId>
-		<artifactId>s3</artifactId>
-		<version>2.23.12</version>
-	</dependency>
-	<dependency>
-		<groupId>com.fasterxml.jackson.datatype</groupId>
-		<artifactId>jackson-datatype-jsr310</artifactId>
-		<version>2.16.1</version>
-	</dependency>
-	<dependency>
-		<groupId>javax.validation</groupId>
-		<artifactId>validation-api</artifactId>
-		<version>2.0.1.Final</version>
-	</dependency>
-	<dependency>
-		<groupId>joda-time</groupId>
-		<artifactId>joda-time</artifactId>
-		<version>2.12.7</version>
-	</dependency>
+		<!--	<dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>1.5.3</version>
 
-	<dependency>
-		<groupId>org.springframework</groupId>
-		<artifactId>spring-webmvc</artifactId>
-		<version>6.1.3</version>
-	</dependency>
+		</dependency> -->
+		<dependency>
+			<groupId>io.cucumber</groupId>
+			<artifactId>cucumber-java</artifactId>
+			<scope>test</scope>
+		</dependency>
 
-	<dependency>
-		<groupId>org.slf4j</groupId>
-		<artifactId>slf4j-simple</artifactId>
-		<version>2.0.12</version>
-		<scope>test</scope>
-	</dependency>
+		<dependency>
+			<groupId>io.cucumber</groupId>
+			<artifactId>cucumber-junit-platform-engine</artifactId>
+			<scope>test</scope>
+		</dependency>
 
-	<dependency>
-		<groupId>org.projectlombok</groupId>
-		<artifactId>lombok</artifactId>
-		<version>1.18.30</version>
-		<scope>provided</scope>
-	</dependency>
+		<dependency>
+			<groupId>org.junit.platform</groupId>
+			<artifactId>junit-platform-suite</artifactId>
+			<scope>test</scope>
+		</dependency>
 
-	<dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>io.rest-assured</groupId>
+			<artifactId>rest-assured</artifactId>
+			<version>5.3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<version>2.23.12</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-jsr310</artifactId>
+			<version>2.16.1</version>
+		</dependency>
+		<dependency>
+			<groupId>javax.validation</groupId>
+			<artifactId>validation-api</artifactId>
+			<version>2.0.1.Final</version>
+		</dependency>
+
+
+		<dependency>
+			<groupId>joda-time</groupId>
+			<artifactId>joda-time</artifactId>
+			<version>2.12.7</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-webmvc</artifactId>
+			<version>6.1.3</version>
+		</dependency>
+
+
+
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>1.18.30</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
 			<version>2.7.18</version>
@@ -122,6 +149,8 @@
 			<version>2.7.18</version>
 			<scope>test</scope>
 		</dependency>
+
+
 	</dependencies>
 
 	<build>
@@ -150,6 +179,169 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>3.2.2</version>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.cxf</groupId>
+				<artifactId>cxf-codegen-plugin</artifactId>
+				<version>4.0.0</version>
+				<executions>
+					<execution>
+						<id>generate-sources</id>
+						<phase>generate-sources</phase>
+						<configuration>
+							<wsdlOptions>
+								<wsdlOption>
+									<wsdl>https://raw.githubusercontent.com/pagopa/pn-ss/develop/src/main/resources/sign/aruba/wsdl/ArubaSignService.wsdl</wsdl>
+									<extraargs>
+										<extraarg>-client</extraarg>
+										<extraarg>-verbose</extraarg>
+										<extraarg>-p</extraarg>
+										<extraarg>it.pagopa.pnss.transformation.wsdl</extraarg>
+										<extraarg>-asyncMethods</extraarg>
+										<extraarg>-bareMethods</extraarg>
+									</extraargs>
+								</wsdlOption>
+							</wsdlOptions>
+						</configuration>
+						<goals>
+							<goal>wsdl2java</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- -->
+
+
+			<plugin>
+				<groupId>org.openapitools</groupId>
+				<artifactId>openapi-generator-maven-plugin</artifactId>
+				<version>5.4.0</version>
+				<executions>
+					<execution>
+						<id>generate-internal-client-ss</id>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<phase>process-sources</phase>
+						<configuration>
+
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ss/develop/docs/openapi/pn-safestorage-internal-v1-api.yaml</inputSpec>
+							<generatorName>java</generatorName>
+							<library>resttemplate</library>
+							<generateApiTests>false</generateApiTests>
+							<generateModelTests>false</generateModelTests>
+							<configOptions>
+								<apiPackage>${project.groupId}.safestorage.generated.openapi.server.v1.api</apiPackage>
+								<modelPackage>${project.groupId}.safestorage.generated.openapi.server.v1.dto</modelPackage>
+
+								<dateLibrary>java8</dateLibrary>
+								<annotationLibrary>none</annotationLibrary>
+								<documentationProvider>source</documentationProvider>
+								<openApiNullable>false</openApiNullable>
+								<useAbstractionForFiles>true</useAbstractionForFiles>
+								<useBeanValidation>false</useBeanValidation>
+								<additionalModelTypeAnnotations>
+									@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+								</additionalModelTypeAnnotations>
+							</configOptions>
+							<apiPackage>${project.groupId}.safestorage.generated.openapi.server.v1.api</apiPackage>
+							<modelPackage>${project.groupId}.safestorage.generated.openapi.server.v1.dto</modelPackage>
+
+						</configuration>
+					</execution>
+					<execution>
+						<id>generate-mandate-server</id>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<phase>generate-sources</phase>
+						<configuration>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ss/develop/docs/openapi/pn-template.yaml</inputSpec>
+							<generatorName>java</generatorName>
+							<library>resttemplate</library>
+							<generateApiTests>false</generateApiTests>
+							<generateModelTests>false</generateModelTests>
+							<configOptions>
+								<apiPackage>${project.groupId}.safestorage.generated.openapi.server.v1.api</apiPackage>
+								<modelPackage>${project.groupId}.safestorage.generated.openapi.server.v1.dto</modelPackage>
+								<dateLibrary>java8</dateLibrary>
+								<annotationLibrary>none</annotationLibrary>
+								<documentationProvider>source</documentationProvider>
+								<openApiNullable>false</openApiNullable>
+								<useAbstractionForFiles>true</useAbstractionForFiles>
+								<useBeanValidation>false</useBeanValidation>
+								<additionalModelTypeAnnotations>
+									@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+								</additionalModelTypeAnnotations>
+							</configOptions>
+							<apiPackage>${project.groupId}.safestorage.generated.openapi.server.v1.api</apiPackage>
+							<modelPackage>${project.groupId}.safestorage.generated.openapi.server.v1.dto</modelPackage>
+						</configuration>
+					</execution>
+
+					<execution>
+						<id>generate-gestore-file</id>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<phase>generate-sources</phase>
+						<configuration>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ss/develop/docs/openapi/pn-safestorage-v1.1-api.yaml</inputSpec>
+							<generatorName>spring</generatorName>
+							<library>spring-boot</library>
+							<generateApiDocumentation>false</generateApiDocumentation>
+							<generateApiTests>false</generateApiTests>
+							<generateModelTests>false</generateModelTests>
+							<configOptions>
+								<dateLibrary>java11</dateLibrary>
+								<delegatePattern>true</delegatePattern>
+								<interfaceOnly>true</interfaceOnly>
+								<annotationLibrary>none</annotationLibrary>
+								<documentationProvider>source</documentationProvider>
+								<openApiNullable>false</openApiNullable>
+								<reactive>true</reactive>
+								<skipDefaultInterface>false</skipDefaultInterface>
+								<useTags>true</useTags>
+								<modelPackage>${project.groupId}.safestorage.generated.openapi.server.v1.dto</modelPackage>
+								<apiPackage>${project.groupId}.safestorage.generated.openapi.server.v1.api</apiPackage>
+							</configOptions>
+						</configuration>
+					</execution>
+
+					<execution>
+						<id>generate-gestore-file-internal</id>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<phase>generate-sources</phase>
+						<configuration>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ss/develop/docs/openapi/pn-safestorage-v1-api.yaml</inputSpec>
+							<generatorName>java</generatorName>
+							<library>resttemplate</library>
+							<generateApiTests>false</generateApiTests>
+							<generateModelTests>false</generateModelTests>
+							<configOptions>
+								<apiPackage>${project.groupId}.safestorage.generated.openapi.server.v1.api</apiPackage>
+								<modelPackage>${project.groupId}.safestorage.generated.openapi.server.v1.dto</modelPackage>
+								<dateLibrary>java8</dateLibrary>
+								<annotationLibrary>none</annotationLibrary>
+								<documentationProvider>source</documentationProvider>
+								<openApiNullable>false</openApiNullable>
+								<useAbstractionForFiles>true</useAbstractionForFiles>
+								<useBeanValidation>false</useBeanValidation>
+								<additionalModelTypeAnnotations>
+									@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+								</additionalModelTypeAnnotations>
+							</configOptions>
+							<apiPackage>${project.groupId}.safestorage.generated.openapi.server.v1.api</apiPackage>
+							<modelPackage>${project.groupId}.safestorage.generated.openapi.server.v1.dto</modelPackage>
+						</configuration>
+					</execution>
+
+				</executions>
+
 			</plugin>
 		</plugins>
 	</build>

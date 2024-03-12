@@ -95,14 +95,13 @@ Feature: Upload SafeStorage
 
   @upload_trasformazione
   Scenario Outline: Upload di un file da sottoporre a trasformazione
-    Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
+   Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
     When request a presigned url to upload the file
     And upload that file
     And it's available
     Then i found in S3
-  Examples:
-  | clientId | APIKey          | documentType      | fileName                    | MIMEType        |
-  | pn-test  | pn-test_api_key | PN_LEGAL_FACTS_ST | src/main/resources/test.zip | application/zip |
-  | pn-test  | pn-test_api_key | PN_LEGAL_FACTS_ST | src/main/resources/test.pdf | application/pdf |
+ Examples:
+ | clientId | APIKey          | documentType      | fileName                    | MIMEType        |
+ | pn-test  | pn-test_api_key | PN_LEGAL_FACTS_ST | src/main/resources/test.zip | application/zip |
+ | pn-test  | pn-test_api_key | PN_LEGAL_FACTS_ST | src/main/resources/test.pdf | application/pdf |
  | pn-test  | pn-test_api_key | PN_LEGAL_FACTS_ST | src/main/resources/test.xml | application/xml |
-  
