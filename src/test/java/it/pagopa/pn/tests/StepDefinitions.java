@@ -15,7 +15,6 @@ import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileDownloadResp
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
 import lombok.CustomLog;
 import org.junit.jupiter.api.Assertions;
-
 import java.io.*;
 import java.net.MalformedURLException;
 import java.nio.file.Path;
@@ -24,11 +23,11 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
 
+import static it.pagopa.pn.cucumber.SqsUtils.checkIfDocumentIsAvailable;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @CustomLog
@@ -50,6 +49,7 @@ public class StepDefinitions {
 	private String status = null;
 	private String retentionUntil = "";
 	private Date retentionDate = null;
+	private final String gestoreDisponibilitaQueueName = System.getenv("gestore.disponibilita.queue.name");
 
 	UpdateFileMetadataRequest requestBody = new UpdateFileMetadataRequest();
 	
@@ -202,6 +202,11 @@ public class StepDefinitions {
     public void i_found_in_s3() {
 		Assertions.assertEquals( 200, CommonUtils.checkDump(SafeStorageUtils.getPresignedURLDownload(sPNClient, sPNClient_AK, sKey), true)); // Ok
     }
+
+	@Then("i check availability")
+	public void i_check_availability() {
+		Assertions.assertTrue(checkIfDocumentIsAvailable(sKey, gestoreDisponibilitaQueueName));
+	}
 	
 	@Then("i get an error {string}")
 	public void i_get_an_error(String sRC) {
