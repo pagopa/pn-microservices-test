@@ -71,6 +71,13 @@
 		</dependency>
 
 		<dependency>
+
+		<groupId>org.slf4j</groupId>
+		<artifactId>slf4j-log4j12</artifactId>
+		<version>2.0.12</version>
+		<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>jakarta.xml.ws</groupId>
 			<artifactId>jakarta.xml.ws-api</artifactId>
 			<version>4.0.0</version>
@@ -247,8 +254,8 @@
 				<version>3.11.0</version>
 				<configuration>
 					<encoding>UTF-8</encoding>
-					<source>9</source>
-					<target>9</target>
+					<source>16</source>
+					<target>16</target>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -309,7 +316,7 @@
 								<apiPackage>${project.groupId}.safestorage.generated.openapi.server.v1.api</apiPackage>
 								<modelPackage>${project.groupId}.safestorage.generated.openapi.server.v1.dto</modelPackage>
 
-								<dateLibrary>java8</dateLibrary>
+								<dateLibrary>java17</dateLibrary>
 								<annotationLibrary>none</annotationLibrary>
 								<documentationProvider>source</documentationProvider>
 								<openApiNullable>false</openApiNullable>
@@ -339,7 +346,7 @@
 							<configOptions>
 								<apiPackage>${project.groupId}.safestorage.generated.openapi.server.v1.api</apiPackage>
 								<modelPackage>${project.groupId}.safestorage.generated.openapi.server.v1.dto</modelPackage>
-								<dateLibrary>java8</dateLibrary>
+								<dateLibrary>java17</dateLibrary>
 								<annotationLibrary>none</annotationLibrary>
 								<documentationProvider>source</documentationProvider>
 								<openApiNullable>false</openApiNullable>
@@ -362,13 +369,13 @@
 						<phase>generate-sources</phase>
 						<configuration>
 							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ss/develop/docs/openapi/pn-safestorage-v1.1-api.yaml</inputSpec>
-							<generatorName>spring</generatorName>
-							<library>spring-boot</library>
+							<generatorName>java</generatorName>
+							<library>resttemplate</library>
 							<generateApiDocumentation>false</generateApiDocumentation>
 							<generateApiTests>false</generateApiTests>
 							<generateModelTests>false</generateModelTests>
 							<configOptions>
-								<dateLibrary>java11</dateLibrary>
+								<dateLibrary>java16</dateLibrary>
 								<delegatePattern>true</delegatePattern>
 								<interfaceOnly>true</interfaceOnly>
 								<annotationLibrary>none</annotationLibrary>
@@ -398,7 +405,7 @@
 							<configOptions>
 								<apiPackage>${project.groupId}.safestorage.generated.openapi.server.v1.api</apiPackage>
 								<modelPackage>${project.groupId}.safestorage.generated.openapi.server.v1.dto</modelPackage>
-								<dateLibrary>java8</dateLibrary>
+								<dateLibrary>java16</dateLibrary>
 								<annotationLibrary>none</annotationLibrary>
 								<documentationProvider>source</documentationProvider>
 								<openApiNullable>false</openApiNullable>
