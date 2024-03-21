@@ -8,7 +8,7 @@ Feature: Upload SafeStorage
     Then i get an error "<rc>"
     Examples:
       | clientId    | APIKey              | documentType                | fileName    | MIMEType        | rc |
-      | pn-unkown | pn-delivery_api_key | PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.zip | application/zip | 403 |
+      | @clientId-unknown | @delivery_api_key | PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.zip | application/zip | 403 |
 
 
   Scenario Outline: Upload di un file da sottoporre a trasformazione con un clientId non riconosciuto
@@ -17,7 +17,7 @@ Feature: Upload SafeStorage
     Then i get an error "<rc>"
     Examples:
       | clientId    | APIKey              | documentType                | fileName    | MIMEType        | rc |
-      | pn-unkown | pn-delivery_api_key | PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.zip | application/zip | 403 |
+      | @clientId-unknown | @delivery_api_key | PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.zip | application/zip | 403 |
 
   Scenario Outline: Upload di un file da sottoporre a trasformazione senza xTraceId come header
     Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
@@ -25,7 +25,7 @@ Feature: Upload SafeStorage
     Then i get an error "<rc>"
     Examples:
       | clientId    | APIKey              | documentType                | fileName    | MIMEType        | rc |
-      | pn-delivery | pn-delivery_api_key | PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.zip | application/zip | 400 |
+      | @clientId-delivery | @delivery_api_key | PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.zip | application/zip | 400 |
 
 
   Scenario Outline: Upload di un file non sottoposto a trasformazione senza xTraceId come header
@@ -34,7 +34,7 @@ Feature: Upload SafeStorage
     Then i get an error "<rc>"
     Examples:
       | clientId    | APIKey              | documentType                | fileName    | MIMEType        | rc |
-      | pn-delivery | pn-delivery_api_key | PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.zip | application/zip | 400 |
+      | @clientId-delivery | @delivery_api_key | PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.zip | application/zip | 400 |
 
 # END TEST KO
 
@@ -45,8 +45,8 @@ Feature: Upload SafeStorage
     Then i found in S3
 		Examples:
       | clientId    | APIKey              | documentType                | fileName    | MIMEType        |
-      | pn-delivery | pn-delivery_api_key | PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.zip | application/zip |
-	    | pn-delivery | pn-delivery_api_key | PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.pdf | application/pdf |
+      | @clientId-delivery | @delivery_api_key | PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.zip | application/zip |
+	    | @clientId-delivery | @delivery_api_key | PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.pdf | application/pdf |
 
   Scenario Outline: Casi di errore in fase di richiesta della presigned URL di upload
     Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
@@ -54,7 +54,7 @@ Feature: Upload SafeStorage
     Then i get an error "<rc>"
 		Examples:
       | clientId    | APIKey              | documentType   | fileName    | MIMEType        | rc  |
-      | pn-delivery | pn-delivery_api_key | PN_LEGAL_FACTS | src/main/resources/test.zip | application/zip | 403 |
+      | @clientId-delivery | @delivery_api_key | PN_LEGAL_FACTS | src/main/resources/test.zip | application/zip | 403 |
 
     # status change e status+date change non disponibili a causa della lambda, da verificare in ambiente corretto
   Scenario Outline: update dei metadata di un file - cambio status o retentionUntil
@@ -66,9 +66,9 @@ Feature: Upload SafeStorage
     Then i check that the document got updated
   Examples:
   | clientId   | APIKey              | documentType               | fileName                    | MIMEType        | clientIdUp  | APIKeyUp            | status   | retentionUntil           |
-  | pn-delivery| pn-delivery_api_key |PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.pdf | application/pdf | pn-test     | pn-test_api_key     | ATTACHED | 2024-07-11T13:02:25.206Z |
-  | pn-delivery| pn-delivery_api_key |PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.pdf | application/pdf | pn-test     | pn-test_api_key     | ATTACHED |                          |
-  | pn-delivery| pn-delivery_api_key |PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.pdf | application/pdf | pn-test     | pn-test_api_key     |          | 2024-07-11T13:02:25.206Z |
+  | @clientId-delivery| @delivery_api_key |PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.pdf | application/pdf | pn-test     | pn-test_api_key     | ATTACHED | 2024-07-11T13:02:25.206Z |
+  | @clientId-delivery| @delivery_api_key |PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.pdf | application/pdf | pn-test     | pn-test_api_key     | ATTACHED |                          |
+  | @clientId-delivery| @delivery_api_key |PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.pdf | application/pdf | pn-test     | pn-test_api_key     |          | 2024-07-11T13:02:25.206Z |
 
   Scenario Outline: tentativo di update dei metadata di un file con chiave invalida o non valorizzata
     Given "<clientIdUp>" authenticated by "<APIKeyUp>" try to update the document using "<status>" and "<retentionUntil>" but has invalid or null "<fileKey>"
@@ -88,10 +88,10 @@ Feature: Upload SafeStorage
     Then i get an error "<rc>"
   Examples:
   | clientId    | APIKey              | documentType               | fileName                    | MIMEType        | clientIdUp  | APIKeyUp            | status   | retentionUntil           | rc  |
-  | pn-delivery | pn-delivery_api_key |PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.pdf | application/pdf | pn-cn       | pn-cn_api_key       | ATTACHED | 2024-07-11T13:02:25.206Z | 403 |
-  | pn-delivery | pn-delivery_api_key |PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.pdf | application/pdf | pn-test     | pn-test_api_key     | SAVED    | 2024-07-11T13:02:25.206Z | 400 |
-  | pn-delivery | pn-delivery_api_key |PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.pdf | application/pdf | pn-test     | pn-test_api_key     | NONEXIST | 2024-07-11T13:02:25.206Z | 400 |
-  | pn-delivery | pn-delivery_api_key |PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.pdf | application/pdf | pn-test     | pn-test_api_key     | ATTACHED | 2022-07-11T13:02:25.206Z | 400 |
+  | @clientId-delivery | @delivery_api_key |PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.pdf | application/pdf | pn-cn       | pn-cn_api_key       | ATTACHED | 2024-07-11T13:02:25.206Z | 403 |
+  | @clientId-delivery | @delivery_api_key |PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.pdf | application/pdf | pn-test     | pn-test_api_key     | SAVED    | 2024-07-11T13:02:25.206Z | 400 |
+  | @clientId-delivery | @delivery_api_key |PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.pdf | application/pdf | pn-test     | pn-test_api_key     | NONEXIST | 2024-07-11T13:02:25.206Z | 400 |
+  | @clientId-delivery | @delivery_api_key |PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.pdf | application/pdf | pn-test     | pn-test_api_key     | ATTACHED | 2022-07-11T13:02:25.206Z | 400 |
 
   @upload_trasformazione
   Scenario Outline: Upload di un file da sottoporre a trasformazione

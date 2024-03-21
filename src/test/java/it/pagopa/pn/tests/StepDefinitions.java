@@ -8,6 +8,7 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.response.Response;
+import it.pagopa.pn.configuration.ApiKeysConfiguration;
 import it.pagopa.pn.cucumber.Checksum;
 import it.pagopa.pn.cucumber.CommonUtils;
 import it.pagopa.pn.cucumber.SafeStorageUtils;
@@ -24,7 +25,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
@@ -52,17 +52,18 @@ public class StepDefinitions {
 	private Date retentionDate = null;
 
 	UpdateFileMetadataRequest requestBody = new UpdateFileMetadataRequest();
-	
+
+
 	@Given("{string} authenticated by {string} try to upload a document of type {string} with content type {string} using {string}")
 	public void a_file_to_upload(String sPNClient, String sPNClient_AK, String sDocumentType, String sMimeType, String sFileName) throws NoSuchAlgorithmException, FileNotFoundException, IOException {
 
 		Path pathFile = Paths.get(sFileName).toAbsolutePath();
 
-		this.sPNClient = sPNClient;
-		this.sPNClient_AK = sPNClient_AK;
-		this.sDocumentType = sDocumentType;
-		this.sMimeType = sMimeType;
-		
+		this.sPNClient = parseIfTagged(sPNClient);
+		this.sPNClient_AK = parseIfTagged(sPNClient_AK);
+		this.sDocumentType = parseIfTagged(sDocumentType);
+		this.sMimeType = parseIfTagged(sMimeType);
+
 		oFile = new File(sFileName);
 		FileInputStream oFIS = new FileInputStream(oFile);
 		byte[] baFile = oFIS.readAllBytes();
@@ -81,12 +82,12 @@ public class StepDefinitions {
 	@Given("{string} authenticated by {string} try to update the document using {string} and {string} but has invalid or null {string}")
 	public void no_file_to_update (String sPNClientUp, String sPNClient_AKUp, String status, String retentionUntil, String fileKey) {
 
-		this.status = status;
-		this.retentionUntil = retentionUntil;
-		this.sPNClientUp = sPNClientUp;
-		this.sPNClient_AKUp = sPNClient_AKUp;
+		this.status = parseIfTagged(status);
+		this.retentionUntil = parseIfTagged(retentionUntil);
+		this.sPNClientUp = parseIfTagged(sPNClientUp);
+		this.sPNClient_AKUp = parseIfTagged(sPNClient_AKUp);
 		if (fileKey != null && !fileKey.isEmpty()) {
-			this.sKey = fileKey;
+			this.sKey = parseIfTagged(fileKey);
 		} else {
 			this.sKey = "";
 		}
@@ -110,10 +111,10 @@ public class StepDefinitions {
 	@When ("{string} authenticated by {string} try to update the document just uploaded using {string} and {string}")
 	public void a_file_to_update (String sPNClientUp, String sPNClient_AKUp, String status, String retentionUntil) {
 
-		this.status = status;
-		this.retentionUntil = retentionUntil;
-		this.sPNClientUp = sPNClientUp;
-		this.sPNClient_AKUp = sPNClient_AKUp;
+		this.status = parseIfTagged(status);
+		this.retentionUntil = parseIfTagged(retentionUntil);
+		this.sPNClientUp = parseIfTagged(sPNClientUp);
+		this.sPNClient_AKUp = parseIfTagged(sPNClient_AKUp);
 
 		log.debug("Client utilizzato: "+sPNClientUp);
 
@@ -255,5 +256,8 @@ public class StepDefinitions {
 	public void doFinally() throws IOException {
 	}
 
+	private String parseIfTagged(String value) {
+		return ApiKeysConfiguration.getInstance().getValueIfTagged(value);
+	}
 
 }
