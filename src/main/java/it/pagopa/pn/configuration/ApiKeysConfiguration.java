@@ -15,15 +15,13 @@ public class ApiKeysConfiguration {
     private static final String TAG = "@";
     private static final String ENV_PROPERTY = "spring.profiles.active";
     private static final String ENV_CONFIG = "environment-config.json";
-    private static final String APPLICATION_PROPERTIES = "application.properties";
-
+    private static final String APPLICATION_PROPERTIES = "application-test.properties";
     private static final String CLASSPATH_ERROR = "Cannot find file on classpath: ";
     private static final String FILE_LOAD_ERROR = "Failed to load :";
 
     public static ApiKeysConfiguration getInstance() {
         return instance == null ? new ApiKeysConfiguration() : instance;
     }
-
 
     private ApiKeysConfiguration() {
         this.environment = loadEnvironmentConfig();
