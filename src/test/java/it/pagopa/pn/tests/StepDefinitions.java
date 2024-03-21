@@ -1,13 +1,15 @@
-package it.pagopa.pn.tests;
+package it.pagopa.pn.cucumber.steps;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.java.After;
+import io.cucumber.java.BeforeAll;
+import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.response.Response;
+import it.pagopa.pn.cucumber.*;
 import it.pagopa.pn.configuration.ApiKeysConfiguration;
 import it.pagopa.pn.cucumber.Checksum;
 import it.pagopa.pn.cucumber.CommonUtils;
@@ -16,7 +18,6 @@ import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileDownloadResp
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
 import lombok.CustomLog;
 import org.junit.jupiter.api.Assertions;
-
 import java.io.*;
 import java.net.MalformedURLException;
 import java.nio.file.Path;
@@ -50,9 +51,14 @@ public class StepDefinitions {
 	private String status = null;
 	private String retentionUntil = "";
 	private Date retentionDate = null;
-
+	private static String nomeCoda;
 	UpdateFileMetadataRequest requestBody = new UpdateFileMetadataRequest();
 
+
+	@BeforeAll
+	public static void loadPropertiesForQueue() {
+		nomeCoda = Config.getInstance().getNomeCoda();
+	}
 
 	@Given("{string} authenticated by {string} try to upload a document of type {string} with content type {string} using {string}")
 	public void a_file_to_upload(String sPNClient, String sPNClient_AK, String sDocumentType, String sMimeType, String sFileName) throws NoSuchAlgorithmException, FileNotFoundException, IOException {
@@ -97,15 +103,15 @@ public class StepDefinitions {
 		Response oResp;
 
 		if (retentionUntil != null && !retentionUntil.isEmpty()) {
-			requestBody.setRetentionUntil(OffsetDateTime.from(Instant.parse(retentionUntil)));
+			requestBody.setRetentionUntil(Date.from(Instant.parse(retentionUntil)));
 		}
 		requestBody.setStatus(status);
 
 		CommonUtils.checkDump(oResp=SafeStorageUtils.updateObjectMetadata(sPNClientUp, sPNClient_AKUp, fileKey, requestBody), true);
 		iRC = oResp.getStatusCode();
-		log.debug("FILE KEY: " + fileKey);
-		log.debug("NEW STATUS: " + status);
-		log.debug("NEW RETENTION UNTIL: " + retentionUntil);
+		log.debug("file key: " + fileKey);
+		log.debug("new status: " + status);
+		log.debug("new retentionUntil: " + retentionUntil);
 	}
 
 	@When ("{string} authenticated by {string} try to update the document just uploaded using {string} and {string}")
@@ -116,19 +122,19 @@ public class StepDefinitions {
 		this.sPNClientUp = parseIfTagged(sPNClientUp);
 		this.sPNClient_AKUp = parseIfTagged(sPNClient_AKUp);
 
-		log.debug("Client utilizzato: "+sPNClientUp);
+		log.debug("client: "+sPNClientUp);
 
 		Response oResp;
 
 		if (retentionUntil != null && !retentionUntil.isEmpty()) {
-			requestBody.setRetentionUntil(OffsetDateTime.from(Instant.parse(retentionUntil)));
+			requestBody.setRetentionUntil(Date.from(Instant.parse(retentionUntil)));
 		}
 		requestBody.setStatus(status);
 
 		CommonUtils.checkDump(oResp= SafeStorageUtils.updateObjectMetadata(sPNClientUp, sPNClient_AKUp, sKey, requestBody), true);
 		iRC = oResp.getStatusCode();
-		log.debug("NEW STATUS: " + status);
-		log.debug("NEW RETENTION UNTIL: " + retentionUntil);
+		log.debug("new status: " + status);
+		log.debug("new retentionUntil: " + retentionUntil);
 
 	}
 	
@@ -137,7 +143,6 @@ public class StepDefinitions {
 		Response oResp;
 
 		CommonUtils.checkDump(oResp=SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256), true);
-		log.debug("CLIENT: " + sPNClient);
 
 		iRC = oResp.getStatusCode();
 		log.debug("oResp body: " + oResp.getBody().asString());
@@ -181,7 +186,7 @@ public class StepDefinitions {
 	}
 
 	@When("it's available")
-	public void it_s_available() throws JsonMappingException, JsonProcessingException, InterruptedException {
+	public void it_s_available() throws JsonProcessingException, InterruptedException {
 		Response oResp;
 		iRC = 0;
 		while ( iRC != 200 ) {
@@ -203,10 +208,20 @@ public class StepDefinitions {
     public void i_found_in_s3() {
 		Assertions.assertEquals( 200, CommonUtils.checkDump(SafeStorageUtils.getPresignedURLDownload(sPNClient, sPNClient_AK, sKey), true)); // Ok
     }
-	
+
+	@And("no availability messages")
+	public void no_availability_messages() {
+		Assertions.assertFalse(checkIfDocumentIsAvailable(sKey, nomeCoda));
+	}
+
+	@And("i check availability message")
+	public void i_check_availability_messages() {
+		Assertions.assertTrue(checkIfDocumentIsAvailable(sKey, nomeCoda));
+	}
+
 	@Then("i get an error {string}")
 	public void i_get_an_error(String sRC) {
-		Assertions.assertEquals( Integer.parseInt(sRC), iRC);
+		Assertions.assertEquals(Integer.parseInt(sRC), iRC);
 		
 	}
 
@@ -220,9 +235,9 @@ public class StepDefinitions {
 			iRC = oResp.getStatusCode();
 			if( iRC == 200 ) {
 				ObjectMapper objectMapper = new ObjectMapper();
-				log.debug("RESPONSE BODY: " + oResp.getBody().asString());
+				log.debug("response body: " + oResp.getBody().asString());
 				FileDownloadResponse oFDR = objectMapper.readValue(oResp.getBody().asString(), FileDownloadResponse.class);
-				log.debug("FILE DOWNLOAD RESPONSE: " + oFDR);
+				log.debug("file download response: " + oFDR);
 
 				boolean condition = false;
 
@@ -233,8 +248,8 @@ public class StepDefinitions {
 					}
 				}
 
-				log.debug("RetentionDate: "+retentionDate);
-				log.debug("Status: "+status);
+				log.debug("retentionDate: "+retentionDate);
+				log.debug("status: "+status);
 
 				if (oFDR.getDocumentStatus().equalsIgnoreCase(status)) {
 					condition = true;
@@ -246,11 +261,6 @@ public class StepDefinitions {
 		}
 	}
 
-	@Then("i get an error with client {string}")
-	public void verifyErrorMessage(String sRC) {
-		// Add code to check if the response contains the expected error message
-		// You might use assertions or other validation mechanisms here
-	}
 	
 	@After
 	public void doFinally() throws IOException {

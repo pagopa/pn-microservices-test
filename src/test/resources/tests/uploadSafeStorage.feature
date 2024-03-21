@@ -48,6 +48,28 @@ Feature: Upload SafeStorage
       | @clientId-delivery | @delivery_api_key | PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.zip | application/zip |
 	    | @clientId-delivery | @delivery_api_key | PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.pdf | application/pdf |
 
+  Scenario Outline: Upload di un file non sottoposto a trasformazione e verifica di nessun messaggio di disponibilità del file
+    Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
+    When request a presigned url to upload the file
+    And upload that file
+    Then i found in S3
+    And no availability messages
+    Examples:
+      | clientId    | APIKey              | documentType                | fileName    | MIMEType        |
+      | pn-delivery | pn-delivery_api_key | PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.zip | application/zip |
+      | pn-delivery | pn-delivery_api_key | PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.pdf | application/pdf |
+
+  Scenario Outline: Upload di un file non sottoposto a trasformazione e verifica del messaggio di disponibilità del file
+    Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
+    When request a presigned url to upload the file
+    And upload that file
+    Then i found in S3
+    And i check availability message
+    Examples:
+      | clientId    | APIKey              | documentType                | fileName    | MIMEType        |
+      | pn-delivery | pn-delivery_api_key | PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.zip | application/zip |
+      | pn-delivery | pn-delivery_api_key | PN_NOTIFICATION_ATTACHMENTS | src/main/resources/test.pdf | application/pdf |
+
   Scenario Outline: Casi di errore in fase di richiesta della presigned URL di upload
     Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
     When request a presigned url to upload the file
@@ -105,3 +127,33 @@ Feature: Upload SafeStorage
  | pn-test  | pn-test_api_key | PN_LEGAL_FACTS_ST | src/main/resources/test.zip | application/zip |
  | pn-test  | pn-test_api_key | PN_LEGAL_FACTS_ST | src/main/resources/test.pdf | application/pdf |
  | pn-test  | pn-test_api_key | PN_LEGAL_FACTS_ST | src/main/resources/test.xml | application/xml |
+
+
+  @upload_trasformazione
+  Scenario Outline: Upload di un file da sottoporre a trasformazione e verifica di nessun messaggio di disponibilità del file
+    Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
+    When request a presigned url to upload the file
+    And upload that file
+    And it's available
+    Then i found in S3
+    And no availability messages
+    Examples:
+      | clientId | APIKey          | documentType      | fileName                    | MIMEType        |
+      | pn-test  | pn-test_api_key | PN_LEGAL_FACTS_ST | src/main/resources/test.zip | application/zip |
+      | pn-test  | pn-test_api_key | PN_LEGAL_FACTS_ST | src/main/resources/test.pdf | application/pdf |
+      | pn-test  | pn-test_api_key | PN_LEGAL_FACTS_ST | src/main/resources/test.xml | application/xml |
+
+
+  @upload_trasformazione
+  Scenario Outline: Upload di un file da sottoporre a trasformazione e verifica del messaggio di disponibilità del file
+    Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
+    When request a presigned url to upload the file
+    And upload that file
+    And it's available
+    Then i found in S3
+    And i check availability message
+    Examples:
+      | clientId | APIKey          | documentType      | fileName                    | MIMEType        |
+      | pn-test  | pn-test_api_key | PN_LEGAL_FACTS_ST | src/main/resources/test.zip | application/zip |
+      | pn-test  | pn-test_api_key | PN_LEGAL_FACTS_ST | src/main/resources/test.pdf | application/pdf |
+      | pn-test  | pn-test_api_key | PN_LEGAL_FACTS_ST | src/main/resources/test.xml | application/xml |
