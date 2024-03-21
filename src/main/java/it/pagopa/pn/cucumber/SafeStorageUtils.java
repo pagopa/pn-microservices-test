@@ -8,7 +8,6 @@ import io.restassured.specification.RequestSpecification;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
 import lombok.extern.slf4j.Slf4j;
 
-import static io.restassured.RestAssured.given;
 
 @Slf4j
 public class SafeStorageUtils {
