@@ -1,6 +1,7 @@
-package it.pagopa.pn.cucumber.steps;
+package it.pagopa.pn.tests;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.java.After;
 import io.cucumber.java.BeforeAll;
@@ -30,6 +31,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
 
+import static it.pagopa.pn.cucumber.SqsUtils.checkIfDocumentIsAvailable;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @CustomLog

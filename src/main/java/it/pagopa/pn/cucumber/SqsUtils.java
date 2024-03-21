@@ -1,6 +1,7 @@
 package it.pagopa.pn.cucumber;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.pagopa.pn.configuration.EnvironmentConfiguration;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
@@ -23,8 +24,9 @@ public class SqsUtils {
         String queueUrl = sqsClient.getQueueUrl(builder -> builder.queueName(queueName)).queueUrl();
         ReceiveMessageResponse response = sqsClient.receiveMessage(builder -> builder.queueUrl(queueUrl));
         Optional<Message> optionalMessage;
+        long timeOut = EnvironmentConfiguration.getInstance().getTiming();
         long startTime = System.currentTimeMillis();
-        long endTime = startTime + 15000; // 15 secondi
+        long endTime = startTime + timeOut;
 
         while (System.currentTimeMillis() < endTime){
             if (response.hasMessages()) {

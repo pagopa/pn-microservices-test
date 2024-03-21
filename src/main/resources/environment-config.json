@@ -1,14 +1,8 @@
-  {
-    "dev": {
-      "apiKey": "apiKey-dev",
-      "clientId-unknown": "pn-unknown",
-      "clientId-delivery": "pn-delivery",
-      "delivery_api_key": "pn-delivery_api_key"
-    },
-    "prod": {
-      "apiKey": "testprod-api-key",
-      "clientId": "testprod-client-id",
-      "delivery": "testprod-delivery",
-        "delivery_api_key": "testprod-delivery_api_key"
-    }
+{
+  "dev": {
+    "timing": 15000
+  },
+  "prod": {
+    "timing": 10000
   }
+}
