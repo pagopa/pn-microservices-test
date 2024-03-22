@@ -1,0 +1,18 @@
+{
+  "apiKey": "apiKey-prod",
+  "apiKey_test": "pn-test_api_key",
+  "clientId-unknown": "pn-unknown",
+  "clientId-delivery": "pn-delivery",
+  "clientId-test": "pn-test",
+  "clientId-pn-cn": "pn-cn",
+  "apiKey-pn_cn": "pn-cn_api_key",
+  "delivery_api_key": "pn-delivery_api_key",
+  "doc_type_notification_attachments": "PN_NOTIFICATION_ATTACHMENTS",
+  "doc_type_legal_facts": "PN_LEGAL_FACTS_ST",
+  "filename_zip": "src/main/resources/test.zip",
+  "filename_pdf": "src/main/resources/test.pdf",
+  "filename_xml": "src/main/resources/test.xml",
+  "mime_type_pdf": "application/pdf",
+  "mime_type_zip": "application/zip",
+  "mime_type_xml": "application/xml"
+}

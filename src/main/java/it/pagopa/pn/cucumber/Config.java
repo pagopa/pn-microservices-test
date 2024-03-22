@@ -16,33 +16,54 @@ public class Config {
 
     private String baseUrl;
     private String nomeCoda;
+    private Long documentAvailabilityTimeout;
+
+    private static final String PROPERTY_FILE = "application-test.properties";
+    private static final String FILE_NOT_FOUND = "File properties non trovato";
+    private static final String BASE_URL = "baseURL";
+    private static final String NOME_CODA = "gestore.disponibilita.queue.name";
+    private static final String DOCUMENT_AVAILABILITY_TIMEOUT = "document.availability.timeout.millis";
 
     private Config(){
         try {
 
-        	baseUrl = System.getProperty("baseURL");
-            nomeCoda = System.getProperty("gestore.disponibilita.queue.name");
-        	
+        	baseUrl = System.getProperty(BASE_URL);
+            nomeCoda = System.getProperty(NOME_CODA);
+            String documentAvailabilityTimeoutString = System.getProperty(DOCUMENT_AVAILABILITY_TIMEOUT);
+
         	if( Objects.isNull(baseUrl)) {
 	            Properties prop = new Properties();
-	            InputStream fileStream = this.getClass().getClassLoader().getResourceAsStream("application-test.properties");
+	            InputStream fileStream = this.getClass().getClassLoader().getResourceAsStream(PROPERTY_FILE);
 	            if(fileStream == null){
-	                log.error("File properties non trovato");
+	                log.error(FILE_NOT_FOUND);
 	                System.exit(1);
 	            }
 	            prop.load(fileStream);
-	            this.baseUrl = prop.getProperty("baseURL");
+	            this.baseUrl = prop.getProperty(BASE_URL);
         	}
 
             if (Objects.isNull(nomeCoda)) {
                 Properties prop = new Properties();
-                InputStream fileStream = this.getClass().getClassLoader().getResourceAsStream("application-test.properties");
+                InputStream fileStream = this.getClass().getClassLoader().getResourceAsStream(PROPERTY_FILE);
                 if(fileStream == null){
-                    log.error("File properties non trovato");
+                    log.error(FILE_NOT_FOUND);
                     System.exit(1);
                 }
                 prop.load(fileStream);
-                this.nomeCoda = prop.getProperty("gestore.disponibilita.queue.name");
+                this.nomeCoda = prop.getProperty(NOME_CODA);
+            }
+
+            if (Objects.isNull(documentAvailabilityTimeout)) {
+                Properties prop = new Properties();
+                InputStream fileStream = this.getClass().getClassLoader().getResourceAsStream(PROPERTY_FILE);
+                if(fileStream == null){
+                    log.error(FILE_NOT_FOUND);
+                    System.exit(1);
+                }
+                prop.load(fileStream);
+                this.documentAvailabilityTimeout = Long.parseLong(prop.getProperty(DOCUMENT_AVAILABILITY_TIMEOUT));
+            } else {
+                this.documentAvailabilityTimeout = Long.parseLong(documentAvailabilityTimeoutString);
             }
             
         } catch (IOException ex) {
@@ -59,5 +80,6 @@ public class Config {
 
         return Config.instance;
     }
+
 
 }
