@@ -1,6 +1,7 @@
-package it.pagopa.pn.tests;
+package it.pagopa.pn.cucumber.steps;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.java.After;
 import io.cucumber.java.BeforeAll;
@@ -14,6 +15,7 @@ import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileDownloadResp
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
 import lombok.CustomLog;
 import org.junit.jupiter.api.Assertions;
+
 import java.io.*;
 import java.net.MalformedURLException;
 import java.nio.file.Path;
@@ -21,6 +23,8 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
@@ -30,7 +34,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @CustomLog
 public class StepDefinitions {
-
 	private String sPNClient = null;
 	private String sPNClient_AK = null;
 	private String sDocumentType = null;
@@ -56,7 +59,6 @@ public class StepDefinitions {
 	public static void loadPropertiesForQueue() {
 		nomeCoda = Config.getInstance().getNomeCoda();
 	}
-
 	@Given("{string} authenticated by {string} try to upload a document of type {string} with content type {string} using {string}")
 	public void a_file_to_upload(String sPNClient, String sPNClient_AK, String sDocumentType, String sMimeType, String sFileName) throws NoSuchAlgorithmException, FileNotFoundException, IOException {
 
@@ -95,7 +97,7 @@ public class StepDefinitions {
 			this.sKey = "";
 		}
 
-		log.info("client: " + sPNClientUp);
+		log.debug("Client utilizzato: " + sPNClientUp);
 
 		Response oResp;
 
@@ -215,7 +217,7 @@ public class StepDefinitions {
 	public void i_check_availability_messages() {
 		Assertions.assertTrue(checkIfDocumentIsAvailable(sKey, nomeCoda));
 	}
-	
+
 	@Then("i get an error {string}")
 	public void i_get_an_error(String sRC) {
 		Assertions.assertEquals(Integer.parseInt(sRC), iRC);
@@ -262,7 +264,6 @@ public class StepDefinitions {
 	@After
 	public void doFinally() throws IOException {
 	}
-
 
 
 }
