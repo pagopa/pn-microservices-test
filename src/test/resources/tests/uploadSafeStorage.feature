@@ -146,7 +146,7 @@ Feature: Upload SafeStorage
 
   @upload_trasformazione
   Scenario Outline: Upload di un file da sottoporre a trasformazione e verifica del messaggio di disponibilità del file
-    Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
+   Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
     When request a presigned url to upload the file
     And upload that file
     And it's available
