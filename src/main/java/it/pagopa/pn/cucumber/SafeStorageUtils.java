@@ -59,7 +59,6 @@ public class SafeStorageUtils {
 
 		sBody += "}";
 		oReq.body(sBody);
-		
 		Response oResp = CommonUtils.myPost(oReq, "/safe-storage/v1/files");
 		return oResp;
 	}
@@ -142,9 +141,9 @@ public class SafeStorageUtils {
 				.pathParam("fileKey", sFileKey)
 				.body(body);
 
-		Response oResp = CommonUtils.myPost(oReq, "/safe-storage/v1/files/{fileKey}");
 
-		log.debug("status: "+oResp.getStatusCode());
+
+		Response oResp = CommonUtils.myPost(oReq, "/safe-storage/v1/files/{fileKey}");
 
 		return oResp;
 	}

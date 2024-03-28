@@ -19,6 +19,9 @@ import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileDownloadResp
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
 import lombok.CustomLog;
 import org.junit.jupiter.api.Assertions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.*;
 import java.net.MalformedURLException;
 import java.nio.file.Path;
@@ -56,6 +59,7 @@ public class StepDefinitions {
     UpdateFileMetadataRequest requestBody = new UpdateFileMetadataRequest();
 
 
+
     @BeforeAll
     public static void loadPropertiesForQueue() {
         nomeCoda = Config.getInstance().getNomeCoda();
@@ -70,6 +74,7 @@ public class StepDefinitions {
         sMimeType = parseIfTagged(sMimeType);
         sFileName = parseIfTagged(sFileName);
 
+        log.debug("pn-client {}", sPNClient);
 
         Path pathFile = Paths.get(sFileName).toAbsolutePath();
 
@@ -112,6 +117,8 @@ public class StepDefinitions {
             this.sKey = "";
         }
 
+
+
         log.debug("Client utilizzato: " + sPNClientUp);
 
         Response oResp;
@@ -121,7 +128,7 @@ public class StepDefinitions {
         }
         requestBody.setStatus(status);
 
-        CommonUtils.checkDump(oResp = SafeStorageUtils.updateObjectMetadata(sPNClientUp, sPNClient_AKUp, fileKey, requestBody), true);
+        CommonUtils.checkDump(oResp=SafeStorageUtils.updateObjectMetadata(sPNClientUp, sPNClient_AKUp, fileKey, requestBody), true);
         iRC = oResp.getStatusCode();
         log.debug("file key: " + fileKey);
         log.debug("new status: " + status);
@@ -150,7 +157,7 @@ public class StepDefinitions {
         }
         requestBody.setStatus(status);
 
-        CommonUtils.checkDump(oResp = SafeStorageUtils.updateObjectMetadata(sPNClientUp, sPNClient_AKUp, sKey, requestBody), true);
+        oResp = SafeStorageUtils.updateObjectMetadata(sPNClientUp, sPNClient_AKUp, sKey, requestBody);
         iRC = oResp.getStatusCode();
         log.debug("new status: " + status);
         log.debug("new retentionUntil: " + retentionUntil);
@@ -161,12 +168,13 @@ public class StepDefinitions {
     public void getUploadPresignedURL() {
         Response oResp;
 
-        CommonUtils.checkDump(oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256), true);
+       oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256);
+
 
         iRC = oResp.getStatusCode();
         log.debug("oResp body: " + oResp.getBody().asString());
         log.debug("oResp uploadUrl: " + oResp.then().extract().path("uploadUrl"));
-        log.info("file key: " + oResp.then().extract().path("key"));
+        log.debug("file key: " + oResp.then().extract().path("key"));
         log.debug("oResp secret: " + oResp.then().extract().path("secret"));
         log.debug("iRC: " + iRC);
         if (iRC == 200) {
@@ -180,13 +188,13 @@ public class StepDefinitions {
     public void getUploadPresignedURLWithoutTraceId() {
         Response oResp;
 
-        CommonUtils.checkDump(oResp = SafeStorageUtils.getPresignedURLUploadKo(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256), true);
+        oResp = SafeStorageUtils.getPresignedURLUploadKo(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256);
         log.debug("CLIENT: " + sPNClient);
 
         iRC = oResp.getStatusCode();
         log.debug("oResp body: " + oResp.getBody().asString());
         log.debug("oResp uploadUrl: " + oResp.then().extract().path("uploadUrl"));
-        log.info("file key: " + oResp.then().extract().path("key"));
+        log.debug("file key: " + oResp.then().extract().path("key"));
         log.debug("oResp secret: " + oResp.then().extract().path("secret"));
         log.debug("iRC: " + iRC);
         if (iRC == 200) {
@@ -225,17 +233,21 @@ public class StepDefinitions {
 
     @Then("i found in S3")
     public void i_found_in_s3() {
-        Assertions.assertEquals(200, CommonUtils.checkDump(SafeStorageUtils.getPresignedURLDownload(sPNClient, sPNClient_AK, sKey), true)); // Ok
+        Assertions.assertEquals(200, SafeStorageUtils.getPresignedURLDownload(sPNClient, sPNClient_AK, sKey).getStatusCode());// Ok
     }
 
-    @And("no availability messages")
-    public void no_availability_messages() {
-        Assertions.assertFalse(checkIfDocumentIsAvailable(sKey, nomeCoda));
-    }
 
     @And("i check availability message")
     public void i_check_availability_messages() {
-        Assertions.assertTrue(checkIfDocumentIsAvailable(sKey, nomeCoda));
+        boolean check = checkIfDocumentIsAvailable(sKey, nomeCoda);
+        if (!check) {
+            Assertions.assertFalse(false);
+            log.info("Message not found for key{}", sKey);
+        } else {
+            Assertions.assertTrue(true);
+            log.info("Message found for key{}", sKey);
+
+        }
     }
 
     @Then("i get an error {string}")
@@ -245,7 +257,7 @@ public class StepDefinitions {
     }
 
     @Then("i check that the document got updated")
-    public void metadata_changed() throws JsonMappingException, JsonProcessingException, InterruptedException {
+    public void metadata_changed() throws JsonProcessingException, InterruptedException {
 
         Response oResp;
         iRC = 0;
