@@ -66,7 +66,7 @@ public class CommonUtils {
 
 		if (log.isDebugEnabled() ) {
 
-			oReq.log().all();
+			//oReq.log().all();
 		}
 		String sMyURL = URLDecoder.decode(sURL, "utf-8");
 		Response oResp = oReq
@@ -86,6 +86,7 @@ public class CommonUtils {
 	}
 	
 	protected static Response myPost(RequestSpecification oReqSpec, String sURI) {
+
 		oReqSpec.given().baseUri(getBaseURL()).basePath(sURI);
 		QueryableRequestSpecification queryRequest = SpecificationQuerier.query(oReqSpec);
 		log.debug("POST ", queryRequest.getURI());
