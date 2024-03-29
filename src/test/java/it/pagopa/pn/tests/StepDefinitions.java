@@ -174,7 +174,7 @@ public class StepDefinitions {
         iRC = oResp.getStatusCode();
         log.debug("oResp body: " + oResp.getBody().asString());
         log.debug("oResp uploadUrl: " + oResp.then().extract().path("uploadUrl"));
-        log.debug("file key: " + oResp.then().extract().path("key"));
+        log.info("fileKey: " + oResp.then().extract().path("key"));
         log.debug("oResp secret: " + oResp.then().extract().path("secret"));
         log.debug("iRC: " + iRC);
         if (iRC == 200) {
