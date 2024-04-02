@@ -1,5 +1,6 @@
 package it.pagopa.pn.tests;
 
+import com.amazonaws.services.kms.model.NotFoundException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,6 +50,7 @@ public class StepDefinitions {
     private String sSecret = null;
     private String sMimeType = null;
     private int iRC = 0;
+    private int statusCode = 0;
     File oFile = null;
     private String sPNClientUp = null;
     private String sPNClient_AKUp = null;
@@ -234,18 +236,20 @@ public class StepDefinitions {
     @Then("i found in S3")
     public void i_found_in_s3() {
         Assertions.assertEquals(200, SafeStorageUtils.getPresignedURLDownload(sPNClient, sPNClient_AK, sKey).getStatusCode());// Ok
+        statusCode = 200;
     }
 
 
-    @And("i check availability message")
-    public void i_check_availability_messages() {
-        boolean check = checkIfDocumentIsAvailable(sKey, nomeCoda);
+    @And("i check availability message {string}")
+    public void i_check_availability_messages(String sRC) {
+      boolean check = checkIfDocumentIsAvailable(sKey, nomeCoda);
         if (!check) {
-            Assertions.assertFalse(false);
-            log.info("Message not found for key{}", sKey);
+            statusCode=404;
+            log.info("Message not found for key{} ", sKey);
+            Assertions.assertEquals(Integer.parseInt(sRC), statusCode);
         } else {
-            Assertions.assertTrue(true);
-            log.info("Message found for key{}", sKey);
+            log.debug("Message found for key{} ", sKey);
+            Assertions.assertEquals(Integer.parseInt(sRC), statusCode);
 
         }
     }
@@ -255,6 +259,7 @@ public class StepDefinitions {
         Assertions.assertEquals(Integer.parseInt(sRC), iRC);
 
     }
+
 
     @Then("i check that the document got updated")
     public void metadata_changed() throws JsonProcessingException, InterruptedException {
@@ -300,6 +305,7 @@ public class StepDefinitions {
     private String parseIfTagged(String value) {
         return TestVariablesConfiguration.getInstance().getValueIfTagged(value);
     }
+
 
 
 }
