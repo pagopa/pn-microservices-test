@@ -60,8 +60,7 @@ public class SsStepDefinitions {
 
     @BeforeAll
     public static void loadPropertiesForQueue() {
-        nomeCoda = Config.getInstance().getNomeCoda();
-
+        Config.getInstance();
     }
 
     @Given("{string} authenticated by {string} try to upload a document of type {string} with content type {string} using {string}")
