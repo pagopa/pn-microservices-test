@@ -25,14 +25,13 @@ public class SqsUtils {
     public static final String NOTIFICATION_TRACKER_EVENT_NAME = "NOTIFICATION TRACKER";
 
 
-    public static boolean checkIfDocumentIsAvailable(String id, String queueName) {
+    public static boolean checkMessageInDebugQueue(String id, String queueName) {
         long pollingInterval = Config.getInstance().getDocumentAvailabilityTimeout();
         int maxPollingAttempts = 3;
         String queueUrl = sqsClient.getQueueUrl(builder -> builder.queueName(queueName)).queueUrl();
         boolean hasFoundMessage = false;
         for (int attempt = 0; attempt < maxPollingAttempts; attempt++) {
-            //log.debug("Pulling messages from '{}', attempt number {}", queueName, attempt);
-            System.out.println("Pulling messages from " + queueName + " , attempt number " + attempt);
+            log.debug("Polling messages from '{}', attempt number {}", queueName, attempt);
             boolean boolResp = true;
             while (boolResp) {
                 ReceiveMessageResponse response = sqsClient.receiveMessage(builder -> builder.queueUrl(queueUrl).maxNumberOfMessages(10));
@@ -40,6 +39,7 @@ public class SqsUtils {
                 for (Message message : response.messages()) {
                     hasFoundMessage = checkMessage(message, id);
                     if (hasFoundMessage) {
+                        log.debug("Message found! Deleting message '{}' from queue...", message.messageId());
                         sqsClient.deleteMessage(builder -> builder.queueUrl(queueUrl).receiptHandle(message.receiptHandle()));
                         break;
                     }
@@ -70,14 +70,9 @@ public class SqsUtils {
 
         if (source.equals(GESTORE_DISPONIBILITA_EVENT_NAME)) {
             NotificationMessage notificationMessage = convertStringToObject(detailJsonObj.toString(), NotificationMessage.class);
-            if (detailType.equals(EVENT_BUS_SOURCE_AVAILABLE_DOCUMENT) && notificationMessage.getKey().equals(id)) {
-                log.debug("Message found: " + message);
-                return true;
-            }
+            return detailType.equals(EVENT_BUS_SOURCE_AVAILABLE_DOCUMENT) && notificationMessage.getKey().equals(id);
         } else if (source.equals(NOTIFICATION_TRACKER_EVENT_NAME)) {
             SingleStatusUpdate singleStatusUpdate = convertStringToObject(detailJsonObj.toString(), SingleStatusUpdate.class);
-            System.out.println("SingleStatusUpdate : " + singleStatusUpdate);
-            System.out.println("Id : " + id);
             if (detailType.equals(EVENT_BUS_SOURCE_DIGITAL_MESSAGE) && singleStatusUpdate != null) {
                 if (singleStatusUpdate.getDigitalCourtesy() != null) {
                     CourtesyMessageProgressEvent digitalCourtesy = singleStatusUpdate.getDigitalCourtesy();

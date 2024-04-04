@@ -1,8 +1,5 @@
 package it.pagopa.pn.tests;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import com.amazonaws.services.kms.model.NotFoundException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.java.After;
@@ -19,11 +16,8 @@ import it.pagopa.pn.cucumber.CommonUtils;
 import it.pagopa.pn.cucumber.SafeStorageUtils;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileDownloadResponse;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
-import lombok.CustomLog;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
-import org.slf4j.LoggerFactory;
-
 import java.io.*;
 import java.net.MalformedURLException;
 import java.nio.file.Path;
@@ -35,7 +29,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
 
-import static it.pagopa.pn.cucumber.SqsUtils.checkIfDocumentIsAvailable;
+import static it.pagopa.pn.cucumber.SqsUtils.checkMessageInDebugQueue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
@@ -243,7 +237,7 @@ public class SsStepDefinitions {
 
     @And("i check availability message {string}")
     public void i_check_availability_messages(String sRC) {
-      boolean check = checkIfDocumentIsAvailable(sKey, nomeCoda);
+      boolean check = checkMessageInDebugQueue(sKey, nomeCoda);
         if (!check) {
             statusCode=404;
             log.info("Message not found for key{} ", sKey);

@@ -7,11 +7,13 @@ import it.pagopa.pn.ec.rest.v1.api.DigitalCourtesyMailRequest;
 import it.pagopa.pn.ec.rest.v1.api.DigitalCourtesySmsRequest;
 import it.pagopa.pn.ec.rest.v1.api.DigitalNotificationRequest;
 import it.pagopa.pn.ec.rest.v1.dto.DigitalLegalMessagesApi;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.util.Date;
 import java.util.Random;
 
+@Slf4j
 public class ExternalChannelUtils {
 
     private static final String SEND_SMS_ENDPOINT =
@@ -71,7 +73,7 @@ public class ExternalChannelUtils {
                 .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
                 .toString();
 
-        System.out.println("geneatedString: "+ generatedString);
+        log.debug("RequestID: " + generatedString);
         return generatedString;
     }
 
@@ -89,7 +91,7 @@ public class ExternalChannelUtils {
         return response;
     }
 
-    public static DigitalCourtesyMailRequest createMailRequest(String requestId){
+    public static DigitalCourtesyMailRequest createMailRequest(String requestId) {
         String defaultStringInit = "stringDefault";
 
         DigitalCourtesyMailRequest digitalCourtesyMailRequestFactory= new DigitalCourtesyMailRequest();
