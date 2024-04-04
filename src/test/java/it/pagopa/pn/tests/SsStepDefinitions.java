@@ -1,5 +1,8 @@
 package it.pagopa.pn.tests;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import com.amazonaws.services.kms.model.NotFoundException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.java.After;
@@ -17,7 +20,9 @@ import it.pagopa.pn.cucumber.SafeStorageUtils;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileDownloadResponse;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
 import lombok.CustomLog;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -33,7 +38,7 @@ import java.util.Date;
 import static it.pagopa.pn.cucumber.SqsUtils.checkIfDocumentIsAvailable;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@CustomLog
+@Slf4j
 public class SsStepDefinitions {
     private String sPNClient = null;
     private String sPNClient_AK = null;
@@ -58,9 +63,11 @@ public class SsStepDefinitions {
 
 
 
+
     @BeforeAll
     public static void loadPropertiesForQueue() {
         nomeCoda = Config.getInstance().getNomeCoda();
+
     }
 
     @Given("{string} authenticated by {string} try to upload a document of type {string} with content type {string} using {string}")
@@ -71,7 +78,6 @@ public class SsStepDefinitions {
         sDocumentType = parseIfTagged(sDocumentType);
         sMimeType = parseIfTagged(sMimeType);
         sFileName = parseIfTagged(sFileName);
-
         log.debug("pn-client {}", sPNClient);
 
         Path pathFile = Paths.get(sFileName).toAbsolutePath();
@@ -167,7 +173,6 @@ public class SsStepDefinitions {
         Response oResp;
 
        oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256);
-
 
         iRC = oResp.getStatusCode();
         log.debug("oResp body: " + oResp.getBody().asString());
