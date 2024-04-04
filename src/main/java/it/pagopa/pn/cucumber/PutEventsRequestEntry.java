@@ -1,6 +1,7 @@
 package it.pagopa.pn.cucumber;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import it.pagopa.pn.ec.rest.v1.api.SingleStatusUpdate;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -20,7 +21,7 @@ public class PutEventsRequestEntry {
     @JsonProperty("detail-type")
     String detailType;
 
-    NotificationMessage detail;
+    String detail;
 
     String eventBusName;
 
@@ -52,7 +53,7 @@ public class PutEventsRequestEntry {
                 '}';
     }
 
-    public NotificationMessage detail() {
+    public String detail() {
         return detail;
     }
 
