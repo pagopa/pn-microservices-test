@@ -1,8 +1,6 @@
 package it.pagopa.pn.tests;
 
-import com.amazonaws.services.kms.model.NotFoundException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.java.After;
 import io.cucumber.java.BeforeAll;
@@ -20,8 +18,6 @@ import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileDownloadResp
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
 import lombok.CustomLog;
 import org.junit.jupiter.api.Assertions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -38,7 +34,7 @@ import static it.pagopa.pn.cucumber.SqsUtils.checkIfDocumentIsAvailable;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @CustomLog
-public class StepDefinitions {
+public class SsStepDefinitions {
     private String sPNClient = null;
     private String sPNClient_AK = null;
     private String sDocumentType = null;

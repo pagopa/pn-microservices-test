@@ -94,5 +94,17 @@ public class CommonUtils {
 		Response oResp = oReqSpec.post();
 		return oResp;
 	}
+	protected static Response myPut(RequestSpecification oReqSpec, String sURI) {
+
+		oReqSpec.given().baseUri(getBaseURL()).basePath(sURI);
+		System.out.println("base url request myPost: " + oReqSpec.given().baseUri(getBaseURL()).basePath(sURI));
+
+		QueryableRequestSpecification queryRequest = SpecificationQuerier.query(oReqSpec);
+		log.debug("POST ", queryRequest.getURI());
+		log.debug(queryRequest.getBody().toString());
+		Response oResp = oReqSpec.put();
+		System.out.println("response: " + oResp.getStatusCode());
+		return oResp;
+	}
 	
 }
