@@ -22,7 +22,7 @@ public class CommonUtils {
 
 	protected static String getBaseURL() {
 		if( baseURL == null ) {
-			baseURL = Config.getInstance().getBaseUrl();
+			baseURL = System.getProperty("baseURL");
 			if( baseURL == null ) {
 				baseURL="";
 			}

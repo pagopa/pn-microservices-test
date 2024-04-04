@@ -99,7 +99,8 @@ public class ExternalChannelUtils {
         digitalCourtesyMailRequestFactory.eventType(defaultStringInit);
         digitalCourtesyMailRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now()));
         digitalCourtesyMailRequestFactory.setQos(DigitalCourtesyMailRequest.QosEnum.INTERACTIVE);
-        digitalCourtesyMailRequestFactory.setReceiverDigitalAddress("+");
+        digitalCourtesyMailRequestFactory.setSenderDigitalAddress("");
+        digitalCourtesyMailRequestFactory.setReceiverDigitalAddress("");
         digitalCourtesyMailRequestFactory.setMessageText(defaultStringInit);
         digitalCourtesyMailRequestFactory.channel(DigitalCourtesyMailRequest.ChannelEnum.EMAIL);
         return digitalCourtesyMailRequestFactory;
@@ -125,7 +126,7 @@ public class ExternalChannelUtils {
         digitalNotificationRequestFactory.eventType(defaultStringInit);
         digitalNotificationRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now()));
         digitalNotificationRequestFactory.setQos(DigitalNotificationRequest.QosEnum.INTERACTIVE);
-        digitalNotificationRequestFactory.setReceiverDigitalAddress("+");
+        digitalNotificationRequestFactory.setReceiverDigitalAddress("");
         digitalNotificationRequestFactory.setMessageText(defaultStringInit);
         digitalNotificationRequestFactory.channel(DigitalNotificationRequest.ChannelEnum.PEC);
         return digitalNotificationRequestFactory;

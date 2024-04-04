@@ -26,7 +26,7 @@ public class SqsUtils {
 
 
     public static boolean checkMessageInDebugQueue(String id, String queueName) {
-        long pollingInterval = Config.getInstance().getDocumentAvailabilityTimeout();
+        long pollingInterval = Long.parseLong(System.getProperty("document.availability.timeout.millis"));
         int maxPollingAttempts = 3;
         String queueUrl = sqsClient.getQueueUrl(builder -> builder.queueName(queueName)).queueUrl();
         boolean hasFoundMessage = false;

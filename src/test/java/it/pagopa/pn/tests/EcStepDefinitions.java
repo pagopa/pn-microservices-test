@@ -50,7 +50,7 @@ public class EcStepDefinitions {
 
     @Then("check if the message has been sent")
     public void checkStatusMessage() {
-        boolean checked = SqsUtils.checkMessageInDebugQueue(requestId, nomeCodaEc);
+        boolean checked = SqsUtils.checkMessageInDebugQueue(requestId, System.getProperty("notifiche.esterne.queue.name"));
         Assertions.assertTrue(checked);
     }
 
