@@ -1,4 +1,4 @@
-package it.pagopa.pn.cucumber;
+package it.pagopa.pn.cucumber.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import it.pagopa.pn.ec.rest.v1.api.SingleStatusUpdate;

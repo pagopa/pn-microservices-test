@@ -9,11 +9,11 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.response.Response;
+import it.pagopa.pn.configuration.Config;
 import it.pagopa.pn.configuration.TestVariablesConfiguration;
-import it.pagopa.pn.cucumber.*;
 import it.pagopa.pn.cucumber.Checksum;
-import it.pagopa.pn.cucumber.CommonUtils;
-import it.pagopa.pn.cucumber.SafeStorageUtils;
+import it.pagopa.pn.cucumber.utils.CommonUtils;
+import it.pagopa.pn.cucumber.utils.SafeStorageUtils;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileDownloadResponse;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +29,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
 
-import static it.pagopa.pn.cucumber.SqsUtils.checkMessageInDebugQueue;
+import static it.pagopa.pn.cucumber.utils.SqsUtils.checkMessageInSsDebugQueue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
@@ -236,7 +236,7 @@ public class SsStepDefinitions {
 
     @And("i check availability message {string}")
     public void i_check_availability_messages(String sRC) {
-      boolean check = checkMessageInDebugQueue(sKey, nomeCoda);
+      boolean check = checkMessageInSsDebugQueue(sKey, System.getProperty("gestore.disponibilita.queue.name"));
         if (!check) {
             statusCode=404;
             log.info("Message not found for key{} ", sKey);
@@ -253,7 +253,17 @@ public class SsStepDefinitions {
         Assertions.assertEquals(Integer.parseInt(sRC), iRC);
 
     }
+    @Then("i check availability message")
+    public void iCheckAvailabilityMessage() {
+        boolean check = checkMessageInSsDebugQueue(sKey, System.getProperty("gestore.disponibilita.queue.name"));
+        if (!check) {
+            statusCode=404;
+            log.info("Message not found for key{} ", sKey);
+        } else {
+            log.debug("Message found for key{} ", sKey);
 
+        }
+    }
 
     @Then("i check that the document got updated")
     public void metadata_changed() throws JsonProcessingException, InterruptedException {
