@@ -1,4 +1,4 @@
-package it.pagopa.pn.cucumber;
+package it.pagopa.pn.cucumber.dto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import javax.annotation.Generated;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.HashMap;

@@ -1,10 +1,12 @@
-package it.pagopa.pn.cucumber;
+package it.pagopa.pn.cucumber.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import it.pagopa.pn.cucumber.Checksum;
+import it.pagopa.pn.cucumber.utils.CommonUtils;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
 import lombok.extern.slf4j.Slf4j;
 

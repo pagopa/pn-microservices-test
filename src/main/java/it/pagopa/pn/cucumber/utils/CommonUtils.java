@@ -1,4 +1,4 @@
-package it.pagopa.pn.cucumber;
+package it.pagopa.pn.cucumber.utils;
 
 import io.restassured.RestAssured;
 import io.restassured.config.EncoderConfig;
@@ -6,6 +6,7 @@ import io.restassured.response.Response;
 import io.restassured.specification.QueryableRequestSpecification;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.SpecificationQuerier;
+import it.pagopa.pn.cucumber.Checksum;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;

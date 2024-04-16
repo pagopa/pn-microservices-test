@@ -1,11 +1,10 @@
-package it.pagopa.pn.cucumber;
+package it.pagopa.pn.configuration;
 
 import lombok.CustomLog;
 import lombok.Getter;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Objects;
 import java.util.Properties;
 
 @Getter
