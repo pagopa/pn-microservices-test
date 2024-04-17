@@ -57,6 +57,7 @@ public class RequestTemplate {
         digitalNotificationRequestFactory.channel(DigitalNotificationRequest.ChannelEnum.PEC);
         digitalNotificationRequestFactory.setSubjectText("test");
         digitalNotificationRequestFactory.setTags(null);
+        digitalNotificationRequestFactory.setMessageContentType(DigitalNotificationRequest.MessageContentTypeEnum.PLAIN);
         return digitalNotificationRequestFactory;
     }
 

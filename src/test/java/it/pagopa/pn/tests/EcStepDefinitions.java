@@ -16,27 +16,17 @@ import it.pagopa.pn.cucumber.utils.SafeStorageUtils;
 import it.pagopa.pn.cucumber.utils.SqsUtils;
 import it.pagopa.pn.ec.rest.v1.api.CourtesyMessageProgressEvent;
 import it.pagopa.pn.ec.rest.v1.api.LegalMessageSentDetails;
-import it.pagopa.pn.ec.rest.v1.api.PaperProgressStatusEvent;
-import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
 import lombok.CustomLog;
 import org.junit.jupiter.api.Assertions;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Date;
 import java.util.List;
 
 import static it.pagopa.pn.cucumber.utils.CommonUtils.getMD5;
 import static it.pagopa.pn.cucumber.utils.CommonUtils.getSHA256;
-import static it.pagopa.pn.cucumber.utils.SqsUtils.checkMessageInSsDebugQueue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @CustomLog

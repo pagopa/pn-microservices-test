@@ -43,11 +43,11 @@ Feature: Send Digital Message Ec
   Scenario Outline: Invio pec e verifica della pubblicazione del messaggio nella coda di debug
     Given a "<clientId>" and "<channel>" to send on
     And I upload the following attachments:
-      | documentType                       | fileName               | mimeType
-      | @doc_type_notification_attachments | src/resources/test.pdf | application/pdf |
+      | documentType                       | fileName                    | mimeType        |
+      | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
     When try to send a digital message
     Then check if the message has been sent
 
     Examples:
-      | clientId           | channel
-      | @clientId-delivery | @channel_pec
+      | clientId           | channel       |
+      | @clientId-delivery | @channel_pec  |
