@@ -15,6 +15,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.util.Base64;
+import java.util.List;
 
 @Slf4j
 public class ExternalChannelUtils extends RequestTemplate {
@@ -76,11 +77,12 @@ public class ExternalChannelUtils extends RequestTemplate {
 
 
     //PEC
-    public static Response sendDigitalNotification(String clientId, String requestId) {
+    public static Response sendDigitalNotification(String clientId, String requestId, List<String> attachments) {
         RequestSpecification oReq = stdReq()
                 .header("x-pagopa-extch-cx-id", clientId)
                 .pathParam("requestIdx", requestId);
         DigitalNotificationRequest digitalNotificationRequest = createDigitalNotificationRequest(requestId);
+        digitalNotificationRequest.setAttachmentUrls(attachments);
 
         oReq.body(digitalNotificationRequest);
         Response response = CommonUtils.myPut(oReq,SEND_PEC_ENDPOINT);
@@ -95,8 +97,7 @@ public class ExternalChannelUtils extends RequestTemplate {
         PaperEngageRequest paperEngageRequest = createPaperEngageRequest(requestId);
 
         oReq.body(paperEngageRequest);
-        Response response = CommonUtils.myPut(oReq,SEND_CARTACEO_ENDPOINT);
-        return response;
+        return CommonUtils.myPut(oReq,SEND_CARTACEO_ENDPOINT);
     }
 
     //API Consolidatore
