@@ -57,7 +57,6 @@ public class RequestTemplate {
         digitalNotificationRequestFactory.channel(DigitalNotificationRequest.ChannelEnum.PEC);
         digitalNotificationRequestFactory.setSubjectText("test");
         digitalNotificationRequestFactory.setTags(null);
-        digitalNotificationRequestFactory.setAttachmentUrls(null);
         return digitalNotificationRequestFactory;
     }
 

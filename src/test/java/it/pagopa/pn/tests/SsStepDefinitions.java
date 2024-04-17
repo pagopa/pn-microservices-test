@@ -29,6 +29,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
 
+import static it.pagopa.pn.cucumber.utils.CommonUtils.*;
 import static it.pagopa.pn.cucumber.utils.SqsUtils.checkMessageInSsDebugQueue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -73,26 +74,14 @@ public class SsStepDefinitions {
         sFileName = parseIfTagged(sFileName);
         log.debug("pn-client {}", sPNClient);
 
-        Path pathFile = Paths.get(sFileName).toAbsolutePath();
-
         this.sPNClient = sPNClient;
         this.sPNClient_AK = sPNClient_AK;
         this.sDocumentType = sDocumentType;
         this.sMimeType = sMimeType;
 
         oFile = new File(sFileName);
-        FileInputStream oFIS = new FileInputStream(oFile);
-        byte[] baFile = oFIS.readAllBytes();
-        oFIS.close();
-        MessageDigest md = MessageDigest.getInstance("SHA256");
-        md.update(baFile);
-        byte[] digest = md.digest();
-        sSHA256 = Base64.getEncoder().encodeToString(digest);
-
-        md = MessageDigest.getInstance("MD5");
-        md.update(baFile);
-        digest = md.digest();
-        sMD5 = Base64.getEncoder().encodeToString(digest);
+        sSHA256 = getSHA256(oFile);
+        sMD5 = getMD5(oFile);
     }
 
 	@Given("{string} authenticated by {string} try to update the document using {string} and {string} but has invalid or null {string}")
@@ -305,11 +294,5 @@ public class SsStepDefinitions {
     @After
     public void doFinally() throws IOException {
     }
-
-    private String parseIfTagged(String value) {
-        return TestVariablesConfiguration.getInstance().getValueIfTagged(value);
-    }
-
-
 
 }

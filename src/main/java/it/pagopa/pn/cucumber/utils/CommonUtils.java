@@ -6,13 +6,19 @@ import io.restassured.response.Response;
 import io.restassured.specification.QueryableRequestSpecification;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.SpecificationQuerier;
+import it.pagopa.pn.configuration.TestVariablesConfiguration;
 import it.pagopa.pn.cucumber.Checksum;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URLDecoder;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 
 
 @Slf4j
@@ -103,6 +109,30 @@ public class CommonUtils {
 		log.debug("POST {}", queryRequest.getURI());
 		log.debug(queryRequest.getBody().toString());
 		return oReqSpec.put();
+	}
+
+	public static String parseIfTagged(String value) {
+		return TestVariablesConfiguration.getInstance().getValueIfTagged(value);
+	}
+
+	public static String getSHA256(File file) throws NoSuchAlgorithmException, IOException {
+		FileInputStream oFIS = new FileInputStream(file);
+		byte[] baFile = oFIS.readAllBytes();
+		oFIS.close();
+		MessageDigest md = MessageDigest.getInstance("SHA256");
+		md.update(baFile);
+		byte[] digest = md.digest();
+		return Base64.getEncoder().encodeToString(digest);
+	}
+
+	public static String getMD5(File file) throws NoSuchAlgorithmException, IOException {
+		FileInputStream oFIS = new FileInputStream(file);
+		byte[] baFile = oFIS.readAllBytes();
+		oFIS.close();
+		MessageDigest md = MessageDigest.getInstance("MD5");
+		md.update(baFile);
+		byte[] digest = md.digest();
+		return Base64.getEncoder().encodeToString(digest);
 	}
 	
 }
