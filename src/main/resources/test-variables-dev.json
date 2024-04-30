@@ -3,6 +3,7 @@
   "apiKey_test": "pn-test_api_key",
   "clientId-unknown": "pn-unknown",
   "clientId-delivery": "pn-delivery",
+  "clientId-cons": "pn-cons-000",
   "clientId-test": "pn-test",
   "clientId-pn-cn": "pn-cn",
   "apiKey-pn_cn": "pn-cn_api_key",
@@ -11,5 +12,6 @@
   "doc_type_legal_facts": "PN_LEGAL_FACTS_ST",
   "channel_sms": "SMS",
   "channel_email": "EMAIL",
-  "channel_pec": "PEC"
+  "channel_pec": "PEC",
+  "channel_paper": "PAPER"
 }
