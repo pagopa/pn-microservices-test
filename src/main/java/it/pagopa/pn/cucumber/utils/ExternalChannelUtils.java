@@ -90,11 +90,12 @@ public class ExternalChannelUtils extends RequestTemplate {
     }
 
     //CARTACEO
-    public static Response sendPaperMessage(String clientId, String requestId) {
+    public static Response sendPaperMessage(String clientId, String requestId, List<PaperEngageRequestAttachments> attachments) {
         RequestSpecification oReq = stdReq()
                 .header("x-pagopa-extch-cx-id", clientId)
                 .pathParam("requestIdx", requestId);
         PaperEngageRequest paperEngageRequest = createPaperEngageRequest(requestId);
+        paperEngageRequest.setAttachments(attachments);
 
         oReq.body(paperEngageRequest);
         return CommonUtils.myPut(oReq,SEND_CARTACEO_ENDPOINT);

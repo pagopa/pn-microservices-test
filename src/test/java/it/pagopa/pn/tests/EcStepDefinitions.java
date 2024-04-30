@@ -16,12 +16,15 @@ import it.pagopa.pn.cucumber.utils.SafeStorageUtils;
 import it.pagopa.pn.cucumber.utils.SqsUtils;
 import it.pagopa.pn.ec.rest.v1.api.CourtesyMessageProgressEvent;
 import it.pagopa.pn.ec.rest.v1.api.LegalMessageSentDetails;
+import it.pagopa.pn.ec.rest.v1.api.PaperEngageRequestAttachments;
 import lombok.CustomLog;
 import org.junit.jupiter.api.Assertions;
 
 import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,6 +42,7 @@ public class EcStepDefinitions {
 
     private SsStepDefinitions ssStepDefinitions;
     private final List<String> fileKeyList = new ArrayList<>();
+    private final List<PaperEngageRequestAttachments> fileKeyListPaper = new ArrayList<>();
     private String fileKey;
     private static String nomeCodaNotifiche;
 
@@ -78,7 +82,7 @@ public class EcStepDefinitions {
     @When("try to send a paper message")
     public void tryToSendAPaperMessage() {
         this.requestId = ExternalChannelUtils.generateRandomRequestId();
-        Response response = ExternalChannelUtils.sendPaperMessage(clientId, requestId);
+        Response response = ExternalChannelUtils.sendPaperMessage(clientId, requestId, fileKeyListPaper);
         assertEquals(200, response.getStatusCode());
     }
 
@@ -92,15 +96,12 @@ public class EcStepDefinitions {
             case "EMAIL" -> SqsUtils.checkMessageInEcDebugQueue(requestId, queueName, CourtesyMessageProgressEvent.EventCodeEnum.M003.getValue());
             case "PEC" -> SqsUtils.checkMessageInEcDebugQueue(requestId, queueName, LegalMessageSentDetails.EventCodeEnum.C000.getValue());
             case "PAPER" -> SqsUtils.checkMessageInEcDebugQueue(requestId, queueName, "P000");
-            default -> throw new IllegalArgumentException();
+            default -> throw new IllegalArgumentException(String.format("The given channel '%s' is not valid.", this.channel));
         };
         Assertions.assertTrue(checked);
     }
 
 
-    @Then("check ricezione esiti")
-    public void checkRicezioneEsiti() {
-    }
 
     @And("I upload the following attachments:")
     public void uploadAttachments(DataTable dataTable) throws NoSuchAlgorithmException, IOException {
@@ -123,6 +124,29 @@ public class EcStepDefinitions {
             Response uploadResp = CommonUtils.uploadFile(sURL, file, sha256, md5, mimeType, sSecret, Checksum.SHA256);
             assertEquals(200, uploadResp.getStatusCode());
         }
+    }
+
+    @And("waiting for scheduling")
+    public void waitingForScheduling() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime nextSchedule = now.withMinute((now.getMinute() / 5 + 1) * 5).withSecond(0).withNano(0);
+        Duration duration = Duration.between(now, nextSchedule);
+        try {
+            Thread.sleep(duration.toMillis() + 5000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Then("check if the message has been accepted and has been delivered")
+    public void checkIfTheMessageIsAcceptedAndDelivered() {
+        String queueName = System.getProperty("notifiche.esterne.queue.name");
+
+       boolean checkAccepted = SqsUtils.checkMessageInEcDebugQueue(requestId, queueName, LegalMessageSentDetails.EventCodeEnum.C001.getValue());
+       log.info(String.valueOf(checkAccepted));
+       boolean checkDelivered = SqsUtils.checkMessageInEcDebugQueue(requestId, queueName, LegalMessageSentDetails.EventCodeEnum.C003.getValue());
+        log.info(String.valueOf(checkDelivered));
+       Assertions.assertTrue(checkAccepted && checkDelivered);
     }
 
     @After

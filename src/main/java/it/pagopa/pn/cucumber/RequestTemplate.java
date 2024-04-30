@@ -51,8 +51,8 @@ public class RequestTemplate {
         digitalNotificationRequestFactory.eventType(defaultStringInit);
         digitalNotificationRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now()));
         digitalNotificationRequestFactory.setQos(DigitalNotificationRequest.QosEnum.INTERACTIVE);
-        digitalNotificationRequestFactory.setSenderDigitalAddress("pec.sender.digital.address");
-        digitalNotificationRequestFactory.setReceiverDigitalAddress("pec.receiver.digital.address");
+        digitalNotificationRequestFactory.setSenderDigitalAddress(System.getProperty("pec.sender.digital.address"));
+        digitalNotificationRequestFactory.setReceiverDigitalAddress(System.getProperty("pec.receiver.digital.address"));
         digitalNotificationRequestFactory.setMessageText(defaultStringInit);
         digitalNotificationRequestFactory.channel(DigitalNotificationRequest.ChannelEnum.PEC);
         digitalNotificationRequestFactory.setSubjectText("test");
@@ -63,58 +63,57 @@ public class RequestTemplate {
 
     //CARTACEO
 
-    public static PaperEngageRequest createPaperEngageRequest(String requestId){
-        String defaultAttachmentUrl = "safestorage://test.pdf";
+    public static PaperEngageRequest createPaperEngageRequest(String requestId) {
         PaperEngageRequest paperEngageRequestFactory = new PaperEngageRequest();
-        PaperEngageRequestAttachments paperEngageRequestAttachmentsFactory = new PaperEngageRequestAttachments();
 
-        paperEngageRequestAttachmentsFactory.setUri(defaultAttachmentUrl);
-        paperEngageRequestAttachmentsFactory.setOrder(BigDecimal.valueOf(1));
-        paperEngageRequestAttachmentsFactory.setDocumentType("TEST");
-        paperEngageRequestAttachmentsFactory.setSha256("stringstringstringstringstringstringstri");
-        List<PaperEngageRequestAttachments> paperEngageRequestAttachmentsList = new ArrayList<>();
-        paperEngageRequestAttachmentsList.add(paperEngageRequestAttachmentsFactory);
-        paperEngageRequestFactory.setAttachments(paperEngageRequestAttachmentsList);
-        paperEngageRequestFactory.setReceiverName("");
-        paperEngageRequestFactory.setReceiverNameRow2("");
-        paperEngageRequestFactory.setReceiverAddress("");
-        paperEngageRequestFactory.setReceiverAddressRow2("");
-        paperEngageRequestFactory.setReceiverCap("");
-        paperEngageRequestFactory.setReceiverCity("");
-        paperEngageRequestFactory.setReceiverCity2("");
-        paperEngageRequestFactory.setReceiverPr("");
-        paperEngageRequestFactory.setReceiverCountry("");
-        paperEngageRequestFactory.setReceiverFiscalCode("");
-        paperEngageRequestFactory.setSenderName("");
-        paperEngageRequestFactory.setSenderAddress("");
-        paperEngageRequestFactory.setSenderCity("");
-        paperEngageRequestFactory.setSenderPr("");
-        paperEngageRequestFactory.setSenderDigitalAddress("");
-        paperEngageRequestFactory.setArName("");
-        paperEngageRequestFactory.setArAddress("");
-        paperEngageRequestFactory.setArCap("");
-        paperEngageRequestFactory.setArCity("");
+      //  List<PaperEngageRequestAttachments> paperEngageRequestAttachmentsList = getPaperEngageRequestAttachments();
+        // paperEngageRequestFactory.setAttachments(paperEngageRequestAttachmentsList);
+        paperEngageRequestFactory.setReceiverName("Paolo Rossi");
+        paperEngageRequestFactory.setReceiverNameRow2("c/o famiglia Bianchi");
+        paperEngageRequestFactory.setReceiverAddress("via Roma 13");
+        paperEngageRequestFactory.setReceiverAddressRow2("scala A interno 4");
+        paperEngageRequestFactory.setReceiverCap("00017");
+        paperEngageRequestFactory.setReceiverCity("Roma");
+        paperEngageRequestFactory.setReceiverCity2("frz Mostacciano");
+        paperEngageRequestFactory.setReceiverPr("RM");
+        paperEngageRequestFactory.setReceiverCountry("Italia");
+        paperEngageRequestFactory.setReceiverFiscalCode("MYYNA0JJART56HOZ");
+        paperEngageRequestFactory.setSenderName("Giovanni");
+        paperEngageRequestFactory.setSenderAddress("Verdi");
+        paperEngageRequestFactory.setSenderCity("Roma");
+        paperEngageRequestFactory.setSenderPr("RM");
+        paperEngageRequestFactory.setSenderDigitalAddress("via napoli 1");
+        paperEngageRequestFactory.setArName("String");
+        paperEngageRequestFactory.setArAddress("string");
+        paperEngageRequestFactory.setArCap("0000");
+        paperEngageRequestFactory.setArCity("Roma");
         var vas = new HashMap<String, String>();
+        vas.put("additionalProp1", "string");
         paperEngageRequestFactory.setVas(vas);
         paperEngageRequestFactory.setIun("iun123456789");
-        paperEngageRequestFactory.setRequestPaId("PagoPa");
+        paperEngageRequestFactory.setRequestPaId("00414580183");
         paperEngageRequestFactory.setProductType("AR");
-        paperEngageRequestFactory.setPrintType("B/N12345");
+        paperEngageRequestFactory.setPrintType("BN_FRONTE_RETRO");
         paperEngageRequestFactory.setRequestId(requestId);
         paperEngageRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now()));
         return paperEngageRequestFactory;
-    }
-
-    //CONSOLIDATORE
-    public static ConsolidatoreIngressPaperProgressStatusEvent createConsolidatoreIngressPaper(String requestId) {
-        ConsolidatoreIngressPaperProgressStatusEvent consolidatore = new ConsolidatoreIngressPaperProgressStatusEvent();
-        consolidatore.setRequestId(requestId);
-     //   consolidatore.setAttachments();
-        consolidatore.setIun("");
-        //consolidatore.set
-        return consolidatore;
 
     }
+
+    private static List<PaperEngageRequestAttachments> getPaperEngageRequestAttachments() {
+        PaperEngageRequestAttachments paperEngageRequestAttachments = new PaperEngageRequestAttachments();
+        String defaultAttachmentUrl = "safestorage://test.pdf";
+        paperEngageRequestAttachments.setUri(defaultAttachmentUrl);
+        paperEngageRequestAttachments.setOrder(BigDecimal.valueOf(1));
+        paperEngageRequestAttachments.setDocumentType("ATTO");
+        paperEngageRequestAttachments.setSha256("stringstringstringstringstringstringstri");
+
+        List<PaperEngageRequestAttachments> paperEngageRequestAttachmentsList = new ArrayList<>();
+        paperEngageRequestAttachmentsList.add(paperEngageRequestAttachments);
+        return paperEngageRequestAttachmentsList;
+    }
+
+
 
 
 }

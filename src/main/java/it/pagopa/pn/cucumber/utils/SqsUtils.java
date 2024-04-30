@@ -15,6 +15,8 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 import org.json.JSONObject;
+
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiFunction;
 
 @Slf4j
@@ -27,17 +29,47 @@ public class SqsUtils {
     public static final String EVENT_BUS_SOURCE_DIGITAL_MESSAGE = "ExternalChannelOutcomeEvent";
     public static final String GESTORE_DISPONIBILITA_EVENT_NAME = "GESTORE DISPONIBILITA";
     public static final String NOTIFICATION_TRACKER_EVENT_NAME = "NOTIFICATION TRACKER";
-    public static final String EVENT_CODE_SENT_SMS = "S003";
-    public static final String EVENT_CODE_SENT_EMAIL = "M003";
 
+    public static boolean checkMessageInDebugQueueSingleton(String id, String queueName, BiFunction<Message, String, Boolean> messageChecker) {
+        String queueUrl = sqsClient.getQueueUrl(builder -> builder.queueName(queueName)).queueUrl();
+        log.info("sqs utils queueName: {}", queueName);
+        QueuePoller poller = QueuePoller.getInstance();
+        poller.setQueueUrl(queueUrl);
+        poller.setPollingTimeoutMillis(Long.parseLong(System.getProperty("polling.timeout.millis")));
+        poller.startPolling();
+        log.info("sqs utils poller queueName: {}", poller.getQueueUrl());
+        // Attendi finché il polling non ha ricevuto i messaggi
+        while (poller.getMessageMap().isEmpty()) {
+            try {
+                Thread.sleep(1000); // Attendi 1 secondo prima di controllare di nuovo
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        }
+        ConcurrentMap<String, Message> messageMap = poller.getMessageMap();
+        log.info("sqs messagesMap: {}", messageMap.size());
+        boolean hasFoundMessage = false;
+
+        if(!messageMap.isEmpty()) {
+            for (Message message : messageMap.values()) {
+                if (messageChecker.apply(message, id)) {
+                    hasFoundMessage = true;
+                   // log.info("hasMessage: {}", hasFoundMessage);
+                }
+            }
+        }
+        return hasFoundMessage;
+    }
 
     public static boolean checkMessageInDebugQueue(String id, String queueName, BiFunction<Message, String, Boolean> messageChecker) {
         long pollingInterval = Long.parseLong(System.getProperty("document.availability.timeout.millis"));
         int maxPollingAttempts = 3;
         String queueUrl = sqsClient.getQueueUrl(builder -> builder.queueName(queueName)).queueUrl();
         boolean hasFoundMessage = false;
+
         for (int attempt = 0; attempt < maxPollingAttempts; attempt++) {
-            log.debug("Polling messages from '{}', attempt number {}", queueName, attempt);
+            log.info("Polling messages from '{}', attempt number {}", queueName, attempt);
             boolean boolResp = true;
             while (boolResp) {
                 ReceiveMessageResponse response = sqsClient.receiveMessage(builder -> builder.queueUrl(queueUrl).maxNumberOfMessages(10));
@@ -49,7 +81,7 @@ public class SqsUtils {
                         throw new RuntimeException();
                     }
                     if (hasFoundMessage) {
-                        log.info("Message found! Deleting message '{}' from queue...", message.messageId());
+                        log.info("Message found! Deleting message '{}' from queue...", message);
                         sqsClient.deleteMessage(builder -> builder.queueUrl(queueUrl).receiptHandle(message.receiptHandle()));
                         break;
                     }
@@ -60,18 +92,21 @@ public class SqsUtils {
                 Thread.sleep(pollingInterval);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                return false;
+              //  return false;
             }
         }
+        log.info("hasMessageFound: {} ", hasFoundMessage);
         return hasFoundMessage;
     }
+
     public static boolean checkMessageInEcDebugQueue(String id, String queueName, String statusToCheck) {
-        return checkMessageInDebugQueue(id, queueName, (message, ecId) -> checkEcMessage(message, ecId, statusToCheck));
+        return checkMessageInDebugQueueSingleton(id, queueName, (message, ecId) -> checkEcMessage(message, ecId, statusToCheck));
     }
 
     public static boolean checkMessageInSsDebugQueue(String id, String queueName) {
         return checkMessageInDebugQueue(id, queueName, SqsUtils::checkSsMessage);
     }
+
     public static boolean checkEcMessage(Message message, String id, String statusToCheck) {
         log.debug("id {}", id);
         JSONObject messageBodyJsonObj = new JSONObject(message.body());
@@ -89,7 +124,6 @@ public class SqsUtils {
                     LegalMessageSentDetails digitalLegal = singleStatusUpdate.getDigitalLegal();
                     return digitalLegal.getRequestId().equals(id) && digitalLegal.getEventCode().getValue().equalsIgnoreCase(statusToCheck);
                 } else if (singleStatusUpdate.getAnalogMail() != null) {
-                    //TODO rivedere lo stato da controllare
                     PaperProgressStatusEvent analogMail = singleStatusUpdate.getAnalogMail();
                     return analogMail.getRequestId().equals(id) && analogMail.getStatusCode().equalsIgnoreCase(statusToCheck);
                 }
@@ -97,6 +131,7 @@ public class SqsUtils {
         }
         return false;
     }
+
 
     public static boolean checkSsMessage(Message message, String id) {
         log.debug("id {}", id);
@@ -107,10 +142,6 @@ public class SqsUtils {
             return messageBodyDto.getDetailType().equals(EVENT_BUS_SOURCE_AVAILABLE_DOCUMENT) && notificationMessage.getKey().equals(id);
         }
         return false;
-    }
-
-    private static RicezioneEsitiDto ricezioneEsiti() {
-        return null;
     }
 
 

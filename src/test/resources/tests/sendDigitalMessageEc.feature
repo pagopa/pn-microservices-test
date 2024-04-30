@@ -31,12 +31,15 @@ Feature: Send Digital Message Ec
   @invioCartaceo
   Scenario Outline: Invio di un messaggio cartaceo e verifica della pubblicazione del messaggio nella coda di debug
     Given a "<clientId>" and "<channel>" to send on
+    And I upload the following attachments:
+      | documentType                       | fileName                    | mimeType        |
+      | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
     When try to send a paper message
-    And check if the message has been sent
-    Then check ricezione esiti
+    And waiting for scheduling
+    Then check if the message has been sent
     Examples:
-      | clientId           | channel  |
-      | @clientId-delivery | CARTACEO |
+      | clientId       | channel |
+      | @clientId-cons | @channel_paper   |
 
 
   @complete_pec
@@ -46,8 +49,24 @@ Feature: Send Digital Message Ec
       | documentType                       | fileName                    | mimeType        |
       | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
     When try to send a digital message
-    Then check if the message has been sent
+    And check if the message has been sent
+    And waiting for scheduling
+    Then check if the message has been accepted and has been delivered
+
 
     Examples:
-      | clientId           | channel       |
-      | @clientId-delivery | @channel_pec  |
+      | clientId           | channel      |
+      | @clientId-delivery | @channel_pec |
+
+
+  @complete_mail
+  Scenario Outline: invio email e verifica della pubblicszione del messaggio nella coda di debug
+    Given a "<clientId>" and "<channel>" to send on
+    And I upload the following attachments:
+      | documentType                       | fileName                    | mimeType        |
+      | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
+    When try to send a digital message
+    Then check if the message has been sent
+    Examples:
+      | clientId           | channel        |
+      | @clientId-delivery | @channel_email |
