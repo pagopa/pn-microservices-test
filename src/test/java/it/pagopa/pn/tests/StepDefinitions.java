@@ -253,7 +253,7 @@ public class StepDefinitions {
 
     @And("i check availability message {string}")
     public void i_check_availability_messages(String sRC) {
-      boolean check = checkIfDocumentIsAvailable(sKey, nomeCoda);
+      boolean check = checkIfDocumentIsAvailable(sKey, System.getProperty("pn.ss.gestore.disponibilita.queue.name"));
         if (!check) {
             statusCode=404;
             log.info("Message not found for key{} ", sKey);
