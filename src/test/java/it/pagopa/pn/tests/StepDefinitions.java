@@ -13,22 +13,21 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.response.Response;
+import it.pagopa.pn.configuration.Config;
 import it.pagopa.pn.configuration.TestVariablesConfiguration;
 import it.pagopa.pn.cucumber.*;
 import it.pagopa.pn.cucumber.Checksum;
 import it.pagopa.pn.cucumber.CommonUtils;
 import it.pagopa.pn.cucumber.SafeStorageUtils;
+import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.Document;
+import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.DocumentResponse;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileDownloadResponse;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
-import lombok.CustomLog;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.MalformedURLException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
@@ -66,9 +65,8 @@ public class StepDefinitions {
 
 
     @BeforeAll
-    public static void loadPropertiesForQueue() {
-        nomeCoda = Config.getInstance().getNomeCoda();
-
+    public static void loadProperties() {
+        Config.getInstance();
     }
 
     @Given("{string} authenticated by {string} try to upload a document of type {string} with content type {string} using {string}")
@@ -80,8 +78,6 @@ public class StepDefinitions {
         sMimeType = parseIfTagged(sMimeType);
         sFileName = parseIfTagged(sFileName);
         log.debug("pn-client {}", sPNClient);
-
-        Path pathFile = Paths.get(sFileName).toAbsolutePath();
 
         this.sPNClient = sPNClient;
         this.sPNClient_AK = sPNClient_AK;
@@ -221,19 +217,31 @@ public class StepDefinitions {
     public void it_s_available() throws JsonProcessingException, InterruptedException {
         Response oResp;
         iRC = 0;
-        while (iRC != 200) {
-            oResp = SafeStorageUtils.getObjectMetadata(sPNClient, sPNClient_AK, sKey);
+        //Set a time limit for the availability check.
+        Instant timeLimit = Instant.now().plusSeconds(Long.parseLong(System.getProperty("pn.ss.document.availability.timeout.millis")));
+        boolean hasBeenFound = false;
+        //Check if the document is available every x seconds.
+        //Time limit represent a timeout for the check.
+        while (Instant.now().isBefore(timeLimit)) {
+            oResp = SafeStorageUtils.getDocument(sKey);
             iRC = oResp.getStatusCode();
             if (iRC == 200) {
                 ObjectMapper objectMapper = new ObjectMapper();
                 log.debug(oResp.getBody().asString());
-                FileDownloadResponse oFDR = objectMapper.readValue(oResp.getBody().asString(), FileDownloadResponse.class);
-                if (oFDR.getDocumentStatus().equalsIgnoreCase("SAVED") || oFDR.getDocumentStatus().equalsIgnoreCase("PRELOADED")) {
+                DocumentResponse oFDR = objectMapper.readValue(oResp.getBody().asString(), DocumentResponse.class);
+                Document document = oFDR.getDocument();
+                assert document != null;
+                assert document.getDocumentState() != null;
+                //If the document is available, exit the loop.
+                if (document.getDocumentState().equalsIgnoreCase("available")) {
+                    hasBeenFound = true;
                     break;
                 }
             }
-            Thread.sleep(3000);
+            Thread.sleep(Long.parseLong(System.getProperty("pn.ss.document.availability.interval.millis")));
         }
+        //If the document is not available after the timeout, the test will fail.
+        Assertions.assertTrue(hasBeenFound);
     }
 
     @Then("i found in S3")
