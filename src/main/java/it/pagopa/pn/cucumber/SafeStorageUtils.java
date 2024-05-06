@@ -124,6 +124,15 @@ public class SafeStorageUtils {
 		return oResp;
 	}
 
+	public static Response getDocument(String sFileKey) {
+		RequestSpecification oReq = stdReq()
+				.pathParam("fileKey", sFileKey)
+				.param("metadataOnly", true);
+
+		Response oResp = CommonUtils.myGet(oReq, "/safestorage/internal/v1/documents/{fileKey}");
+		return oResp;
+	}
+
 	public static Response updateObjectMetadata (String sCxId, String sAPIKey, String sFileKey, UpdateFileMetadataRequest requestBody) {
 
 		ObjectMapper objMapper = new ObjectMapper();

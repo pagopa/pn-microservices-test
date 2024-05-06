@@ -23,7 +23,7 @@ public class SqsUtils {
 
 
     public static boolean checkIfDocumentIsAvailable(String fileKey, String queueName) {
-        long pollingInterval = Config.getInstance().getDocumentAvailabilityTimeout();
+        long pollingInterval = Long.parseLong(System.getProperty("pn.ss.sqs.lookup.interval.millis"));
         int maxPollingAttempts = 3;
 
         String queueUrl = sqsClient.getQueueUrl(builder -> builder.queueName(queueName)).queueUrl();
