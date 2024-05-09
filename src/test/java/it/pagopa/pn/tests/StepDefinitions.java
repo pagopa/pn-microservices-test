@@ -274,13 +274,15 @@ public class StepDefinitions {
 
     @Then("i check that the document got updated")
     public void metadata_changed() throws JsonProcessingException, InterruptedException {
-
+        //Check if the previous updateMetadata request has been successful.
+        Assertions.assertEquals(200, iRC);
+        //Check if the document in DynamoDB has been updated.
         Response oResp;
-        iRC = 0;
-        while (iRC != 200) {
+        statusCode = 0;
+        while (statusCode != 200) {
             oResp = SafeStorageUtils.getObjectMetadata(sPNClientUp, sPNClient_AKUp, sKey);
-            iRC = oResp.getStatusCode();
-            if (iRC == 200) {
+            statusCode = oResp.getStatusCode();
+            if (statusCode == 200) {
                 ObjectMapper objectMapper = new ObjectMapper();
                 log.debug("response body: " + oResp.getBody().asString());
                 FileDownloadResponse oFDR = objectMapper.readValue(oResp.getBody().asString(), FileDownloadResponse.class);

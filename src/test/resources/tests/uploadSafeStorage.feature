@@ -42,8 +42,8 @@ Feature: Upload SafeStorage
     Examples:
       | clientId           | APIKey            | documentType                       | fileName                    | MIMEType        | clientIdUp         | APIKeyUp          | status   | retentionUntil           |
       | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-delivery | @delivery_api_key | ATTACHED |                          |
-      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-delivery | @delivery_api_key | ATTACHED | 2024-05-04T16:15:00.000Z |
-      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-delivery | @delivery_api_key |          | 2024-07-11T13:02:25.206Z |
+      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-delivery | @delivery_api_key | ATTACHED | 2025-07-11T16:15:00.000Z |
+      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-delivery | @delivery_api_key |          | 2025-07-11T13:02:25.206Z |
 
 
   Scenario Outline: tentativo di update dei metadata di un file con chiave invalida o non valorizzata
@@ -64,9 +64,9 @@ Feature: Upload SafeStorage
     Then i get an error "<rc>"
     Examples:
       | clientId           | APIKey            | documentType                       | fileName      | MIMEType       | clientIdUp      | APIKeyUp      | status   | retentionUntil           | rc  |
-      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-pn-cn | @apiKey-pn_cn | ATTACHED | 2024-07-11T13:02:25.206Z | 403 |
-      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf| application/pdf | @clientId-test  | @apiKey_test  | SAVED    | 2024-07-11T13:02:25.206Z | 400 |
-      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-test  | @apiKey_test  | NONEXIST | 2024-07-11T13:02:25.206Z | 400 |
+      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-pn-cn | @apiKey-pn_cn | ATTACHED | 2025-07-11T13:02:25.206Z | 403 |
+      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf| application/pdf | @clientId-test  | @apiKey_test  | SAVED    | 2025-07-11T13:02:25.206Z | 400 |
+      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-test  | @apiKey_test  | NONEXIST | 2025-07-11T13:02:25.206Z | 400 |
 
 
   Scenario Outline: Upload di un file da sottoporre a trasformazione e verifica del messaggio di disponibilità del file

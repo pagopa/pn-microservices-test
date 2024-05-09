@@ -9,6 +9,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
+import java.time.Instant;
 import java.util.Optional;
 
 @Slf4j
@@ -21,40 +22,30 @@ public class SqsUtils {
     public static final String GESTORE_DISPONIBILITA_EVENT_NAME = "GESTORE DISPONIBILITA";
 
 
-
     public static boolean checkIfDocumentIsAvailable(String fileKey, String queueName) {
-        long pollingInterval = Long.parseLong(System.getProperty("pn.ss.sqs.lookup.interval.millis"));
-        int maxPollingAttempts = 3;
-
         String queueUrl = sqsClient.getQueueUrl(builder -> builder.queueName(queueName)).queueUrl();
+        long pollingInterval = Long.parseLong(System.getProperty("pn.ss.sqs.lookup.interval.millis"));
+        Instant timeLimit = Instant.now().plusSeconds(Long.parseLong(System.getProperty("pn.ss.sqs.lookup.timeout.millis")));
+        while (Instant.now().isBefore(timeLimit)) {
+            ReceiveMessageResponse response = sqsClient.receiveMessage(builder -> builder.queueUrl(queueUrl).waitTimeSeconds(2).maxNumberOfMessages(10));
 
-        //System.out.println(queueUrl);
+            for (Message message : response.messages()) {
+                String messageBody = message.body();
+                PutEventsRequestEntry putEventsRequestEntry = convertStringToObject(messageBody, PutEventsRequestEntry.class);
+                NotificationMessage notificationMessage = putEventsRequestEntry.detail;
 
-        for (int attempt = 0; attempt < maxPollingAttempts; attempt++) {
-            boolean boolResp = true;
-                while(boolResp) {
-                    ReceiveMessageResponse response = sqsClient.receiveMessage(builder -> builder.queueUrl(queueUrl).maxNumberOfMessages(10));
-                    boolResp = response.hasMessages();
-
-                    for (Message message : response.messages()) {
-                        String messageBody = message.body();
-                        PutEventsRequestEntry putEventsRequestEntry = convertStringToObject(messageBody, PutEventsRequestEntry.class);
-                        NotificationMessage notificationMessage = putEventsRequestEntry.detail;
-
-                        if (putEventsRequestEntry.detailType().equals(EVENT_BUS_SOURCE_AVAILABLE_DOCUMENT)
-                                && putEventsRequestEntry.source().equals(GESTORE_DISPONIBILITA_EVENT_NAME)
-                                && notificationMessage.getKey().equals(fileKey)) {
-                            log.debug("Message found: " + message);
-                            sqsClient.deleteMessage(builder -> builder.queueUrl(queueUrl).receiptHandle(message.receiptHandle()));
-                            return true;
-                        }
-                    }
+                if (putEventsRequestEntry.detailType().equals(EVENT_BUS_SOURCE_AVAILABLE_DOCUMENT)
+                        && putEventsRequestEntry.source().equals(GESTORE_DISPONIBILITA_EVENT_NAME)
+                        && notificationMessage.getKey().equals(fileKey)) {
+                    log.debug("Message found: " + message);
+                    sqsClient.deleteMessage(builder -> builder.queueUrl(queueUrl).receiptHandle(message.receiptHandle()));
+                    return true;
                 }
+            }
             try {
-                Thread.sleep(pollingInterval); // aspetto prima di effettuare il polling successivo
+                Thread.sleep(pollingInterval);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                return false;
             }
         }
         return false;
