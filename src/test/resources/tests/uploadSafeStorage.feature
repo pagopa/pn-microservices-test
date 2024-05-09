@@ -39,11 +39,12 @@ Feature: Upload SafeStorage
     And it's available
     And "<clientIdUp>" authenticated by "<APIKeyUp>" try to update the document just uploaded using "<status>" and "<retentionUntil>"
     Then i check that the document got updated
+    And i check availability message "<rc>"
     Examples:
-      | clientId           | APIKey            | documentType                       | fileName                    | MIMEType        | clientIdUp         | APIKeyUp          | status   | retentionUntil           |
-      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-delivery | @delivery_api_key | ATTACHED |                          |
-      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-delivery | @delivery_api_key | ATTACHED | 2025-07-11T16:15:00.000Z |
-      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-delivery | @delivery_api_key |          | 2025-07-11T13:02:25.206Z |
+      | clientId           | APIKey            | documentType                       | fileName                    | MIMEType        | clientIdUp         | APIKeyUp          | status   | retentionUntil           | rc  |
+      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-delivery | @delivery_api_key | ATTACHED |                          | 200 |
+      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-delivery | @delivery_api_key | ATTACHED | 2025-07-11T16:15:00.000Z | 200 |
+      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-delivery | @delivery_api_key |          | 2025-07-11T13:02:25.206Z | 200 |
 
 
   Scenario Outline: tentativo di update dei metadata di un file con chiave invalida o non valorizzata
