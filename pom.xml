@@ -49,13 +49,6 @@
 			<artifactId>sts</artifactId>
 			<version>2.25.14</version>
 		</dependency>
-<!--
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-simple</artifactId>
-			<version>2.0.12</version>
-		</dependency>
--->
 
 		<dependency>
 			<groupId>com.sun.xml.ws</groupId>
@@ -149,21 +142,24 @@
 			<artifactId>joda-time</artifactId>
 			<version>2.12.7</version>
 		</dependency>
-<!--
-		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-classic</artifactId>
-			<version>1.4.14</version>
-		</dependency> -->
-<!--	<dependency>
-			<groupId>net.logstash.logback</groupId>
-			<artifactId>logstash-logback-encoder</artifactId>
-			<version>7.4</version>
-		</dependency>-->
+
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<version>1.18.30</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20240303</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>amazon-sqs-java-messaging-lib</artifactId>
+			<version>2.1.3</version>
+			<type>jar</type>
 		</dependency>
 
 

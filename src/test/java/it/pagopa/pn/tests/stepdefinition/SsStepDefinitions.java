@@ -1,12 +1,8 @@
-package it.pagopa.pn.tests;
+package it.pagopa.pn.tests.stepdefinition;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import com.amazonaws.services.kms.model.NotFoundException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.cucumber.java.After;
+import io.cucumber.java.AfterAll;
 import io.cucumber.java.BeforeAll;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
@@ -15,14 +11,15 @@ import io.cucumber.java.en.When;
 import io.restassured.response.Response;
 import it.pagopa.pn.configuration.Config;
 import it.pagopa.pn.configuration.TestVariablesConfiguration;
-import it.pagopa.pn.cucumber.*;
-import it.pagopa.pn.cucumber.Checksum;
-import it.pagopa.pn.cucumber.CommonUtils;
-import it.pagopa.pn.cucumber.SafeStorageUtils;
+import it.pagopa.pn.cucumber.dto.pojo.Checksum;
+import it.pagopa.pn.cucumber.utils.CommonUtils;
+import it.pagopa.pn.cucumber.utils.SafeStorageUtils;
+import it.pagopa.pn.cucumber.poller.PnSsQueuePoller;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.Document;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.DocumentResponse;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileDownloadResponse;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
+import jakarta.jms.JMSException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 
@@ -35,11 +32,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
 
-import static it.pagopa.pn.cucumber.SqsUtils.checkIfDocumentIsAvailable;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
-public class StepDefinitions {
+public class SsStepDefinitions {
     private String sPNClient = null;
     private String sPNClient_AK = null;
     private String sDocumentType = null;
@@ -59,14 +55,14 @@ public class StepDefinitions {
     private String retentionUntil = "";
     private Date retentionDate = null;
     private static String nomeCoda;
+    private static PnSsQueuePoller queuePoller;
     UpdateFileMetadataRequest requestBody = new UpdateFileMetadataRequest();
 
-
-
-
     @BeforeAll
-    public static void loadProperties() {
+    public static void loadProperties() throws JMSException {
         Config.getInstance();
+        queuePoller = new PnSsQueuePoller();
+        queuePoller.startPolling();
     }
 
     @Given("{string} authenticated by {string} try to upload a document of type {string} with content type {string} using {string}")
@@ -99,8 +95,8 @@ public class StepDefinitions {
         sMD5 = Base64.getEncoder().encodeToString(digest);
     }
 
-	@Given("{string} authenticated by {string} try to update the document using {string} and {string} but has invalid or null {string}")
-	public void no_file_to_update (String sPNClientUp, String sPNClient_AKUp, String status, String retentionUntil, String fileKey) {
+    @Given("{string} authenticated by {string} try to update the document using {string} and {string} but has invalid or null {string}")
+    public void no_file_to_update(String sPNClientUp, String sPNClient_AKUp, String status, String retentionUntil, String fileKey) {
 
         sPNClientUp = parseIfTagged(sPNClientUp);
         sPNClient_AKUp = parseIfTagged(sPNClient_AKUp);
@@ -119,7 +115,6 @@ public class StepDefinitions {
         }
 
 
-
         log.debug("Client utilizzato: " + sPNClientUp);
 
         Response oResp;
@@ -129,7 +124,7 @@ public class StepDefinitions {
         }
         requestBody.setStatus(status);
 
-        CommonUtils.checkDump(oResp=SafeStorageUtils.updateObjectMetadata(sPNClientUp, sPNClient_AKUp, fileKey, requestBody), true);
+        CommonUtils.checkDump(oResp = SafeStorageUtils.updateObjectMetadata(sPNClientUp, sPNClient_AKUp, fileKey, requestBody), true);
         iRC = oResp.getStatusCode();
         log.debug("file key: " + fileKey);
         log.debug("new status: " + status);
@@ -169,7 +164,7 @@ public class StepDefinitions {
     public void getUploadPresignedURL() {
         Response oResp;
 
-       oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256);
+        oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256);
 
         iRC = oResp.getStatusCode();
         log.debug("oResp body: " + oResp.getBody().asString());
@@ -253,16 +248,16 @@ public class StepDefinitions {
 
     @And("i check availability message {string}")
     public void i_check_availability_messages(String sRC) {
-      boolean check = checkIfDocumentIsAvailable(sKey, System.getProperty("pn.ss.gestore.disponibilita.queue.name"));
+        int status;
+        boolean check = queuePoller.checkMessageAvailability(sKey);
         if (!check) {
-            statusCode=404;
-            log.info("Message not found for key{} ", sKey);
-            Assertions.assertEquals(Integer.parseInt(sRC), statusCode);
+            status = 404;
+            log.info("Message not found for key {} ", sKey);
         } else {
-            log.debug("Message found for key{} ", sKey);
-            Assertions.assertEquals(Integer.parseInt(sRC), statusCode);
-
+            status = 200;
+            log.debug("Message found for key {} ", sKey);
         }
+        Assertions.assertEquals(Integer.parseInt(sRC), status);
     }
 
     @Then("i get an error {string}")
@@ -310,15 +305,14 @@ public class StepDefinitions {
         }
     }
 
-
-    @After
-    public void doFinally() throws IOException {
+    @AfterAll
+    public static void doFinally() throws JMSException {
+        queuePoller.close();
     }
 
     private String parseIfTagged(String value) {
         return TestVariablesConfiguration.getInstance().getValueIfTagged(value);
     }
-
 
 
 }
