@@ -1,8 +1,7 @@
-package it.pagopa.pn.tests.stepdefinition;
+package it.pagopa.pn.cucumber.steps;
 
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.AfterAll;
-import io.cucumber.java.BeforeAll;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -16,7 +15,6 @@ import it.pagopa.pn.cucumber.utils.*;
 import it.pagopa.pn.ec.rest.v1.api.CourtesyMessageProgressEvent;
 import it.pagopa.pn.ec.rest.v1.api.LegalMessageSentDetails;
 import it.pagopa.pn.ec.rest.v1.api.PaperEngageRequestAttachments;
-import it.pagopa.pn.tests.stepdefinition.SsStepDefinitions;
 import jakarta.jms.JMSException;
 import lombok.CustomLog;
 import org.junit.jupiter.api.Assertions;
@@ -48,11 +46,14 @@ public class EcStepDefinitions {
     private static PnEcQueuePoller queuePoller;
 
 
-    @BeforeAll
-    public static void beforeAll() throws JMSException {
-        Config.getInstance();
-        queuePoller = new PnEcQueuePoller();
-        queuePoller.startPolling();
+    static {
+        try {
+            Config.getInstance();
+            queuePoller = new PnEcQueuePoller();
+            queuePoller.startPolling();
+        } catch (JMSException e) {
+            throw new RuntimeException("Error initializing queue poller", e);
+        }
     }
 
     @Given("a {string} and {string} to send on")

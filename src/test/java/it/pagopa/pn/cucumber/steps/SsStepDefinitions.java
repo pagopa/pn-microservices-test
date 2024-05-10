@@ -1,4 +1,4 @@
-package it.pagopa.pn.tests.stepdefinition;
+package it.pagopa.pn.cucumber.steps;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -58,11 +58,14 @@ public class SsStepDefinitions {
     private static PnSsQueuePoller queuePoller;
     UpdateFileMetadataRequest requestBody = new UpdateFileMetadataRequest();
 
-    @BeforeAll
-    public static void loadProperties() throws JMSException {
-        Config.getInstance();
-        queuePoller = new PnSsQueuePoller();
-        queuePoller.startPolling();
+    static {
+        try {
+            Config.getInstance();
+            queuePoller = new PnSsQueuePoller();
+            queuePoller.startPolling();
+        } catch (JMSException e) {
+            throw new RuntimeException("Error initializing queue poller", e);
+        }
     }
 
     @Given("{string} authenticated by {string} try to upload a document of type {string} with content type {string} using {string}")
