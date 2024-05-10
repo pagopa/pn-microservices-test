@@ -66,7 +66,7 @@ public class SsStepDefinitions {
     }
 
     @Given("{string} authenticated by {string} try to upload a document of type {string} with content type {string} using {string}")
-    public void a_file_to_upload(String sPNClient, String sPNClient_AK, String sDocumentType, String sMimeType, String sFileName) throws NoSuchAlgorithmException, FileNotFoundException, IOException {
+    public void a_file_to_upload(String sPNClient, String sPNClient_AK, String sDocumentType, String sMimeType, String sFileName) throws NoSuchAlgorithmException, IOException {
 
         sPNClient = parseIfTagged(sPNClient);
         sPNClient_AK = parseIfTagged(sPNClient_AK);
