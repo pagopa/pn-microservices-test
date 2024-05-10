@@ -45,7 +45,7 @@ public class PnSsQueuePoller extends QueuePoller {
         Instant timeLimit = Instant.now().plusMillis(Long.parseLong(System.getProperty("pn.ss.sqs.lookup.timeout.millis")));
         while (Instant.now().isBefore(timeLimit)) {
             var result = this.messageMap.get(fileKey);
-            if (result != null) {
+            if (result != null && (result.contains("SAVED") || result.contains("PRELOADED"))) {
                 check = true;
                 break;
             }

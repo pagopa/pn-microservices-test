@@ -36,11 +36,14 @@ public abstract class QueuePoller implements MessageListener {
         if (this.connection == null)
             this.connection = connectionFactory.createConnection();
 
-        try (Session session = this.connection.createSession(false, Session.AUTO_ACKNOWLEDGE)) {
-            Queue queue = session.createQueue(this.queueName);
-            MessageConsumer consumer = session.createConsumer(queue);
-            consumer.setMessageListener(this);
-        }
+        Session session = this.connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(this.queueName);
+
+        //Create a consumer for the queue.
+        MessageConsumer consumer = session.createConsumer(queue);
+
+        //Instantiate and set the message listener for the consumer.
+        consumer.setMessageListener(this);
 
         // Start receiving incoming messages.
         this.connection.start();
