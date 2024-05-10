@@ -1,7 +1,6 @@
-@PnEcSend
 Feature: Send Digital Message Ec
 
-  @invioSMS
+  @PnEcSendMessage @invioSMS
   Scenario Outline: Invio sms e verifica della pubblicazione del messaggio nella coda di debug
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message
@@ -11,7 +10,7 @@ Feature: Send Digital Message Ec
       | @clientId-delivery | @channel_sms |
 
 
-  @invioPEC
+  @PnEcSendMessage @invioPEC
   Scenario Outline: Invio pec e verifica della pubblicazione del messaggio nella coda di debug
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message
@@ -20,7 +19,7 @@ Feature: Send Digital Message Ec
       | clientId           | channel      |
       | @clientId-delivery | @channel_pec |
 
-  @invioEMAIL
+  @PnEcSendMessage @invioEMAIL
   Scenario Outline: Invio email e verifica della pubblicazione del messaggio nella coda di debug
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message
@@ -29,7 +28,7 @@ Feature: Send Digital Message Ec
       | clientId           | channel        |
       | @clientId-delivery | @channel_email |
 
-  @invioCartaceo
+  @PnEcSendMessage @invioCartaceo
   Scenario Outline: Invio di un messaggio cartaceo e verifica della pubblicazione del messaggio nella coda di debug
     Given a "<clientId>" and "<channel>" to send on
     And I upload the following attachments:
@@ -43,7 +42,7 @@ Feature: Send Digital Message Ec
       | @clientId-cons | @channel_paper   |
 
 
-  @complete_pec
+  @PnEcSendMessage @complete_pec
   Scenario Outline: Invio pec e verifica della pubblicazione del messaggio nella coda di debug
     Given a "<clientId>" and "<channel>" to send on
     And I upload the following attachments:
@@ -60,7 +59,7 @@ Feature: Send Digital Message Ec
       | @clientId-delivery | @channel_pec |
 
 
-  @complete_mail
+  @PnEcSendMessage @complete_mail
   Scenario Outline: invio email e verifica della pubblicszione del messaggio nella coda di debug
     Given a "<clientId>" and "<channel>" to send on
     And I upload the following attachments:
