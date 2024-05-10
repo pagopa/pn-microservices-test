@@ -1,3 +1,4 @@
+@PnEcSend
 Feature: Send Digital Message Ec
 
   @invioSMS

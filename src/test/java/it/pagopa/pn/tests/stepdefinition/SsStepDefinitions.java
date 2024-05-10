@@ -1,8 +1,8 @@
-package it.pagopa.pn.tests;
+package it.pagopa.pn.tests.stepdefinition;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.cucumber.java.After;
+import io.cucumber.java.AfterAll;
 import io.cucumber.java.BeforeAll;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
@@ -11,17 +11,20 @@ import io.cucumber.java.en.When;
 import io.restassured.response.Response;
 import it.pagopa.pn.configuration.Config;
 import it.pagopa.pn.configuration.TestVariablesConfiguration;
-import it.pagopa.pn.cucumber.Checksum;
+import it.pagopa.pn.cucumber.dto.pojo.Checksum;
 import it.pagopa.pn.cucumber.utils.CommonUtils;
 import it.pagopa.pn.cucumber.utils.SafeStorageUtils;
+import it.pagopa.pn.cucumber.poller.PnSsQueuePoller;
+import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.Document;
+import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.DocumentResponse;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileDownloadResponse;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
+import jakarta.jms.JMSException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
+
 import java.io.*;
 import java.net.MalformedURLException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
@@ -29,8 +32,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
 
-import static it.pagopa.pn.cucumber.utils.CommonUtils.*;
-import static it.pagopa.pn.cucumber.utils.SqsUtils.checkMessageInSsDebugQueue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
@@ -54,18 +55,18 @@ public class SsStepDefinitions {
     private String retentionUntil = "";
     private Date retentionDate = null;
     private static String nomeCoda;
+    private static PnSsQueuePoller queuePoller;
     UpdateFileMetadataRequest requestBody = new UpdateFileMetadataRequest();
 
-
-
-
     @BeforeAll
-    public static void loadPropertiesForQueue() {
+    public static void loadProperties() throws JMSException {
         Config.getInstance();
+        queuePoller = new PnSsQueuePoller();
+        queuePoller.startPolling();
     }
 
     @Given("{string} authenticated by {string} try to upload a document of type {string} with content type {string} using {string}")
-    public void a_file_to_upload(String sPNClient, String sPNClient_AK, String sDocumentType, String sMimeType, String sFileName) throws NoSuchAlgorithmException, FileNotFoundException, IOException {
+    public void a_file_to_upload(String sPNClient, String sPNClient_AK, String sDocumentType, String sMimeType, String sFileName) throws NoSuchAlgorithmException, IOException {
 
         sPNClient = parseIfTagged(sPNClient);
         sPNClient_AK = parseIfTagged(sPNClient_AK);
@@ -80,12 +81,22 @@ public class SsStepDefinitions {
         this.sMimeType = sMimeType;
 
         oFile = new File(sFileName);
-        sSHA256 = getSHA256(oFile);
-        sMD5 = getMD5(oFile);
+        FileInputStream oFIS = new FileInputStream(oFile);
+        byte[] baFile = oFIS.readAllBytes();
+        oFIS.close();
+        MessageDigest md = MessageDigest.getInstance("SHA256");
+        md.update(baFile);
+        byte[] digest = md.digest();
+        sSHA256 = Base64.getEncoder().encodeToString(digest);
+
+        md = MessageDigest.getInstance("MD5");
+        md.update(baFile);
+        digest = md.digest();
+        sMD5 = Base64.getEncoder().encodeToString(digest);
     }
 
-	@Given("{string} authenticated by {string} try to update the document using {string} and {string} but has invalid or null {string}")
-	public void no_file_to_update (String sPNClientUp, String sPNClient_AKUp, String status, String retentionUntil, String fileKey) {
+    @Given("{string} authenticated by {string} try to update the document using {string} and {string} but has invalid or null {string}")
+    public void no_file_to_update(String sPNClientUp, String sPNClient_AKUp, String status, String retentionUntil, String fileKey) {
 
         sPNClientUp = parseIfTagged(sPNClientUp);
         sPNClient_AKUp = parseIfTagged(sPNClient_AKUp);
@@ -104,7 +115,6 @@ public class SsStepDefinitions {
         }
 
 
-
         log.debug("Client utilizzato: " + sPNClientUp);
 
         Response oResp;
@@ -114,7 +124,7 @@ public class SsStepDefinitions {
         }
         requestBody.setStatus(status);
 
-        CommonUtils.checkDump(oResp=SafeStorageUtils.updateObjectMetadata(sPNClientUp, sPNClient_AKUp, fileKey, requestBody), true);
+        CommonUtils.checkDump(oResp = SafeStorageUtils.updateObjectMetadata(sPNClientUp, sPNClient_AKUp, fileKey, requestBody), true);
         iRC = oResp.getStatusCode();
         log.debug("file key: " + fileKey);
         log.debug("new status: " + status);
@@ -154,10 +164,11 @@ public class SsStepDefinitions {
     public void getUploadPresignedURL() {
         Response oResp;
 
-       oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256);
+        oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256);
 
         iRC = oResp.getStatusCode();
         log.debug("oResp body: " + oResp.getBody().asString());
+
         log.debug("oResp uploadUrl: " + oResp.then().extract().path("uploadUrl"));
         log.info("fileKey: " + oResp.then().extract().path("key"));
         log.debug("oResp secret: " + oResp.then().extract().path("secret"));
@@ -201,19 +212,31 @@ public class SsStepDefinitions {
     public void it_s_available() throws JsonProcessingException, InterruptedException {
         Response oResp;
         iRC = 0;
-        while (iRC != 200) {
-            oResp = SafeStorageUtils.getObjectMetadata(sPNClient, sPNClient_AK, sKey);
+        //Set a time limit for the availability check.
+        Instant timeLimit = Instant.now().plusSeconds(Long.parseLong(System.getProperty("pn.ss.document.availability.timeout.millis")));
+        boolean hasBeenFound = false;
+        //Check if the document is available every x seconds.
+        //Time limit represent a timeout for the check.
+        while (Instant.now().isBefore(timeLimit)) {
+            oResp = SafeStorageUtils.getDocument(sKey);
             iRC = oResp.getStatusCode();
             if (iRC == 200) {
                 ObjectMapper objectMapper = new ObjectMapper();
                 log.debug(oResp.getBody().asString());
-                FileDownloadResponse oFDR = objectMapper.readValue(oResp.getBody().asString(), FileDownloadResponse.class);
-                if (oFDR.getDocumentStatus().equalsIgnoreCase("SAVED") || oFDR.getDocumentStatus().equalsIgnoreCase("PRELOADED")) {
+                DocumentResponse oFDR = objectMapper.readValue(oResp.getBody().asString(), DocumentResponse.class);
+                Document document = oFDR.getDocument();
+                assert document != null;
+                assert document.getDocumentState() != null;
+                //If the document is available, exit the loop.
+                if (document.getDocumentState().equalsIgnoreCase("available")) {
+                    hasBeenFound = true;
                     break;
                 }
             }
-            Thread.sleep(3000);
+            Thread.sleep(Long.parseLong(System.getProperty("pn.ss.document.availability.interval.millis")));
         }
+        //If the document is not available after the timeout, the test will fail.
+        Assertions.assertTrue(hasBeenFound);
     }
 
     @Then("i found in S3")
@@ -225,16 +248,16 @@ public class SsStepDefinitions {
 
     @And("i check availability message {string}")
     public void i_check_availability_messages(String sRC) {
-      boolean check = checkMessageInSsDebugQueue(sKey, System.getProperty("gestore.disponibilita.queue.name"));
+        int status;
+        boolean check = queuePoller.checkMessageAvailability(sKey);
         if (!check) {
-            statusCode=404;
-            log.info("Message not found for key{} ", sKey);
-            Assertions.assertEquals(Integer.parseInt(sRC), statusCode);
+            status = 404;
+            log.info("Message not found for key {} ", sKey);
         } else {
-            log.debug("Message found for key{} ", sKey);
-            Assertions.assertEquals(Integer.parseInt(sRC), statusCode);
-
+            status = 200;
+            log.debug("Message found for key {} ", sKey);
         }
+        Assertions.assertEquals(Integer.parseInt(sRC), status);
     }
 
     @Then("i get an error {string}")
@@ -242,27 +265,19 @@ public class SsStepDefinitions {
         Assertions.assertEquals(Integer.parseInt(sRC), iRC);
 
     }
-    @Then("i check availability message")
-    public void iCheckAvailabilityMessage() {
-        boolean check = checkMessageInSsDebugQueue(sKey, System.getProperty("gestore.disponibilita.queue.name"));
-        if (!check) {
-            statusCode=404;
-            log.info("Message not found for key{} ", sKey);
-        } else {
-            log.debug("Message found for key{} ", sKey);
 
-        }
-    }
 
     @Then("i check that the document got updated")
     public void metadata_changed() throws JsonProcessingException, InterruptedException {
-
+        //Check if the previous updateMetadata request has been successful.
+        Assertions.assertEquals(200, iRC);
+        //Check if the document in DynamoDB has been updated.
         Response oResp;
-        iRC = 0;
-        while (iRC != 200) {
+        statusCode = 0;
+        while (statusCode != 200) {
             oResp = SafeStorageUtils.getObjectMetadata(sPNClientUp, sPNClient_AKUp, sKey);
-            iRC = oResp.getStatusCode();
-            if (iRC == 200) {
+            statusCode = oResp.getStatusCode();
+            if (statusCode == 200) {
                 ObjectMapper objectMapper = new ObjectMapper();
                 log.debug("response body: " + oResp.getBody().asString());
                 FileDownloadResponse oFDR = objectMapper.readValue(oResp.getBody().asString(), FileDownloadResponse.class);
@@ -290,9 +305,14 @@ public class SsStepDefinitions {
         }
     }
 
-
-    @After
-    public void doFinally() throws IOException {
+    @AfterAll
+    public static void doFinally() throws JMSException {
+        queuePoller.close();
     }
+
+    private String parseIfTagged(String value) {
+        return TestVariablesConfiguration.getInstance().getValueIfTagged(value);
+    }
+
 
 }
