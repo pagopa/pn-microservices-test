@@ -7,7 +7,7 @@
             <pattern>%d [%X{trace_id}] %highlight(%-5level) - %-4relative - [%thread] - %cyan(%logger{20}) - %red([%X{cx_id}]) - %msg %n</pattern>
         </encoder>
     </appender>
-    <logger name="it.pagopa.pn.tests.StepDefinitions" level="INFO" />
+    <logger name="it.pagopa.pn.tests.stepdefinition.SsStepDefinitions" level="INFO" />
     <logger name="it.pagopa.pn.tests" level="INFO" />
     <root level="INFO">
         <appender-ref ref="STDOUT"/>

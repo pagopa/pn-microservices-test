@@ -7,7 +7,7 @@ import io.restassured.specification.QueryableRequestSpecification;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.SpecificationQuerier;
 import it.pagopa.pn.configuration.TestVariablesConfiguration;
-import it.pagopa.pn.cucumber.Checksum;
+import it.pagopa.pn.cucumber.dto.pojo.Checksum;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
@@ -24,8 +24,11 @@ import java.util.Base64;
 @Slf4j
 public class CommonUtils {
 
+	private CommonUtils() {
+		throw new IllegalStateException("CommonUtils is a utility class");
+	}
+
 	private static String baseURL = null;
-	private static String [] asMimeType = {"application/pdf","application/xml", "application/zip", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "message/rfc822"};
 
 	protected static String getBaseURL() {
 		if( baseURL == null ) {
@@ -39,9 +42,9 @@ public class CommonUtils {
 	
 	public static int checkDump(Response oResp, boolean boDumpBody) {
 		int iRc = oResp.getStatusCode();
-		
-		if(boDumpBody) {
-			if( log.isDebugEnabled() ) oResp.then().log().all();
+
+		if (boDumpBody && log.isDebugEnabled()) {
+			oResp.then().log().all();
 		}
 		return iRc;
 	}
@@ -72,8 +75,7 @@ public class CommonUtils {
 		oReq.body(oFile);
 
 		if (log.isDebugEnabled() ) {
-
-			//oReq.log().all();
+			oReq.log().all();
 		}
 		String sMyURL = URLDecoder.decode(sURL, "utf-8");
 		Response oResp = oReq
@@ -98,8 +100,7 @@ public class CommonUtils {
 		QueryableRequestSpecification queryRequest = SpecificationQuerier.query(oReqSpec);
 		log.debug("POST ", queryRequest.getURI());
 		log.debug(queryRequest.getBody().toString());
-		Response oResp = oReqSpec.post();
-		return oResp;
+		return oReqSpec.post();
 	}
 
 	protected static Response myPut(RequestSpecification oReqSpec, String sURI) {
@@ -134,5 +135,5 @@ public class CommonUtils {
 		byte[] digest = md.digest();
 		return Base64.getEncoder().encodeToString(digest);
 	}
-	
+
 }

@@ -1,22 +1,23 @@
-package it.pagopa.pn.tests;
+package it.pagopa.pn.tests.stepdefinition;
 
 import io.cucumber.datatable.DataTable;
-import io.cucumber.java.After;
+import io.cucumber.java.AfterAll;
 import io.cucumber.java.BeforeAll;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.response.Response;
+import it.pagopa.pn.configuration.Config;
 import it.pagopa.pn.configuration.TestVariablesConfiguration;
-import it.pagopa.pn.cucumber.Checksum;
-import it.pagopa.pn.cucumber.utils.CommonUtils;
-import it.pagopa.pn.cucumber.utils.ExternalChannelUtils;
-import it.pagopa.pn.cucumber.utils.SafeStorageUtils;
-import it.pagopa.pn.cucumber.utils.SqsUtils;
+import it.pagopa.pn.cucumber.dto.pojo.Checksum;
+import it.pagopa.pn.cucumber.poller.PnEcQueuePoller;
+import it.pagopa.pn.cucumber.utils.*;
 import it.pagopa.pn.ec.rest.v1.api.CourtesyMessageProgressEvent;
 import it.pagopa.pn.ec.rest.v1.api.LegalMessageSentDetails;
 import it.pagopa.pn.ec.rest.v1.api.PaperEngageRequestAttachments;
+import it.pagopa.pn.tests.stepdefinition.SsStepDefinitions;
+import jakarta.jms.JMSException;
 import lombok.CustomLog;
 import org.junit.jupiter.api.Assertions;
 
@@ -39,18 +40,19 @@ public class EcStepDefinitions {
     private String requestId;
     private String qos;
     private String channel;
-
     private SsStepDefinitions ssStepDefinitions;
     private final List<String> fileKeyList = new ArrayList<>();
     private final List<PaperEngageRequestAttachments> fileKeyListPaper = new ArrayList<>();
     private String fileKey;
     private static String nomeCodaNotifiche;
+    private static PnEcQueuePoller queuePoller;
 
 
     @BeforeAll
-    public static void loadPropertiesForQueue() {
-        //nomeCodaEc = Config.getInstance().getNomeCodaEc();
-      //  nomeCodaNotifiche = System.getProperty("notifiche.esterne.queue.name");
+    public static void beforeAll() throws JMSException {
+        Config.getInstance();
+        queuePoller = new PnEcQueuePoller();
+        queuePoller.startPolling();
     }
 
     @Given("a {string} and {string} to send on")
@@ -78,7 +80,6 @@ public class EcStepDefinitions {
     }
 
 
-
     @When("try to send a paper message")
     public void tryToSendAPaperMessage() {
         this.requestId = ExternalChannelUtils.generateRandomRequestId();
@@ -86,21 +87,22 @@ public class EcStepDefinitions {
         assertEquals(200, response.getStatusCode());
     }
 
-
     @Then("check if the message has been sent")
     public void checkStatusMessage() {
         log.info("requestId {}", requestId);
-        String queueName = System.getProperty("notifiche.esterne.queue.name");
         boolean checked = switch (this.channel.toUpperCase()) {
-            case "SMS" -> SqsUtils.checkMessageInEcDebugQueue(requestId, queueName, CourtesyMessageProgressEvent.EventCodeEnum.S003.getValue());
-            case "EMAIL" -> SqsUtils.checkMessageInEcDebugQueue(requestId, queueName, CourtesyMessageProgressEvent.EventCodeEnum.M003.getValue());
-            case "PEC" -> SqsUtils.checkMessageInEcDebugQueue(requestId, queueName, LegalMessageSentDetails.EventCodeEnum.C000.getValue());
-            case "PAPER" -> SqsUtils.checkMessageInEcDebugQueue(requestId, queueName, "P000");
-            default -> throw new IllegalArgumentException(String.format("The given channel '%s' is not valid.", this.channel));
+            case "SMS" ->
+                    queuePoller.checkMessageAvailability(requestId, List.of(CourtesyMessageProgressEvent.EventCodeEnum.S003.getValue()));
+            case "EMAIL" ->
+                    queuePoller.checkMessageAvailability(requestId, List.of(CourtesyMessageProgressEvent.EventCodeEnum.M003.getValue()));
+            case "PEC" ->
+                    queuePoller.checkMessageAvailability(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.C000.getValue()));
+            case "PAPER" -> queuePoller.checkMessageAvailability(requestId, List.of("P000"));
+            default ->
+                    throw new IllegalArgumentException(String.format("The given channel '%s' is not valid.", this.channel));
         };
         Assertions.assertTrue(checked);
     }
-
 
 
     @And("I upload the following attachments:")
@@ -140,23 +142,16 @@ public class EcStepDefinitions {
 
     @Then("check if the message has been accepted and has been delivered")
     public void checkIfTheMessageIsAcceptedAndDelivered() {
-        String queueName = System.getProperty("notifiche.esterne.queue.name");
-
-       boolean checkAccepted = SqsUtils.checkMessageInEcDebugQueue(requestId, queueName, LegalMessageSentDetails.EventCodeEnum.C001.getValue());
-       log.info(String.valueOf(checkAccepted));
-       boolean checkDelivered = SqsUtils.checkMessageInEcDebugQueue(requestId, queueName, LegalMessageSentDetails.EventCodeEnum.C003.getValue());
-        log.info(String.valueOf(checkDelivered));
-       Assertions.assertTrue(checkAccepted && checkDelivered);
-    }
-
-    @After
-    public void doFinally() throws IOException {
+        Assertions.assertTrue(queuePoller.checkMessageAvailability(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.C001.getValue(), LegalMessageSentDetails.EventCodeEnum.C003.getValue())));
     }
 
     private String parseIfTagged(String value) {
         return TestVariablesConfiguration.getInstance().getValueIfTagged(value);
     }
 
-
+    @AfterAll
+    public static void doFinally() throws JMSException {
+        queuePoller.close();
+    }
 
 }
