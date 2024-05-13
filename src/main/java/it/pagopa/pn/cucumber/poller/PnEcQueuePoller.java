@@ -13,8 +13,7 @@ import jakarta.jms.TextMessage;
 import lombok.CustomLog;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static it.pagopa.pn.cucumber.utils.SqsUtils.isEcMessage;
 import static it.pagopa.pn.cucumber.utils.SqsUtils.parseMessageBody;
@@ -33,7 +32,7 @@ public class PnEcQueuePoller extends QueuePoller {
         try {
             MessageBodyDto messageBodyDto = parseMessageBody(((TextMessage) message).getText());
             SingleStatusUpdate singleStatusUpdate = objectMapper.readValue(messageBodyDto.getDetail(), SingleStatusUpdate.class);
-            log.info("SingleStatusUpdate : {}", singleStatusUpdate);
+            log.debug("SingleStatusUpdate : {}", singleStatusUpdate);
 
             String requestId = "";
             String status = "";
@@ -54,7 +53,7 @@ public class PnEcQueuePoller extends QueuePoller {
                 }
 
                 if (!this.messageMap.containsKey(requestId))
-                    this.messageMap.put(requestId, Set.of(status));
+                    this.messageMap.put(requestId, new HashSet<>(List.of(status)));
                 else {
                     Set<String> documentStatusList = this.messageMap.get(requestId);
                     documentStatusList.add(status);
@@ -72,10 +71,10 @@ public class PnEcQueuePoller extends QueuePoller {
         boolean check = false;
         long pollingInterval = Long.parseLong(System.getProperty("pn.ss.sqs.lookup.interval.millis"));
         Instant timeLimit = Instant.now().plusMillis(Long.parseLong(System.getProperty("pn.ss.sqs.lookup.timeout.millis")));
+        Set<String> statusesFound = null;
         while (Instant.now().isBefore(timeLimit)) {
-            var result = this.messageMap.get(requestId);
-            log.info("Result : {}", result);
-            if (result != null && result.containsAll(statusesToCheck)) {
+            statusesFound = this.messageMap.get(requestId);
+            if (statusesFound != null && statusesFound.containsAll(statusesToCheck)) {
                 check = true;
                 break;
             }
@@ -85,6 +84,7 @@ public class PnEcQueuePoller extends QueuePoller {
                 Thread.currentThread().interrupt();
             }
         }
+        log.debug("Statuses found : {}", statusesFound);
         return check;
     }
 

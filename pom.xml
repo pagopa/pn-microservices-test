@@ -119,11 +119,11 @@
 			<artifactId>sqs</artifactId>
 			<version>2.23.12</version>
 		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.datatype</groupId>
-			<artifactId>jackson-datatype-jsr310</artifactId>
-			<version>2.17.0</version>
-		</dependency>
+<!--		<dependency>-->
+<!--			<groupId>com.fasterxml.jackson.datatype</groupId>-->
+<!--			<artifactId>jackson-datatype-jsr310</artifactId>-->
+<!--			<version>2.17.0</version>-->
+<!--		</dependency>-->
 		<dependency>
 			<groupId>javax.validation</groupId>
 			<artifactId>validation-api</artifactId>
@@ -393,7 +393,7 @@
 								<apiPackage>${project.groupId}.ec.rest.v1.dto</apiPackage>
 								<modelPackage>${project.groupId}.ec.rest.v1.api</modelPackage>
 
-								<dateLibrary>java17</dateLibrary>
+								<dateLibrary>java8</dateLibrary>
 								<annotationLibrary>none</annotationLibrary>
 								<documentationProvider>source</documentationProvider>
 								<openApiNullable>false</openApiNullable>

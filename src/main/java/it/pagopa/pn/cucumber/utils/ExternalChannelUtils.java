@@ -32,7 +32,7 @@ public class ExternalChannelUtils extends RequestTemplate {
     private static final String SEND_CARTACEO_ENDPOINT =
             "/external-channels/v1/paper-deliveries-engagements/{requestIdx}";
     private static final String SEND_CONSOLIDATORE_ENDPOINT =
-            "/consolidatore-ingress/v1/push-progress-events/{requestIdx}";
+            "/consolidatore-ingress/v1/push-progress-events";
 
 
     protected static RequestSpecification stdReq() {
@@ -102,27 +102,21 @@ public class ExternalChannelUtils extends RequestTemplate {
     }
 
     //API Consolidatore
-    public static Response sendRequestConsolidatore(String clientId, String requestId) {
+    public static Response sendRequestConsolidatore(String clientId, String apiKey, List<ConsolidatoreIngressPaperProgressStatusEvent> events) {
         RequestSpecification oReq = stdReq()
-                .header("x-pagopa-extch-cx-id", clientId)
-                .pathParam("requestIdx", requestId);
-        ConsolidatoreIngressPaperProgressStatusEvent ingressPaperProgressStatusEvent ;
-      //  oReq.body(ingressPaperProgressStatusEvent);
-        Response response = CommonUtils.myPut(oReq, SEND_CONSOLIDATORE_ENDPOINT);
-        return response;
+                .header("x-pagopa-extch-service-id", clientId)
+                .header("x-api-key", apiKey);
+        oReq.body(events);
+        return CommonUtils.myPut(oReq, SEND_CONSOLIDATORE_ENDPOINT);
     }
 
     public static String generateRandomRequestId() {
-        int targetStringLength = 40;
-        String requestId = "requestId";
+        int targetStringLength = 30;
+        String requestId = "PnEcMsCucumberTest";
         String generatedString = requestId.concat("-").concat(RandomStringUtils.randomAlphanumeric(targetStringLength));
 
         log.info("requestId {} ", generatedString);
         return generatedString;
     }
-
-
-
-
 
 }
