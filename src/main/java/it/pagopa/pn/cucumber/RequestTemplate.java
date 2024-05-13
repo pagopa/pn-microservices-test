@@ -66,8 +66,6 @@ public class RequestTemplate {
     public static PaperEngageRequest createPaperEngageRequest(String requestId) {
         PaperEngageRequest paperEngageRequestFactory = new PaperEngageRequest();
 
-      //  List<PaperEngageRequestAttachments> paperEngageRequestAttachmentsList = getPaperEngageRequestAttachments();
-        // paperEngageRequestFactory.setAttachments(paperEngageRequestAttachmentsList);
         paperEngageRequestFactory.setReceiverName("Paolo Rossi");
         paperEngageRequestFactory.setReceiverNameRow2("c/o famiglia Bianchi");
         paperEngageRequestFactory.setReceiverAddress("via Roma 13");
@@ -90,7 +88,7 @@ public class RequestTemplate {
         var vas = new HashMap<String, String>();
         vas.put("additionalProp1", "string");
         paperEngageRequestFactory.setVas(vas);
-        paperEngageRequestFactory.setIun("iun123456789");
+        paperEngageRequestFactory.setIun(requestId);
         paperEngageRequestFactory.setRequestPaId("00414580183");
         paperEngageRequestFactory.setProductType("AR");
         paperEngageRequestFactory.setPrintType("BN_FRONTE_RETRO");

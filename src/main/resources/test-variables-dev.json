@@ -7,6 +7,7 @@
   "clientId-test": "pn-test",
   "clientId-pn-cn": "pn-cn",
   "apiKey-pn_cn": "pn-cn_api_key",
+  "apiKey-cons" : "apiKey-pn-cons-000",
   "delivery_api_key": "pn-delivery_api_key",
   "doc_type_notification_attachments": "PN_NOTIFICATION_ATTACHMENTS",
   "doc_type_legal_facts": "PN_LEGAL_FACTS_ST",

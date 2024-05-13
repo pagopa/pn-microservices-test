@@ -12,20 +12,21 @@ import it.pagopa.pn.configuration.TestVariablesConfiguration;
 import it.pagopa.pn.cucumber.dto.pojo.Checksum;
 import it.pagopa.pn.cucumber.poller.PnEcQueuePoller;
 import it.pagopa.pn.cucumber.utils.*;
-import it.pagopa.pn.ec.rest.v1.api.CourtesyMessageProgressEvent;
-import it.pagopa.pn.ec.rest.v1.api.LegalMessageSentDetails;
-import it.pagopa.pn.ec.rest.v1.api.PaperEngageRequestAttachments;
+import it.pagopa.pn.ec.rest.v1.api.*;
 import jakarta.jms.JMSException;
 import lombok.CustomLog;
 import org.junit.jupiter.api.Assertions;
+import org.springframework.util.Assert;
 
 import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Date;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.OffsetDateTime;
+import java.util.*;
 
 import static it.pagopa.pn.cucumber.utils.CommonUtils.getMD5;
 import static it.pagopa.pn.cucumber.utils.CommonUtils.getSHA256;
@@ -41,6 +42,11 @@ public class EcStepDefinitions {
     private SsStepDefinitions ssStepDefinitions;
     private final List<String> fileKeyList = new ArrayList<>();
     private final List<PaperEngageRequestAttachments> fileKeyListPaper = new ArrayList<>();
+    private final Set<String> statusesToCheck = new HashSet<>();
+    private int sendPaperProgressStatusRespCode = 0;
+    private String sendPaperProgressStatusResultCode;
+    private String sendPaperProgressStatusResultDescription;
+    private List<String> sendPaperProgressStatusErrorList;
     private String fileKey;
     private static String nomeCodaNotifiche;
     private static PnEcQueuePoller queuePoller;
@@ -98,7 +104,8 @@ public class EcStepDefinitions {
                     queuePoller.checkMessageAvailability(requestId, List.of(CourtesyMessageProgressEvent.EventCodeEnum.M003.getValue()));
             case "PEC" ->
                     queuePoller.checkMessageAvailability(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.C000.getValue()));
-            case "PAPER" -> queuePoller.checkMessageAvailability(requestId, List.of("P000"));
+            case "PAPER" ->
+                    queuePoller.checkMessageAvailability(requestId, List.of("P000"));
             default ->
                     throw new IllegalArgumentException(String.format("The given channel '%s' is not valid.", this.channel));
         };
@@ -129,10 +136,63 @@ public class EcStepDefinitions {
         }
     }
 
+    @Then("I send the following paper progress status requests:")
+    public void sendPaperProgressStatusRequests(DataTable dataTable) {
+        {
+            List<ConsolidatoreIngressPaperProgressStatusEvent> events = new ArrayList<>();
+            List<Map<String, String>> eventsList = dataTable.asMaps();
+            eventsList.forEach(map -> {
+                ConsolidatoreIngressPaperProgressStatusEvent event = new ConsolidatoreIngressPaperProgressStatusEvent();
+                event.setRequestId(requestId);
+
+                String statusCode = map.get("statusCode");
+                event.setStatusCode(statusCode);
+                statusesToCheck.add(statusCode);
+
+                event.setStatusDescription(map.get("statusDescription"));
+                event.setProductType(map.getOrDefault("productType", "AR"));
+                event.setIun(map.getOrDefault("iun", requestId));
+
+                OffsetDateTime now = OffsetDateTime.now();
+
+                String statusDateTime = map.getOrDefault("statusDateTime", now.toString());
+                event.setStatusDateTime(OffsetDateTime.parse(statusDateTime));
+
+                String clientRequestTimeStamp = map.getOrDefault("clientRequestTimeStamp", now.toString());
+                event.setClientRequestTimeStamp(OffsetDateTime.parse(clientRequestTimeStamp));
+
+                events.add(event);
+            });
+            var sPNClient = parseIfTagged("@clientId-cons");
+            var sPNClient_AK = parseIfTagged("@apiKey-cons");
+            Response response = ExternalChannelUtils.sendRequestConsolidatore(sPNClient, sPNClient_AK, events);
+            OperationResultCodeResponse operationResultCodeResponse = response.as(OperationResultCodeResponse.class);
+            sendPaperProgressStatusRespCode = response.getStatusCode();
+            sendPaperProgressStatusResultCode = operationResultCodeResponse.getResultCode();
+            sendPaperProgressStatusResultDescription = operationResultCodeResponse.getResultDescription();
+            sendPaperProgressStatusErrorList = operationResultCodeResponse.getErrorList();
+        }
+    }
+
+    @And("check if paper progress status requests have been accepted")
+    public void checkIfPaperProgressStatusRequestsHaveBeenAccepted() {
+        Assertions.assertEquals(200, sendPaperProgressStatusRespCode);
+        Assertions.assertEquals("200.00", sendPaperProgressStatusResultCode);
+        Assertions.assertEquals("Accepted", sendPaperProgressStatusResultDescription);
+        Assertions.assertNull(sendPaperProgressStatusErrorList);
+        Assertions.assertTrue(queuePoller.checkMessageAvailability(requestId, new ArrayList<>(statusesToCheck)));
+    }
+
     @And("waiting for scheduling")
     public void waitingForScheduling() {
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime nextSchedule = now.withMinute((now.getMinute() / 5 + 1) * 5).withSecond(0).withNano(0);
+        int newMinute = (now.getMinute() / 5 + 1) * 5;
+        LocalDateTime nextSchedule;
+        if (newMinute < 60) {
+            nextSchedule = now.withMinute((now.getMinute() / 5 + 1) * 5).withSecond(0).withNano(0);
+        } else {
+            nextSchedule = now.plusHours(1).withMinute(0).withSecond(0).withNano(0);
+        }
         Duration duration = Duration.between(now, nextSchedule);
         try {
             Thread.sleep(duration.toMillis() + 5000);
@@ -144,6 +204,13 @@ public class EcStepDefinitions {
     @Then("check if the message has been accepted and has been delivered")
     public void checkIfTheMessageIsAcceptedAndDelivered() {
         Assertions.assertTrue(queuePoller.checkMessageAvailability(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.C001.getValue(), LegalMessageSentDetails.EventCodeEnum.C003.getValue())));
+    }
+
+    @Then("I get {string} result code")
+    public void i_get_result_code(String sRC) {
+        Assertions.assertEquals(sRC, sendPaperProgressStatusResultCode);
+        Assertions.assertFalse(sendPaperProgressStatusErrorList.isEmpty());
+        log.info("Error list: " + sendPaperProgressStatusErrorList);
     }
 
     private String parseIfTagged(String value) {
