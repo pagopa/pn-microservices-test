@@ -10,6 +10,7 @@ import it.pagopa.pn.configuration.TestVariablesConfiguration;
 import it.pagopa.pn.cucumber.dto.pojo.Checksum;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.validation.constraints.Null;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -19,6 +20,7 @@ import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
+import java.util.Map;
 
 
 @Slf4j
@@ -134,6 +136,18 @@ public class CommonUtils {
 		md.update(baFile);
 		byte[] digest = md.digest();
 		return Base64.getEncoder().encodeToString(digest);
+	}
+
+	public static String getValueOrDefault(Map<String, String> map, String key, String defaultValue) {
+		try {
+			String value = map.get(key);
+			if (value == null) {
+				return defaultValue;
+			}
+			return value;
+		} catch (NullPointerException e) {
+			return defaultValue;
+		}
 	}
 
 }

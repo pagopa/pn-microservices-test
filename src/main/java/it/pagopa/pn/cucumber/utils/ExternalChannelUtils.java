@@ -4,17 +4,12 @@ import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import it.pagopa.pn.cucumber.RequestTemplate;
-import it.pagopa.pn.cucumber.utils.CommonUtils;
+import it.pagopa.pn.cucumber.dto.pojo.PnAttachment;
 import it.pagopa.pn.ec.rest.v1.api.*;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.security.MessageDigest;
-import java.util.Base64;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Slf4j
@@ -77,26 +72,33 @@ public class ExternalChannelUtils extends RequestTemplate {
 
 
     //PEC
-    public static Response sendDigitalNotification(String clientId, String requestId, List<String> attachments) {
+    public static Response sendDigitalNotification(String clientId, String requestId, List<PnAttachment> attachments) {
         RequestSpecification oReq = stdReq()
                 .header("x-pagopa-extch-cx-id", clientId)
                 .pathParam("requestIdx", requestId);
         DigitalNotificationRequest digitalNotificationRequest = createDigitalNotificationRequest(requestId);
-        digitalNotificationRequest.setAttachmentUrls(attachments);
+        List<String> attachmentsUri = attachments.stream().map(PnAttachment::getUri).toList();
+        digitalNotificationRequest.setAttachmentUrls(attachmentsUri);
 
         oReq.body(digitalNotificationRequest);
-        Response response = CommonUtils.myPut(oReq,SEND_PEC_ENDPOINT);
-        return response;
+        return CommonUtils.myPut(oReq,SEND_PEC_ENDPOINT);
     }
 
     //CARTACEO
-    public static Response sendPaperMessage(String clientId, String requestId, List<PaperEngageRequestAttachments> attachments) {
+    public static Response sendPaperMessage(String clientId, String requestId, List<PnAttachment> attachments) {
         RequestSpecification oReq = stdReq()
                 .header("x-pagopa-extch-cx-id", clientId)
                 .pathParam("requestIdx", requestId);
         PaperEngageRequest paperEngageRequest = createPaperEngageRequest(requestId);
-        paperEngageRequest.setAttachments(attachments);
-
+        List<PaperEngageRequestAttachments> paperEngageRequestAttachmentsList = attachments.stream().map(attachment -> {
+            PaperEngageRequestAttachments paperEngageRequestAttachments = new PaperEngageRequestAttachments();
+            paperEngageRequestAttachments.setDocumentType(attachment.getDocumentType());
+            paperEngageRequestAttachments.setUri(attachment.getUri());
+            paperEngageRequestAttachments.setSha256(attachment.getSha256());
+            paperEngageRequestAttachments.setOrder(BigDecimal.ZERO);
+            return paperEngageRequestAttachments;
+        }).toList();
+        paperEngageRequest.setAttachments(paperEngageRequestAttachmentsList);
         oReq.body(paperEngageRequest);
         return CommonUtils.myPut(oReq,SEND_CARTACEO_ENDPOINT);
     }
