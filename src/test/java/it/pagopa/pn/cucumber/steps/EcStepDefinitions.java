@@ -10,26 +10,24 @@ import io.restassured.response.Response;
 import it.pagopa.pn.configuration.Config;
 import it.pagopa.pn.configuration.TestVariablesConfiguration;
 import it.pagopa.pn.cucumber.dto.pojo.Checksum;
+import it.pagopa.pn.cucumber.dto.pojo.PnAttachment;
 import it.pagopa.pn.cucumber.poller.PnEcQueuePoller;
 import it.pagopa.pn.cucumber.utils.*;
 import it.pagopa.pn.ec.rest.v1.api.*;
 import jakarta.jms.JMSException;
 import lombok.CustomLog;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Assertions;
-import org.springframework.util.Assert;
 
 import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Date;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.*;
 
-import static it.pagopa.pn.cucumber.utils.CommonUtils.getMD5;
-import static it.pagopa.pn.cucumber.utils.CommonUtils.getSHA256;
+import static it.pagopa.pn.cucumber.utils.CommonUtils.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @CustomLog
@@ -40,8 +38,7 @@ public class EcStepDefinitions {
     private String qos;
     private String channel;
     private SsStepDefinitions ssStepDefinitions;
-    private final List<String> fileKeyList = new ArrayList<>();
-    private final List<PaperEngageRequestAttachments> fileKeyListPaper = new ArrayList<>();
+    private final List<PnAttachment> attachmentsList = new ArrayList<>();
     private final Set<String> statusesToCheck = new HashSet<>();
     private int sendPaperProgressStatusRespCode = 0;
     private String sendPaperProgressStatusResultCode;
@@ -77,7 +74,7 @@ public class EcStepDefinitions {
         Response response = switch (channel.toUpperCase()) {
             case "SMS" -> ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId);
             case "EMAIL" -> ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId);
-            case "PEC" -> ExternalChannelUtils.sendDigitalNotification(clientId, requestId, fileKeyList);
+            case "PEC" -> ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList);
             default -> throw new IllegalArgumentException();
         };
         log.info(String.valueOf(response.getStatusCode()));
@@ -90,7 +87,7 @@ public class EcStepDefinitions {
     @When("try to send a paper message")
     public void tryToSendAPaperMessage() {
         this.requestId = ExternalChannelUtils.generateRandomRequestId();
-        Response response = ExternalChannelUtils.sendPaperMessage(clientId, requestId, fileKeyListPaper);
+        Response response = ExternalChannelUtils.sendPaperMessage(clientId, requestId, attachmentsList);
         assertEquals(200, response.getStatusCode());
     }
 
@@ -104,8 +101,7 @@ public class EcStepDefinitions {
                     queuePoller.checkMessageAvailability(requestId, List.of(CourtesyMessageProgressEvent.EventCodeEnum.M003.getValue()));
             case "PEC" ->
                     queuePoller.checkMessageAvailability(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.C000.getValue()));
-            case "PAPER" ->
-                    queuePoller.checkMessageAvailability(requestId, List.of("P000"));
+            case "PAPER" -> queuePoller.checkMessageAvailability(requestId, List.of("P000"));
             default ->
                     throw new IllegalArgumentException(String.format("The given channel '%s' is not valid.", this.channel));
         };
@@ -122,6 +118,7 @@ public class EcStepDefinitions {
             String documentType = parseIfTagged(row.get(0));
             String fileName = row.get(1);
             String mimeType = row.get(2);
+
             File file = new File(fileName);
             var sha256 = getSHA256(file);
             var md5 = getMD5(file);
@@ -130,7 +127,16 @@ public class EcStepDefinitions {
             String sURL = getPresignedUrlResp.then().extract().path("uploadUrl");
             String sKey = getPresignedUrlResp.then().extract().path("key");
             String sSecret = getPresignedUrlResp.then().extract().path("secret");
-            fileKeyList.add("safestorage://" + sKey);
+
+            PnAttachment pnAttachment = new PnAttachment();
+            pnAttachment.setUri("safestorage://" + sKey);
+            pnAttachment.setDate(OffsetDateTime.now());
+            pnAttachment.setDocumentType("AAR");
+            pnAttachment.setSha256(sha256);
+            pnAttachment.setDocumentId(UUID.randomUUID().toString());
+            pnAttachment.setId(RandomStringUtils.randomAlphanumeric(10));
+            attachmentsList.add(pnAttachment);
+
             Response uploadResp = CommonUtils.uploadFile(sURL, file, sha256, md5, mimeType, sSecret, Checksum.SHA256);
             assertEquals(200, uploadResp.getStatusCode());
         }
@@ -149,16 +155,16 @@ public class EcStepDefinitions {
                 event.setStatusCode(statusCode);
                 statusesToCheck.add(statusCode);
 
-                event.setStatusDescription(map.get("statusDescription"));
-                event.setProductType(map.getOrDefault("productType", "AR"));
-                event.setIun(map.getOrDefault("iun", requestId));
+                event.setStatusDescription(getValueOrDefault(map, "statusDescription", "Test description"));
+                event.setProductType(getValueOrDefault(map, "productType", "AR"));
+                event.setIun(getValueOrDefault(map, "iun", requestId));
 
                 OffsetDateTime now = OffsetDateTime.now();
 
-                String statusDateTime = map.getOrDefault("statusDateTime", now.toString());
+                String statusDateTime = getValueOrDefault(map, "statusDateTime", now.toString());
                 event.setStatusDateTime(OffsetDateTime.parse(statusDateTime));
 
-                String clientRequestTimeStamp = map.getOrDefault("clientRequestTimeStamp", now.toString());
+                String clientRequestTimeStamp = getValueOrDefault(map, "clientRequestTimeStamp", now.toString());
                 event.setClientRequestTimeStamp(OffsetDateTime.parse(clientRequestTimeStamp));
 
                 events.add(event);
