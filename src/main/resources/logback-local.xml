@@ -38,7 +38,7 @@
             </logger>
         </then>
     </if> -->
-    <logger name="ss.it.pagopa.pn.cucumber.tests.SsStepDefinitions" level="INFO"/>
+    <logger name="ss.it.pagopa.pn.cucumber.tests.SsStepDefinitions" level="DEBUG"/>
     <logger name="it.pagopa.pn.tests" level="DEBUG"/>
     <root level="INFO">
         <appender-ref ref="STDOUT"/>
