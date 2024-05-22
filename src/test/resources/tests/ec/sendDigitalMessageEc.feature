@@ -29,7 +29,7 @@ Feature: Send Digital Message Ec
       | @clientId-delivery | @channel_email |
 
   @PnEcSendMessage @invioPEC @complete_pec
-  Scenario Outline: Invio pec e verifica della pubblicazione del messaggio nella coda di debug
+  Scenario Outline: Invio pec con allegati e verifica della pubblicazione del messaggio nella coda di debug
     Given a "<clientId>" and "<channel>" to send on
     And I upload the following attachments:
       | documentType                       | fileName                    | mimeType        |
@@ -38,15 +38,13 @@ Feature: Send Digital Message Ec
     And check if the message has been sent
     And waiting for scheduling
     Then check if the message has been accepted and has been delivered
-
-
     Examples:
       | clientId           | channel      |
       | @clientId-delivery | @channel_pec |
 
 
   @PnEcSendMessage @invioEMAIL @complete_mail
-  Scenario Outline: invio email e verifica della pubblicszione del messaggio nella coda di debug
+  Scenario Outline: invio email con allegati e verifica della pubblicazione del messaggio nella coda di debug
     Given a "<clientId>" and "<channel>" to send on
     And I upload the following attachments:
       | documentType                       | fileName                    | mimeType        |

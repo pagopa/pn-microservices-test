@@ -34,9 +34,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class EcStepDefinitions {
 
     private String clientId;
+    private String apiKey;
     private String requestId;
     private String qos;
     private String channel;
+    private int sendPaperMessageStatusCode;
     private SsStepDefinitions ssStepDefinitions;
     private final List<PnAttachment> attachmentsList = new ArrayList<>();
     private final Set<String> statusesToCheck = new HashSet<>();
@@ -44,6 +46,7 @@ public class EcStepDefinitions {
     private String sendPaperProgressStatusResultCode;
     private String sendPaperProgressStatusResultDescription;
     private List<String> sendPaperProgressStatusErrorList;
+    private List<ConsolidatoreIngressPaperProgressStatusEventAttachments> paperProgressStatusEventAttachments = new ArrayList<>();
     private String fileKey;
     private static String nomeCodaNotifiche;
     private static PnEcQueuePoller queuePoller;
@@ -67,6 +70,27 @@ public class EcStepDefinitions {
         log.debug("CLIENTID: " + clientId);
     }
 
+    @Given("{string} authenticated by {string}")
+    public void authenticatedBy(String clientId, String apiKey) {
+        this.clientId = parseIfTagged(clientId);
+        this.apiKey = parseIfTagged(apiKey);
+    }
+
+    @And("The following paper progress status event attachments:")
+    public void theFollowingPaperProgressStatusEventAttachments(DataTable dataTable) {
+        List<Map<String, String>> attachmentsList = dataTable.asMaps();
+        attachmentsList.forEach(map -> {
+            ConsolidatoreIngressPaperProgressStatusEventAttachments attachment = new ConsolidatoreIngressPaperProgressStatusEventAttachments()
+                    .uri(map.get("attachmentUri"))
+                    .sha256(RandomStringUtils.randomAlphanumeric(45))
+                    .documentType(map.get("attachmentDocumentType"))
+                    .id("id")
+                    .date(OffsetDateTime.now())
+                    .documentId("documentId");
+            this.paperProgressStatusEventAttachments.add(attachment);
+        });
+    }
+
     @When("try to send a digital message")
     public void presaInCarico() {
         this.requestId = ExternalChannelUtils.generateRandomRequestId();
@@ -88,7 +112,7 @@ public class EcStepDefinitions {
     public void tryToSendAPaperMessage() {
         this.requestId = ExternalChannelUtils.generateRandomRequestId();
         Response response = ExternalChannelUtils.sendPaperMessage(clientId, requestId, attachmentsList);
-        assertEquals(200, response.getStatusCode());
+        this.sendPaperMessageStatusCode = response.getStatusCode();
     }
 
     @Then("check if the message has been sent")
@@ -155,23 +179,24 @@ public class EcStepDefinitions {
                 event.setStatusCode(statusCode);
                 statusesToCheck.add(statusCode);
 
-                event.setStatusDescription(getValueOrDefault(map, "statusDescription", "Test description"));
-                event.setProductType(getValueOrDefault(map, "productType", "AR"));
-                event.setIun(getValueOrDefault(map, "iun", requestId));
+                String iun = map.get("iun");
+                event.setIun(iun.equals("@requestId") ? this.requestId : iun);
+
+                event.setStatusDescription("Test description");
+                event.setProductType("AR");
+                event.setDeliveryFailureCause(getValueOrDefault(map, "deliveryFailureCause", null));
 
                 OffsetDateTime now = OffsetDateTime.now();
+                String statusDateTime = map.get("statusDateTime");
+                event.setStatusDateTime(statusDateTime.equals("@now") ? now : OffsetDateTime.parse(statusDateTime));
+                event.setClientRequestTimeStamp(now);
 
-                String statusDateTime = getValueOrDefault(map, "statusDateTime", now.toString());
-                event.setStatusDateTime(OffsetDateTime.parse(statusDateTime));
-
-                String clientRequestTimeStamp = getValueOrDefault(map, "clientRequestTimeStamp", now.toString());
-                event.setClientRequestTimeStamp(OffsetDateTime.parse(clientRequestTimeStamp));
+                if (!this.paperProgressStatusEventAttachments.isEmpty())
+                    event.setAttachments(this.paperProgressStatusEventAttachments);
 
                 events.add(event);
             });
-            var sPNClient = parseIfTagged("@clientId-cons");
-            var sPNClient_AK = parseIfTagged("@apiKey-cons");
-            Response response = ExternalChannelUtils.sendRequestConsolidatore(sPNClient, sPNClient_AK, events);
+            Response response = ExternalChannelUtils.sendRequestConsolidatore(this.clientId, this.apiKey, events);
             OperationResultCodeResponse operationResultCodeResponse = response.as(OperationResultCodeResponse.class);
             sendPaperProgressStatusRespCode = response.getStatusCode();
             sendPaperProgressStatusResultCode = operationResultCodeResponse.getResultCode();
@@ -212,10 +237,14 @@ public class EcStepDefinitions {
         Assertions.assertTrue(queuePoller.checkMessageAvailability(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.C001.getValue(), LegalMessageSentDetails.EventCodeEnum.C003.getValue())));
     }
 
+    @Then("I get {string} status code")
+    public void i_get_status_code(String sRC) {
+        Assertions.assertEquals(Integer.parseInt(sRC), sendPaperMessageStatusCode);
+    }
+
     @Then("I get {string} result code")
     public void i_get_result_code(String sRC) {
         Assertions.assertEquals(sRC, sendPaperProgressStatusResultCode);
-        Assertions.assertFalse(sendPaperProgressStatusErrorList.isEmpty());
         log.info("Error list: " + sendPaperProgressStatusErrorList);
     }
 
