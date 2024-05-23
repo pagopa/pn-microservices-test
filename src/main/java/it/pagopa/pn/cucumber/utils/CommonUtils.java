@@ -8,6 +8,7 @@ import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.SpecificationQuerier;
 import it.pagopa.pn.configuration.TestVariablesConfiguration;
 import it.pagopa.pn.cucumber.dto.pojo.Checksum;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.validation.constraints.Null;
@@ -51,7 +52,8 @@ public class CommonUtils {
 		return iRc;
 	}
 
-	public static Response uploadFile(String sURL, File oFile, String sSHA256, String sMD5, String sContentType, String sSecret, Checksum eCS) throws MalformedURLException, UnsupportedEncodingException {
+	@SneakyThrows(UnsupportedEncodingException.class)
+	public static Response uploadFile(String sURL, File oFile, String sSHA256, String sMD5, String sContentType, String sSecret, Checksum eCS) {
 		log.debug("In upload file");
 
 		log.debug("uploadFile(\"{}\", \"{}\", \"{}\", \"{}\", \"{}\", "+eCS.name()+")", sURL, sSHA256, sMD5, sContentType, sSecret);
@@ -118,7 +120,8 @@ public class CommonUtils {
 		return TestVariablesConfiguration.getInstance().getValueIfTagged(value);
 	}
 
-	public static String getSHA256(File file) throws NoSuchAlgorithmException, IOException {
+	@SneakyThrows({NoSuchAlgorithmException.class, IOException.class})
+	public static String getSHA256(File file) {
 		FileInputStream oFIS = new FileInputStream(file);
 		byte[] baFile = oFIS.readAllBytes();
 		oFIS.close();
@@ -128,7 +131,8 @@ public class CommonUtils {
 		return Base64.getEncoder().encodeToString(digest);
 	}
 
-	public static String getMD5(File file) throws NoSuchAlgorithmException, IOException {
+	@SneakyThrows({NoSuchAlgorithmException.class, IOException.class})
+	public static String getMD5(File file) {
 		FileInputStream oFIS = new FileInputStream(file);
 		byte[] baFile = oFIS.readAllBytes();
 		oFIS.close();
