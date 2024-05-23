@@ -76,8 +76,8 @@ public class EcStepDefinitions {
         this.apiKey = parseIfTagged(apiKey);
     }
 
-    @And("The following paper progress status event attachments:")
-    public void theFollowingPaperProgressStatusEventAttachments(DataTable dataTable) {
+    @And("I prepare the following paper progress status event attachments:")
+    public void iPrepareTheFollowingPaperProgressStatusEventAttachments(DataTable dataTable) {
         List<Map<String, String>> attachmentsList = dataTable.asMaps();
         attachmentsList.forEach(map -> {
             ConsolidatoreIngressPaperProgressStatusEventAttachments attachment = new ConsolidatoreIngressPaperProgressStatusEventAttachments()
@@ -164,6 +164,38 @@ public class EcStepDefinitions {
             Response uploadResp = CommonUtils.uploadFile(sURL, file, sha256, md5, mimeType, sSecret, Checksum.SHA256);
             assertEquals(200, uploadResp.getStatusCode());
         }
+    }
+
+    @And("I upload the following paper progress status event attachments:")
+    public void iUploadTheFollowingPaperProgressStatusEventAttachments(DataTable dataTable) {
+        var sPNClient = parseIfTagged("@clientId-delivery");
+        var sPNClient_AK = parseIfTagged("@delivery_api_key");
+
+        List<Map<String, String>> attachmentsList = dataTable.asMaps();
+        attachmentsList.forEach(map -> {
+            String documentType = parseIfTagged(map.get("documentType"));
+            String fileName = map.get("fileName");
+            String mimeType = map.get("mimeType");
+            File file = new File(fileName);
+            var sha256 = getSHA256(file);
+            var md5 = getMD5(file);
+            Response getPresignedUrlResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, mimeType, documentType, getSHA256(file), getMD5(file), "SAVED", true, Checksum.SHA256);
+            assertEquals(200, getPresignedUrlResp.getStatusCode());
+            String sURL = getPresignedUrlResp.then().extract().path("uploadUrl");
+            String sKey = getPresignedUrlResp.then().extract().path("key");
+            String sSecret = getPresignedUrlResp.then().extract().path("secret");
+            Response uploadResp = CommonUtils.uploadFile(sURL, file, sha256, md5, mimeType, sSecret, Checksum.SHA256);
+            assertEquals(200, uploadResp.getStatusCode());
+
+            ConsolidatoreIngressPaperProgressStatusEventAttachments attachment = new ConsolidatoreIngressPaperProgressStatusEventAttachments()
+                    .uri("safestorage://" + sKey)
+                    .sha256(sha256)
+                    .documentType(map.get("attachmentDocumentType"))
+                    .id("id")
+                    .date(OffsetDateTime.now())
+                    .documentId("documentId");
+            this.paperProgressStatusEventAttachments.add(attachment);
+        });
     }
 
     @Then("I send the following paper progress status requests:")

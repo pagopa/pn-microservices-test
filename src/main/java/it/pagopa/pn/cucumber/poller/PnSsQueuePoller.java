@@ -9,6 +9,8 @@ import lombok.CustomLog;
 import lombok.SneakyThrows;
 
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static it.pagopa.pn.cucumber.utils.SqsUtils.isSsMessage;
@@ -30,7 +32,7 @@ public class PnSsQueuePoller extends QueuePoller {
         NotificationMessage notificationMessage = objectMapper.readValue(messageBodyDto.getDetail(), NotificationMessage.class);
         if (isSsMessage(messageBodyDto)) {
             if (!this.messageMap.containsKey(notificationMessage.getKey()))
-                this.messageMap.put(notificationMessage.getKey(), Set.of(notificationMessage.getDocumentStatus()));
+                this.messageMap.put(notificationMessage.getKey(), new HashSet<>(List.of(notificationMessage.getDocumentStatus())));
             else {
                 Set<String> documentStatusList = this.messageMap.get(notificationMessage.getKey());
                 documentStatusList.add(notificationMessage.getDocumentStatus());

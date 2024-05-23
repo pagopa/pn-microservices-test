@@ -12,10 +12,10 @@ Feature: Send Paper Progress Status
   @PnEcSendMessage @PAPER @complete
   Scenario Outline: Invio di un messaggio cartaceo, verifica della pubblicazione del messaggio nella coda di debug e verifica dello stato di avanzamento
     Given "<clientId>" authenticated by "<apiKey>"
-    When I upload the following attachments:
-      | documentType                       | fileName                    | mimeType        |
-      | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
-    And I send the following paper progress status requests:
+    And I upload the following paper progress status event attachments:
+      | documentType                       | fileName                    | mimeType        | attachmentDocumentType |
+      | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf | AR                     |
+    When I send the following paper progress status requests:
       | statusCode | deliveryFailureCause | iun        | statusDateTime |
       | CON080     |                      | @requestId | @now           |
       | RECAG004   |                      | @requestId | @now           |
@@ -43,7 +43,7 @@ Feature: Send Paper Progress Status
   @PnEcSendMessage @PAPER @verificaAttachments
   Scenario Outline: Verifica degli allegati nell'avanzamento dei progressi di postalizzazione
     Given "<clientId>" authenticated by "<apiKey>"
-    And The following paper progress status event attachments:
+    And I prepare the following paper progress status event attachments:
       | attachmentUri   | attachmentDocumentType   |
       | <attachmentUri> | <attachmentDocumentType> |
     When I send the following paper progress status requests:
@@ -54,3 +54,17 @@ Feature: Send Paper Progress Status
       | clientId       | apiKey       | attachmentUri                    | attachmentDocumentType | rc     |
       | @clientId-cons | @apiKey-cons | InvalidUri                       | AR                     | 400.02 |
       | @clientId-cons | @apiKey-cons | safestorage://NonExistentFileKey | AR                     | 400.02 |
+
+  @PnEcSendMessage @PAPER @verificaAttachmentsREC
+  Scenario Outline: Verifica dei documentType degli allegati nell'avanzamento degli stati di tipo REC
+    Given "<clientId>" authenticated by "<apiKey>"
+    And I upload the following paper progress status event attachments:
+      | documentType                       | fileName                    | mimeType        | attachmentDocumentType |
+      | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf | NO                     |
+    When I send the following paper progress status requests:
+      | statusCode | deliveryFailureCause | iun        | statusDateTime |
+      | RECAG010   |                      | @requestId | @now           |
+    Then I get "<rc>" result code
+    Examples:
+      | clientId       | apiKey       | rc     |
+      | @clientId-cons | @apiKey-cons | 400.02 |
