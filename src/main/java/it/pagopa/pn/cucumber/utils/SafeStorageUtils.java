@@ -42,7 +42,7 @@ public class SafeStorageUtils {
 		RequestSpecification oReq = stdReq() 
 			.header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
 			.header(X_API_KEY, sAPIKey)
-			.header("x-amz-trace-id", java.util.UUID.randomUUID().toString());
+			.header("x-amzn-trace-id", java.util.UUID.randomUUID().toString());
 		if( boHeader ) {
 			switch (eCS) {
 				case MD5:
