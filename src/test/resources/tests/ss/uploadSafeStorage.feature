@@ -43,3 +43,22 @@ Feature: Upload SafeStorage
       | @clientId-test | @apiKey_test | @doc_type_legal_facts | src/main/resources/test.zip | application/zip | 200 |
       | @clientId-test | @apiKey_test | @doc_type_legal_facts | src/main/resources/test.pdf | application/pdf | 200 |
       | @clientId-test | @apiKey_test | @doc_type_legal_facts | src/main/resources/test.xml | application/xml | 200 |
+
+  @PnSsUpload @getFile
+    Scenario Outline: getFile di un file con una fileKey definita come parametro e metadataOnly
+    Given "<clientId>" authenticated by "<APIKey>" try to get a file with key "<fileKey>" and metadataOnly as "false"
+    When request a presigned url to download the file
+    Then i get that presigned url
+    Examples:
+      | clientId | APIKey | fileKey |
+      | @clientId-test | @apiKey_test | PN_EXTERNAL_LEGAL_FACTS-b5cb17897bcd4aadaa8e9784e8618c57.pdf |
+
+  @PnSsUpload @getFile
+  Scenario Outline: getFile di un file con una fileKey definita come parametro e metadataOnly
+    Given "<clientId>" authenticated by "<APIKey>" try to get a file with key "<fileKey>" and metadataOnly as "true"
+    When request a presigned url to download the file
+    Then i get file metadata
+    Examples:
+      | clientId | APIKey | fileKey |
+      | @clientId-test | @apiKey_test | PN_EXTERNAL_LEGAL_FACTS-b5cb17897bcd4aadaa8e9784e8618c57.pdf |
+

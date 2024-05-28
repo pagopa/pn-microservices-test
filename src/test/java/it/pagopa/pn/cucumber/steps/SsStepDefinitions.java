@@ -15,10 +15,7 @@ import it.pagopa.pn.cucumber.dto.pojo.Checksum;
 import it.pagopa.pn.cucumber.utils.CommonUtils;
 import it.pagopa.pn.cucumber.utils.SafeStorageUtils;
 import it.pagopa.pn.cucumber.poller.PnSsQueuePoller;
-import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.Document;
-import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.DocumentResponse;
-import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileDownloadResponse;
-import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
+import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.*;
 import jakarta.jms.JMSException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
@@ -57,6 +54,9 @@ public class SsStepDefinitions {
     private static String nomeCoda;
     private static PnSsQueuePoller queuePoller;
     UpdateFileMetadataRequest requestBody = new UpdateFileMetadataRequest();
+    private boolean metadataOnly;
+
+    private FileDownloadResponse fileDownloadResponse;
 
     static {
         try {
@@ -134,7 +134,7 @@ public class SsStepDefinitions {
         log.debug("new retentionUntil: " + retentionUntil);
     }
 
-    @When("{string} authenticated by {string} try to update the document just uploaded using {string} and {string}")
+    @When("{string} authenticated by {string} try to update the document using {string} and {string}")
     public void a_file_to_update(String sPNClientUp, String sPNClient_AKUp, String status, String retentionUntil) {
 
         sPNClientUp = parseIfTagged(sPNClientUp);
@@ -244,7 +244,7 @@ public class SsStepDefinitions {
 
     @Then("i found in S3")
     public void i_found_in_s3() {
-        Assertions.assertEquals(200, SafeStorageUtils.getPresignedURLDownload(sPNClient, sPNClient_AK, sKey).getStatusCode());// Ok
+        Assertions.assertEquals(200, SafeStorageUtils.getPresignedURLDownload(sPNClient, sPNClient_AK, sKey,false).getStatusCode());// Ok
         statusCode = 200;
     }
 
@@ -308,6 +308,50 @@ public class SsStepDefinitions {
         }
     }
 
+
+    @Given("{string} authenticated by {string} try to get a file with key {string} and metadataOnly as {string}")
+    public void getPresignedUrlByFileKey(String sPNClient, String sPNClient_AK, String fileKey, String metadataOnly) {
+        this.sPNClient = parseIfTagged(sPNClient);
+        this.sPNClient_AK = parseIfTagged(sPNClient_AK);
+        this.sKey = fileKey;
+        this.metadataOnly = Boolean.parseBoolean(metadataOnly);
+
+    }
+
+    @When("request a presigned url to download the file")
+    public void requestAPresignedUrlToDownloadTheFile() {
+        Response response = SafeStorageUtils.getPresignedURLDownload(sPNClient,sPNClient_AK,sKey,metadataOnly);
+        Assertions.assertEquals(200, response.getStatusCode());
+
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            FileDownloadResponse oFDR = objectMapper.readValue(response.getBody().asString(), FileDownloadResponse.class);
+            this.fileDownloadResponse= oFDR;
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Then("i get that presigned url")
+    public void iGetThatPresignedUrl() {
+        log.debug("fileDownloadResponse {}", fileDownloadResponse);
+        Assertions.assertNotNull(fileDownloadResponse);
+        Assertions.assertNotNull(fileDownloadResponse.getDownload());
+    }
+
+    @Then("i get file metadata")
+    public void iGetFileMetadata() {
+        log.debug("fileDownloadResponse {}", fileDownloadResponse);
+        Assertions.assertNotNull(fileDownloadResponse);
+        Assertions.assertNull(fileDownloadResponse.getDownload());
+    }
+
+    @Given("a document with fileKey {string}")
+    public void aFileKey(String fileKey) {
+        this.sKey = fileKey;
+    }
+
+
     @AfterAll
     public static void doFinally() throws JMSException {
         queuePoller.close();
@@ -316,6 +360,9 @@ public class SsStepDefinitions {
     private String parseIfTagged(String value) {
         return TestVariablesConfiguration.getInstance().getValueIfTagged(value);
     }
+
+
+
 
 
 }
