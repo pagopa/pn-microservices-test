@@ -41,7 +41,8 @@ public class SafeStorageUtils {
 		log.debug("getPresignedURLUpload(\"{}\",\"{}\",\"{}\", \"{}\", \"{}\", \"{}\", \"{}\", {}, {})", sCxId, sAPIKey, sContentType, sDocType, sSHA256, sMD5, sStatus, (boHeader?"header":"body"), eCS.name());		
 		RequestSpecification oReq = stdReq() 
 			.header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
-			.header(X_API_KEY, sAPIKey);
+			.header(X_API_KEY, sAPIKey)
+			.header("x-amz-trace-id", java.util.UUID.randomUUID().toString());
 		if( boHeader ) {
 			switch (eCS) {
 				case MD5:
