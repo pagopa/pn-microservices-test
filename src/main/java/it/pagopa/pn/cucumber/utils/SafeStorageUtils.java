@@ -111,12 +111,13 @@ public class SafeStorageUtils {
 	}
 
 
-	public static Response getPresignedURLDownload(String sCxId, String sAPIKey, String sFileKey) {
+	public static Response getPresignedURLDownload(String sCxId, String sAPIKey, String sFileKey, boolean metadataOnly) {
 		log.debug("getPresignedURLDownload(\"{}\",\"{}\",\"{}\")", sCxId, sAPIKey, sFileKey);		
-		RequestSpecification oReq = stdReq() 
+		RequestSpecification oReq = stdReq()
+				.param("metadataOnly", metadataOnly)
 			.header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
 			.header(X_API_KEY, sAPIKey);
-		
+
 		return CommonUtils.myGet(oReq, "/safe-storage/v1/files/"+sFileKey);
 	}
 
