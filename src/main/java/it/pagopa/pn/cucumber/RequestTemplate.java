@@ -1,5 +1,6 @@
 package it.pagopa.pn.cucumber;
 
+import it.pagopa.pn.cucumber.dto.ClientConfigurationInternalDto;
 import it.pagopa.pn.ec.rest.v1.api.*;
 
 import java.math.BigDecimal;
@@ -9,7 +10,7 @@ import java.util.*;
 public class RequestTemplate {
 
     //SMS
-    public static DigitalCourtesySmsRequest createSmsRequest(String requestId){
+    public static DigitalCourtesySmsRequest createSmsRequest(String requestId, String receiver){
         String defaultStringInit = "stringDefault";
 
         DigitalCourtesySmsRequest digitalCourtesySmsRequestFactory= new DigitalCourtesySmsRequest();
@@ -17,14 +18,14 @@ public class RequestTemplate {
         digitalCourtesySmsRequestFactory.eventType(defaultStringInit);
         digitalCourtesySmsRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now()));
         digitalCourtesySmsRequestFactory.setQos(DigitalCourtesySmsRequest.QosEnum.INTERACTIVE);
-        digitalCourtesySmsRequestFactory.setReceiverDigitalAddress(System.getProperty("sms.receiver.digital.address"));
+        digitalCourtesySmsRequestFactory.setReceiverDigitalAddress(receiver);
         digitalCourtesySmsRequestFactory.setMessageText(defaultStringInit);
         digitalCourtesySmsRequestFactory.channel(DigitalCourtesySmsRequest.ChannelEnum.SMS);
         return digitalCourtesySmsRequestFactory;
     }
 
     //EMAIL
-    public static DigitalCourtesyMailRequest createMailRequest(String requestId) {
+    public static DigitalCourtesyMailRequest createMailRequest(String requestId, String receiver) {
         String defaultStringInit = "stringDefault";
 
         DigitalCourtesyMailRequest digitalCourtesyMailRequestFactory= new DigitalCourtesyMailRequest();
@@ -33,7 +34,7 @@ public class RequestTemplate {
         digitalCourtesyMailRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now()));
         digitalCourtesyMailRequestFactory.setQos(DigitalCourtesyMailRequest.QosEnum.INTERACTIVE);
         digitalCourtesyMailRequestFactory.setSenderDigitalAddress(System.getProperty("email.sender.digital.address"));
-        digitalCourtesyMailRequestFactory.setReceiverDigitalAddress(System.getProperty("email.receiver.digital.address"));
+        digitalCourtesyMailRequestFactory.setReceiverDigitalAddress(receiver);
         digitalCourtesyMailRequestFactory.setMessageText(defaultStringInit);
         digitalCourtesyMailRequestFactory.channel(DigitalCourtesyMailRequest.ChannelEnum.EMAIL);
         digitalCourtesyMailRequestFactory.setMessageContentType(DigitalCourtesyMailRequest.MessageContentTypeEnum.PLAIN);
@@ -42,7 +43,7 @@ public class RequestTemplate {
     }
 
 //PEC
-    public static DigitalNotificationRequest createDigitalNotificationRequest(String requestId){
+    public static DigitalNotificationRequest createDigitalNotificationRequest(String requestId, String receiver){
         String defaultStringInit = "stringDefault";
 
 
@@ -52,7 +53,7 @@ public class RequestTemplate {
         digitalNotificationRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now()));
         digitalNotificationRequestFactory.setQos(DigitalNotificationRequest.QosEnum.INTERACTIVE);
         digitalNotificationRequestFactory.setSenderDigitalAddress(System.getProperty("pec.sender.digital.address"));
-        digitalNotificationRequestFactory.setReceiverDigitalAddress(System.getProperty("pec.receiver.digital.address"));
+        digitalNotificationRequestFactory.setReceiverDigitalAddress(receiver);
         digitalNotificationRequestFactory.setMessageText(defaultStringInit);
         digitalNotificationRequestFactory.channel(DigitalNotificationRequest.ChannelEnum.PEC);
         digitalNotificationRequestFactory.setSubjectText("test");
@@ -63,12 +64,12 @@ public class RequestTemplate {
 
     //CARTACEO
 
-    public static PaperEngageRequest createPaperEngageRequest(String requestId) {
+    public static PaperEngageRequest createPaperEngageRequest(String requestId, String receiver) {
         PaperEngageRequest paperEngageRequestFactory = new PaperEngageRequest();
 
         paperEngageRequestFactory.setReceiverName("Paolo Rossi");
         paperEngageRequestFactory.setReceiverNameRow2("c/o famiglia Bianchi");
-        paperEngageRequestFactory.setReceiverAddress("via Roma 13");
+        paperEngageRequestFactory.setReceiverAddress(receiver);
         paperEngageRequestFactory.setReceiverAddressRow2("scala A interno 4");
         paperEngageRequestFactory.setReceiverCap("00017");
         paperEngageRequestFactory.setReceiverCity("Roma");
@@ -80,7 +81,7 @@ public class RequestTemplate {
         paperEngageRequestFactory.setSenderAddress("Verdi");
         paperEngageRequestFactory.setSenderCity("Roma");
         paperEngageRequestFactory.setSenderPr("RM");
-        paperEngageRequestFactory.setSenderDigitalAddress("via napoli 1");
+        paperEngageRequestFactory.setSenderDigitalAddress("via Napoli 1");
         paperEngageRequestFactory.setArName("String");
         paperEngageRequestFactory.setArAddress("string");
         paperEngageRequestFactory.setArCap("0000");
@@ -96,6 +97,25 @@ public class RequestTemplate {
         paperEngageRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now()));
         return paperEngageRequestFactory;
 
+    }
+
+    public static ClientConfigurationDto createClientConfigurationRequest() {
+        ClientConfigurationDto clientConfigurationDto = new  ClientConfigurationDto();
+        clientConfigurationDto.setSqsArn("");
+        clientConfigurationDto.setSqsName("");
+        clientConfigurationDto.setSenderPhysicalAddress(new SenderPhysicalAddressDto());
+        clientConfigurationDto.setMailReplyTo("");
+        clientConfigurationDto.setPecReplyTo("");
+        return clientConfigurationDto;
+    }
+    public static ClientConfigurationInternalDto createClientConfigurationInternalRequest() {
+        ClientConfigurationInternalDto clientConfigurationDto = new  ClientConfigurationInternalDto();
+        clientConfigurationDto.setSqsArn("");
+        clientConfigurationDto.setSqsName("");
+        clientConfigurationDto.setSenderPhysicalAddress(new SenderPhysicalAddressDto());
+        clientConfigurationDto.setMailReplyTo("");
+        clientConfigurationDto.setPecReplyTo("");
+        return clientConfigurationDto;
     }
 
     private static List<PaperEngageRequestAttachments> getPaperEngageRequestAttachments() {

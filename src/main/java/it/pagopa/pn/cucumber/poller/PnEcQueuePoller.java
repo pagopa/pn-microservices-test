@@ -59,6 +59,8 @@ public class PnEcQueuePoller extends QueuePoller {
                     documentStatusList.add(status);
                     this.messageMap.put(requestId, documentStatusList);
                 }
+                log.info("messageMap poll{} ", this.messageMap);
+
             }
         } catch (JMSException e) {
             e.printStackTrace();
@@ -72,8 +74,11 @@ public class PnEcQueuePoller extends QueuePoller {
         long pollingInterval = Long.parseLong(System.getProperty("pn.ss.sqs.lookup.interval.millis"));
         Instant timeLimit = Instant.now().plusMillis(Long.parseLong(System.getProperty("pn.ss.sqs.lookup.timeout.millis")));
         Set<String> statusesFound = null;
+
         while (Instant.now().isBefore(timeLimit)) {
             statusesFound = this.messageMap.get(requestId);
+            log.info("this.messageMap {} ", this.messageMap);
+            log.info("statusFound: {} ", statusesFound);
             if (statusesFound != null && statusesFound.containsAll(statusesToCheck)) {
                 check = true;
                 break;
