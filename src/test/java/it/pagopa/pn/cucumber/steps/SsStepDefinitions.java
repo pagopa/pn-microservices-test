@@ -32,6 +32,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
 
+import static it.pagopa.pn.configuration.TestVariablesConfiguration.getValueIfTagged;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
@@ -60,7 +61,7 @@ public class SsStepDefinitions {
 
     static {
         try {
-            Config.getInstance();
+            Config.getInstance().loadProperties();
             queuePoller = new PnSsQueuePoller();
             queuePoller.startPolling();
         } catch (JMSException e) {
@@ -71,11 +72,11 @@ public class SsStepDefinitions {
     @Given("{string} authenticated by {string} try to upload a document of type {string} with content type {string} using {string}")
     public void a_file_to_upload(String sPNClient, String sPNClient_AK, String sDocumentType, String sMimeType, String sFileName) throws NoSuchAlgorithmException, IOException {
 
-        sPNClient = parseIfTagged(sPNClient);
-        sPNClient_AK = parseIfTagged(sPNClient_AK);
-        sDocumentType = parseIfTagged(sDocumentType);
-        sMimeType = parseIfTagged(sMimeType);
-        sFileName = parseIfTagged(sFileName);
+        sPNClient = getValueIfTagged(sPNClient);
+        sPNClient_AK = getValueIfTagged(sPNClient_AK);
+        sDocumentType = getValueIfTagged(sDocumentType);
+        sMimeType = getValueIfTagged(sMimeType);
+        sFileName = getValueIfTagged(sFileName);
         log.debug("pn-client {}", sPNClient);
 
         this.sPNClient = sPNClient;
@@ -101,11 +102,11 @@ public class SsStepDefinitions {
     @Given("{string} authenticated by {string} try to update the document using {string} and {string} but has invalid or null {string}")
     public void no_file_to_update(String sPNClientUp, String sPNClient_AKUp, String status, String retentionUntil, String fileKey) {
 
-        sPNClientUp = parseIfTagged(sPNClientUp);
-        sPNClient_AKUp = parseIfTagged(sPNClient_AKUp);
-        status = parseIfTagged(status);
-        retentionUntil = parseIfTagged(retentionUntil);
-        fileKey = parseIfTagged(fileKey);
+        sPNClientUp = getValueIfTagged(sPNClientUp);
+        sPNClient_AKUp = getValueIfTagged(sPNClient_AKUp);
+        status = getValueIfTagged(status);
+        retentionUntil = getValueIfTagged(retentionUntil);
+        fileKey = getValueIfTagged(fileKey);
 
         this.status = status;
         this.retentionUntil = retentionUntil;
@@ -137,10 +138,10 @@ public class SsStepDefinitions {
     @When("{string} authenticated by {string} try to update the document just uploaded using {string} and {string}")
     public void a_file_to_update(String sPNClientUp, String sPNClient_AKUp, String status, String retentionUntil) {
 
-        sPNClientUp = parseIfTagged(sPNClientUp);
-        sPNClient_AKUp = parseIfTagged(sPNClient_AKUp);
-        status = parseIfTagged(status);
-        retentionUntil = parseIfTagged(retentionUntil);
+        sPNClientUp = getValueIfTagged(sPNClientUp);
+        sPNClient_AKUp = getValueIfTagged(sPNClient_AKUp);
+        status = getValueIfTagged(status);
+        retentionUntil = getValueIfTagged(retentionUntil);
 
         this.status = status;
         this.retentionUntil = retentionUntil;
@@ -312,10 +313,5 @@ public class SsStepDefinitions {
     public static void doFinally() throws JMSException {
         queuePoller.close();
     }
-
-    private String parseIfTagged(String value) {
-        return TestVariablesConfiguration.getInstance().getValueIfTagged(value);
-    }
-
 
 }

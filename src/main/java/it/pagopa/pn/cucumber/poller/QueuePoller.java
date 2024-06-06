@@ -25,6 +25,7 @@ public abstract class QueuePoller implements MessageListener {
         this.queueName = queueName;
     }
 
+
     public void startPolling() throws JMSException {
         // Create a new connection factory with all defaults (credentials and region) set automatically
         SQSConnectionFactory connectionFactory = new SQSConnectionFactory(
@@ -38,6 +39,8 @@ public abstract class QueuePoller implements MessageListener {
 
         Session session = this.connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(this.queueName);
+        log.info("queue: {}",queue);
+        log.info("queue: {}",queue.getQueueName());
 
         //Create a consumer for the queue.
         MessageConsumer consumer = session.createConsumer(queue);
