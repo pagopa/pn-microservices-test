@@ -4,6 +4,7 @@ import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import it.pagopa.pn.cucumber.RequestTemplate;
+import it.pagopa.pn.cucumber.dto.ClientConfigurationInternalDto;
 import it.pagopa.pn.cucumber.dto.pojo.PnAttachment;
 import it.pagopa.pn.ec.rest.v1.api.*;
 import lombok.extern.slf4j.Slf4j;
@@ -29,24 +30,28 @@ public class ExternalChannelUtils extends RequestTemplate {
     private static final String SEND_CONSOLIDATORE_ENDPOINT =
             "/consolidatore-ingress/v1/push-progress-events";
 
+    private static final String GET_CONFIGURATIONS = "/external-channels/v1/configurations";
+
+    private static final String GET_CLIENT = "/external-channel/gestoreRepository/clients/{x-pagopa-extch-cx-id}";
+
 
     protected static RequestSpecification stdReq() {
         return RestAssured.given()
                 .header("Accept", "application/json")
                 .header("Content-type", "application/json")
-                .header("x-amzn-trace-id", java.util.UUID.randomUUID().toString());
+                .header("x-amz-trace-id", java.util.UUID.randomUUID().toString());
     }
 
     /*
     un metodo che definisce una chiamata API per ogni channel
      */
     //SMS
-    public static Response sendSmsCourtesySimpleMessage(String clientId, String requestId) {
+    public static Response sendSmsCourtesySimpleMessage(String clientId, String requestId, String receiver) {
         log.info("requestId {}", requestId);
         RequestSpecification oReq = stdReq()
                 .header("x-pagopa-extch-cx-id", clientId)
                 .pathParam("requestIdx", requestId);
-        DigitalCourtesySmsRequest digitalCourtesySmsRequest = createSmsRequest(requestId);
+        DigitalCourtesySmsRequest digitalCourtesySmsRequest = createSmsRequest(requestId, receiver);
     log.info(digitalCourtesySmsRequest.getRequestId());
         oReq.body(digitalCourtesySmsRequest);
          Response response = CommonUtils.myPut(oReq,SEND_SMS_ENDPOINT);
@@ -55,15 +60,32 @@ public class ExternalChannelUtils extends RequestTemplate {
         return response;
     }
 
+    public static Response getConfigurations(String clientId) {
+        RequestSpecification oReq = stdReq()
+                .header("x-pagopa-extch-cx-id", clientId);
+               // .pathParam("requestIdx", generateRandomRequestId());
+            ClientConfigurationDto clientConfigurationDto = createClientConfigurationRequest();
+            oReq.body(clientConfigurationDto);
+            Response response = CommonUtils.myGet(oReq, GET_CONFIGURATIONS);
+        return response;
+    }
 
+    public static Response getClient(String clientId){
+        RequestSpecification oReq = stdReq()
+                .pathParam("x-pagopa-extch-cx-id", clientId);
+        ClientConfigurationInternalDto clientConfigurationInternalDto = createClientConfigurationInternalRequest();
+        oReq.body(clientConfigurationInternalDto);
+        Response response = CommonUtils.myGet(oReq, GET_CLIENT);
+        return response;
+    }
 
     // EMAIL
 
-    public static Response sendEmailCourtesySimpleMessage(String clientId, String requestId) {
+    public static Response sendEmailCourtesySimpleMessage(String clientId, String requestId, String receiver) {
         RequestSpecification oReq = stdReq()
                 .header("x-pagopa-extch-cx-id", clientId)
                 .pathParam("requestIdx", requestId);
-        DigitalCourtesyMailRequest digitalCourtesyMailRequest = createMailRequest(requestId);
+        DigitalCourtesyMailRequest digitalCourtesyMailRequest = createMailRequest(requestId, receiver);
         oReq.body(digitalCourtesyMailRequest);
         Response response = CommonUtils.myPut(oReq,SEND_EMAIL_ENDPOINT);
 
@@ -72,11 +94,11 @@ public class ExternalChannelUtils extends RequestTemplate {
 
 
     //PEC
-    public static Response sendDigitalNotification(String clientId, String requestId, List<PnAttachment> attachments) {
+    public static Response sendDigitalNotification(String clientId, String requestId, List<PnAttachment> attachments, String receiver) {
         RequestSpecification oReq = stdReq()
                 .header("x-pagopa-extch-cx-id", clientId)
                 .pathParam("requestIdx", requestId);
-        DigitalNotificationRequest digitalNotificationRequest = createDigitalNotificationRequest(requestId);
+        DigitalNotificationRequest digitalNotificationRequest = createDigitalNotificationRequest(requestId, receiver);
         List<String> attachmentsUri = attachments.stream().map(PnAttachment::getUri).toList();
         digitalNotificationRequest.setAttachmentUrls(attachmentsUri);
 
@@ -85,11 +107,11 @@ public class ExternalChannelUtils extends RequestTemplate {
     }
 
     //CARTACEO
-    public static Response sendPaperMessage(String clientId, String requestId, List<PnAttachment> attachments) {
+    public static Response sendPaperMessage(String clientId, String requestId, List<PnAttachment> attachments, String receiver) {
         RequestSpecification oReq = stdReq()
                 .header("x-pagopa-extch-cx-id", clientId)
                 .pathParam("requestIdx", requestId);
-        PaperEngageRequest paperEngageRequest = createPaperEngageRequest(requestId);
+        PaperEngageRequest paperEngageRequest = createPaperEngageRequest(requestId, receiver);
         List<PaperEngageRequestAttachments> paperEngageRequestAttachmentsList = attachments.stream().map(attachment -> {
             PaperEngageRequestAttachments paperEngageRequestAttachments = new PaperEngageRequestAttachments();
             paperEngageRequestAttachments.setDocumentType(attachment.getDocumentType());

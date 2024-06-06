@@ -112,12 +112,7 @@ public class CommonUtils {
 		log.debug("base url request myPost: {}", oReqSpec.given().baseUri(getBaseURL()).basePath(sURI));
 		QueryableRequestSpecification queryRequest = SpecificationQuerier.query(oReqSpec);
 		log.debug("POST {}", queryRequest.getURI());
-		log.debug(queryRequest.getBody().toString());
 		return oReqSpec.put();
-	}
-
-	public static String parseIfTagged(String value) {
-		return TestVariablesConfiguration.getInstance().getValueIfTagged(value);
 	}
 
 	@SneakyThrows({NoSuchAlgorithmException.class, IOException.class})
