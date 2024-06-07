@@ -57,6 +57,7 @@ public class EcStepDefinitions {
     private static PnEcQueuePoller queuePoller;
     private String sRC;
     private Response response;
+    private OffsetDateTime testStartTime;
 
 
     static {
@@ -98,7 +99,15 @@ public class EcStepDefinitions {
         });
     }
 
-    @When("try to send a digital message to {}")
+    @When("try to send a paper message")
+    public void tryToSendAPaperMessage() {
+        this.requestId = ExternalChannelUtils.generateRandomRequestId();
+        String receiver = System.getProperty("paper.receiver.digital.address");
+        Response response = ExternalChannelUtils.sendPaperMessage(clientId, requestId, attachmentsList,receiver);
+        this.sendPaperMessageStatusCode = response.getStatusCode();
+    }
+
+    @When("try to send a digital message to {string}")
     public void presaInCarico(String receiver) {
         this.requestId = ExternalChannelUtils.generateRandomRequestId();
         this.receiver = getValueIfTagged(receiver);
@@ -211,6 +220,9 @@ public class EcStepDefinitions {
     @Then("I send the following paper progress status requests:")
     public void sendPaperProgressStatusRequests(DataTable dataTable) {
         {
+            if (testStartTime == null) {
+                testStartTime = OffsetDateTime.now();
+            }
             List<ConsolidatoreIngressPaperProgressStatusEvent> events = new ArrayList<>();
             List<Map<String, String>> eventsList = dataTable.asMaps();
             eventsList.forEach(map -> {
@@ -230,7 +242,17 @@ public class EcStepDefinitions {
 
                 OffsetDateTime now = OffsetDateTime.now();
                 String statusDateTime = map.get("statusDateTime");
-                event.setStatusDateTime(statusDateTime.equals("@now") ? now : OffsetDateTime.parse(statusDateTime));
+                switch (statusDateTime) {
+                    case "@testStartTime":
+                        event.setStatusDateTime(testStartTime);
+                        break;
+                    case "@now":
+                        event.setStatusDateTime(now);
+                        break;
+                    default:
+                        event.setStatusDateTime(OffsetDateTime.parse(statusDateTime));
+
+                }
                 event.setClientRequestTimeStamp(now);
 
                 if (!this.paperProgressStatusEventAttachments.isEmpty())

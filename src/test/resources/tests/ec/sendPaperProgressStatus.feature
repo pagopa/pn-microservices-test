@@ -69,15 +69,15 @@ Feature: Send Paper Progress Status
       | clientId       | apiKey       | rc     |
       | @clientId-cons | @apiKey-cons | 400.02 |
 
-  @PnEcSendMessage @PAPER @verificaDuplicati
+    @PnEcSendMessage @PAPER @verificaDuplicati
   Scenario Outline: Verifica dei documentType degli allegati nell'avanzamento degli stati di tipo REC
     Given "<clientId>" authenticated by "<apiKey>"
     When I send the following paper progress status requests:
       | statusCode | deliveryFailureCause | iun        | statusDateTime |
-      | RECAG010   |                      | @requestId | @now           |
+      | RECAG010   |                      | @requestId | @testStartTime           |
     And I send the following paper progress status requests:
       | statusCode | deliveryFailureCause | iun        | statusDateTime |
-      | RECAG010   |                      | @requestId | @now           |
+      | RECAG010   |                      | @requestId | @testStartTime           |
     Then I get "<rc>" result code
     Examples:
       | clientId       | apiKey       | rc     |
