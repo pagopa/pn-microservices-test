@@ -6,7 +6,7 @@ Feature: Send Paper Message Ec
     When I upload the following attachments:
       | documentType                       | fileName                    | mimeType        |
       | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
-    When try to send a paper message to "<receiver>"
+    When try to send a paper message
     * waiting for scheduling
     Then check if the message has been sent
     Examples:
@@ -16,7 +16,7 @@ Feature: Send Paper Message Ec
   @PnEcSendMessage @PAPER @invioCartaceo @testKo
   Scenario Outline: Invio di un messaggio cartaceo con clientId non valido e verifica dello statusCode
     Given a "<clientId>" and "<channel>" to send on
-    When try to send a paper message to "<receiver>"
+    When try to send a paper message
     Then I get "<rc>" status code
     Examples:
       | clientId     | channel        | rc  | receiver |

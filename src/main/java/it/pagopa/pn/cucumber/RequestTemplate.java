@@ -64,12 +64,12 @@ public class RequestTemplate {
 
     //CARTACEO
 
-    public static PaperEngageRequest createPaperEngageRequest(String requestId, String receiver) {
+    public static PaperEngageRequest createPaperEngageRequest(String requestId) {
         PaperEngageRequest paperEngageRequestFactory = new PaperEngageRequest();
 
         paperEngageRequestFactory.setReceiverName("Paolo Rossi");
         paperEngageRequestFactory.setReceiverNameRow2("c/o famiglia Bianchi");
-        paperEngageRequestFactory.setReceiverAddress(receiver);
+        paperEngageRequestFactory.setReceiverAddress(System.getProperty("paper.receiver.digital.address"));
         paperEngageRequestFactory.setReceiverAddressRow2("scala A interno 4");
         paperEngageRequestFactory.setReceiverCap("00017");
         paperEngageRequestFactory.setReceiverCity("Roma");

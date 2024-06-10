@@ -15,8 +15,8 @@
   "channel_email": "EMAIL",
   "channel_pec": "PEC",
   "channel_paper": "PAPER",
-  "pec.receiver.digital.address": "mario.ottone@arubapec.it",
-  "email.receiver.digital.address": "mario.ottone@arubapec.it",
+  "pec.receiver.digital.address": "rossi.m@arubapec.it",
+  "email.receiver.digital.address": "rossi.m@arubapec.it",
   "sms.receiver.digital.address" : "+390000000000",
   "paper.receiver.digital.address" : "Via Roma 1"
 }
