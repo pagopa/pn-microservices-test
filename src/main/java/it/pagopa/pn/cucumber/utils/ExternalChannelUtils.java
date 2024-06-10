@@ -30,9 +30,14 @@ public class ExternalChannelUtils extends RequestTemplate {
     private static final String SEND_CONSOLIDATORE_ENDPOINT =
             "/consolidatore-ingress/v1/push-progress-events";
 
-    private static final String GET_CONFIGURATIONS = "/external-channels/v1/configurations";
+    private static final String GET_CONFIGURATIONS_ENDPOINT =
+            "/external-channels/v1/configurations";
 
-    private static final String GET_CLIENT = "/external-channel/gestoreRepository/clients/{x-pagopa-extch-cx-id}";
+    private static final String GET_CLIENT_ENDPOINT =
+            "/external-channel/gestoreRepository/clients/{x-pagopa-extch-cx-id}";
+
+    private static final String GET_PEC_ENDPOINT =
+            "/external-channels/v1/digital-deliveries/legal-full-message-requests/{requestIdx}";
 
 
     protected static RequestSpecification stdReq() {
@@ -60,24 +65,6 @@ public class ExternalChannelUtils extends RequestTemplate {
         return response;
     }
 
-    public static Response getConfigurations(String clientId) {
-        RequestSpecification oReq = stdReq()
-                .header("x-pagopa-extch-cx-id", clientId);
-               // .pathParam("requestIdx", generateRandomRequestId());
-            ClientConfigurationDto clientConfigurationDto = createClientConfigurationRequest();
-            oReq.body(clientConfigurationDto);
-            Response response = CommonUtils.myGet(oReq, GET_CONFIGURATIONS);
-        return response;
-    }
-
-    public static Response getClient(String clientId){
-        RequestSpecification oReq = stdReq()
-                .pathParam("x-pagopa-extch-cx-id", clientId);
-        ClientConfigurationInternalDto clientConfigurationInternalDto = createClientConfigurationInternalRequest();
-        oReq.body(clientConfigurationInternalDto);
-        Response response = CommonUtils.myGet(oReq, GET_CLIENT);
-        return response;
-    }
 
     // EMAIL
 
@@ -87,9 +74,8 @@ public class ExternalChannelUtils extends RequestTemplate {
                 .pathParam("requestIdx", requestId);
         DigitalCourtesyMailRequest digitalCourtesyMailRequest = createMailRequest(requestId, receiver);
         oReq.body(digitalCourtesyMailRequest);
-        Response response = CommonUtils.myPut(oReq,SEND_EMAIL_ENDPOINT);
 
-        return response;
+        return CommonUtils.myPut(oReq,SEND_EMAIL_ENDPOINT);
     }
 
 
@@ -107,11 +93,11 @@ public class ExternalChannelUtils extends RequestTemplate {
     }
 
     //CARTACEO
-    public static Response sendPaperMessage(String clientId, String requestId, List<PnAttachment> attachments, String receiver) {
+    public static Response sendPaperMessage(String clientId, String requestId, List<PnAttachment> attachments) {
         RequestSpecification oReq = stdReq()
                 .header("x-pagopa-extch-cx-id", clientId)
                 .pathParam("requestIdx", requestId);
-        PaperEngageRequest paperEngageRequest = createPaperEngageRequest(requestId, receiver);
+        PaperEngageRequest paperEngageRequest = createPaperEngageRequest(requestId);
         List<PaperEngageRequestAttachments> paperEngageRequestAttachmentsList = attachments.stream().map(attachment -> {
             PaperEngageRequestAttachments paperEngageRequestAttachments = new PaperEngageRequestAttachments();
             paperEngageRequestAttachments.setDocumentType(attachment.getDocumentType());
@@ -132,6 +118,32 @@ public class ExternalChannelUtils extends RequestTemplate {
                 .header("x-api-key", apiKey);
         oReq.body(events);
         return CommonUtils.myPut(oReq, SEND_CONSOLIDATORE_ENDPOINT);
+    }
+
+    //CLIENT
+    public static Response getConfigurations(String clientId) {
+        RequestSpecification oReq = stdReq()
+                .header("x-pagopa-extch-cx-id", clientId);
+        // .pathParam("requestIdx", generateRandomRequestId());
+        ClientConfigurationDto clientConfigurationDto = createClientConfigurationRequest();
+        oReq.body(clientConfigurationDto);
+        return CommonUtils.myGet(oReq, GET_CONFIGURATIONS_ENDPOINT);
+    }
+
+    public static Response getClient(String clientId){
+        RequestSpecification oReq = stdReq()
+                .pathParam("x-pagopa-extch-cx-id", clientId);
+      //  ClientConfigurationInternalDto clientConfigurationInternalDto = createClientConfigurationInternalRequest();
+        //oReq.body(clientConfigurationInternalDto);
+        return CommonUtils.myGet(oReq, GET_CLIENT_ENDPOINT);
+    }
+
+    //GET PEC
+    public static Response getPecByRequestId(String clientId, String requestId){
+        RequestSpecification oReq = stdReq()
+                .header("x-pagopa-extch-cx-id", clientId)
+                .pathParam("requestIdx", requestId);
+        return CommonUtils.myGet(oReq, GET_PEC_ENDPOINT);
     }
 
     public static String generateRandomRequestId() {

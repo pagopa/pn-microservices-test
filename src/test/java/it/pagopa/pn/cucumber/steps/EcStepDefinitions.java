@@ -103,7 +103,7 @@ public class EcStepDefinitions {
     public void tryToSendAPaperMessage() {
         this.requestId = ExternalChannelUtils.generateRandomRequestId();
         String receiver = System.getProperty("paper.receiver.digital.address");
-        Response response = ExternalChannelUtils.sendPaperMessage(clientId, requestId, attachmentsList,receiver);
+        Response response = ExternalChannelUtils.sendPaperMessage(clientId, requestId, attachmentsList);
         this.sendPaperMessageStatusCode = response.getStatusCode();
     }
 
@@ -129,7 +129,7 @@ public class EcStepDefinitions {
     public void tryToSendAPaperMessage(String receiver) {
         this.requestId = ExternalChannelUtils.generateRandomRequestId();
         this.receiver = getValueIfTagged(receiver);
-        Response response = ExternalChannelUtils.sendPaperMessage(clientId, requestId, attachmentsList, this.receiver);
+        Response response = ExternalChannelUtils.sendPaperMessage(clientId, requestId, attachmentsList);
         this.sendPaperMessageStatusCode = response.getStatusCode();
     }
 
