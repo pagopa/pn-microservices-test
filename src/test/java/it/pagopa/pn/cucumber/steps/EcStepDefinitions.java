@@ -24,6 +24,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import static it.pagopa.pn.configuration.TestVariablesConfiguration.getValueIfTagged;
@@ -36,24 +37,16 @@ public class EcStepDefinitions {
     private String clientId;
     private String apiKey;
     private String requestId;
-    private String qos;
     private String channel;
     private String receiver;
     private int sendPaperMessageStatusCode;
-    private int getClientMessageStatusCode;
-    private SsStepDefinitions ssStepDefinitions;
     private final List<PnAttachment> attachmentsList = new ArrayList<>();
     private final Set<String> statusesToCheck = new HashSet<>();
     private int sendPaperProgressStatusRespCode = 0;
-    private int getClientMessageStatusRespCode = 0;
     private String sendPaperProgressStatusResultCode;
-    private String getClientMessageStatusResultCode;
     private String sendPaperProgressStatusResultDescription;
-    private String getClientMessageStatusResultDescription;
     private List<String> sendPaperProgressStatusErrorList;
     private List<ConsolidatoreIngressPaperProgressStatusEventAttachments> paperProgressStatusEventAttachments = new ArrayList<>();
-    private String fileKey;
-    private static String nomeCodaNotifiche;
     private static PnEcQueuePoller queuePoller;
     private String sRC;
     private Response response;
@@ -70,6 +63,7 @@ public class EcStepDefinitions {
         }
     }
 
+    //GIVEN
     @Given("a {string} and {string} to send on")
     public void messageToSend(String clientId, String channel) {
         this.clientId = getValueIfTagged(clientId);
@@ -84,21 +78,14 @@ public class EcStepDefinitions {
         this.apiKey = getValueIfTagged(apiKey);
     }
 
-    @And("I prepare the following paper progress status event attachments:")
-    public void iPrepareTheFollowingPaperProgressStatusEventAttachments(DataTable dataTable) {
-        List<Map<String, String>> attachmentsList = dataTable.asMaps();
-        attachmentsList.forEach(map -> {
-            ConsolidatoreIngressPaperProgressStatusEventAttachments attachment = new ConsolidatoreIngressPaperProgressStatusEventAttachments()
-                    .uri(map.get("attachmentUri"))
-                    .sha256(RandomStringUtils.randomAlphanumeric(45))
-                    .documentType(map.get("attachmentDocumentType"))
-                    .id("id")
-                    .date(OffsetDateTime.now())
-                    .documentId("documentId");
-            this.paperProgressStatusEventAttachments.add(attachment);
-        });
+    @Given("a {string} to send request")
+    public void aClientToSendRequest(String clientId) {
+        this.clientId = getValueIfTagged(clientId);
+        log.info(this.clientId);
     }
 
+
+    //WHEN
     @When("try to send a paper message")
     public void tryToSendAPaperMessage() {
         this.requestId = ExternalChannelUtils.generateRandomRequestId();
@@ -116,14 +103,14 @@ public class EcStepDefinitions {
         Response response = switch (channel.toUpperCase()) {
             case "SMS" -> ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, this.receiver);
             case "EMAIL" -> ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, this.receiver);
-            case "PEC" -> ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList, this.receiver);
+            case "PEC" ->
+                    ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList, this.receiver);
             default -> throw new IllegalArgumentException();
         };
         log.info(String.valueOf(response.getStatusCode()));
         log.info(channel);
         assertEquals(200, response.getStatusCode());
     }
-
 
     @When("try to send a paper message to {string}")
     public void tryToSendAPaperMessage(String receiver) {
@@ -133,24 +120,88 @@ public class EcStepDefinitions {
         this.sendPaperMessageStatusCode = response.getStatusCode();
     }
 
-    @Then("check if the message has been sent")
-    public void checkStatusMessage() {
-        log.info("requestId {}", requestId);
-        boolean checked = switch (this.channel.toUpperCase()) {
-            case "SMS" ->
-                    queuePoller.checkMessageAvailability(requestId, List.of(CourtesyMessageProgressEvent.EventCodeEnum.S003.getValue()));
-            case "EMAIL" ->
-                    queuePoller.checkMessageAvailability(requestId, List.of(CourtesyMessageProgressEvent.EventCodeEnum.M003.getValue()));
-            case "PEC" ->
-                    queuePoller.checkMessageAvailability(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.C000.getValue()));
-            case "PAPER" ->
-                    queuePoller.checkMessageAvailability(requestId, List.of("P000"));
-            default ->
-                    throw new IllegalArgumentException(String.format("The given channel '%s' is not valid.", this.channel));
-        };
-        Assertions.assertTrue(checked);
+    @When("try to get client configurations")
+    public void tryToGetClientConfigurations() {
+        this.response = ExternalChannelUtils.getClient(this.clientId);
+        this.sRC = String.valueOf(response.getStatusCode());
     }
 
+    @When("try to get all client configurations")
+    public void tryToGetAllClientConfigurations() {
+        this.response = ExternalChannelUtils.getClientConfigurations(this.clientId);
+        this.sRC = String.valueOf(response.getStatusCode());
+    }
+
+    @When("try to get request by {string}")
+    public void tryToGetRequestByRequestId(String requestId) {
+        this.response = ExternalChannelUtils.getRequest(clientId, getValueIfTagged(requestId));
+        this.sRC = String.valueOf(response.getStatusCode());
+    }
+
+    @When("try to get request by messageId {string}")
+    public void tryToGetRequestByMessageId(String messageId) {
+
+        if(Objects.equals(messageId, "messageIdNotFound")) {
+            this.response = ExternalChannelUtils.getRequestByMessageId(ExternalChannelUtils.encodeMessageId(clientId,
+                    ExternalChannelUtils.generateRandomRequestId()));
+
+        } else {
+            this.response = ExternalChannelUtils.getRequestByMessageId(getValueIfTagged(messageId));
+        }
+        this.sRC = String.valueOf(response.getStatusCode());
+    }
+
+    @When("try to get attachment with a {string}")
+    public void tryToGetAttachmentWithFileKey(String fileKey) {
+        fileKey = getValueIfTagged(fileKey);
+        this.response = ExternalChannelUtils.getAttachmentsByFileKey(fileKey, clientId, apiKey);
+        this.sRC = String.valueOf(response.getStatusCode());
+    }
+
+    @When("try to get result")
+    public void getResultRequest() {
+        Response response = switch (channel.toUpperCase()) {
+            case "SMS" -> ExternalChannelUtils.getSmsByRequestId(clientId, requestId);
+            case "EMAIL" -> ExternalChannelUtils.getEmailByRequestId(clientId, requestId);
+            case "PEC" -> ExternalChannelUtils.getPecByRequestId(clientId, requestId);
+            case "PAPER" -> ExternalChannelUtils.getPaperByRequestId(clientId, requestId);
+            default -> throw new IllegalArgumentException();
+        };
+        log.info(String.valueOf(response.getStatusCode()));
+        log.info(channel);
+        this.sRC = String.valueOf(response.getStatusCode());
+    }
+
+    @When("try to get result with a {string}")
+    public void getResultRequestByRequestId(String requestId) {
+        Response response = switch (channel.toUpperCase()) {
+            case "SMS" -> ExternalChannelUtils.getSmsByRequestId(clientId, getValueIfTagged(requestId));
+            case "EMAIL" -> ExternalChannelUtils.getEmailByRequestId(clientId, getValueIfTagged(requestId));
+            case "PEC" -> ExternalChannelUtils.getPecByRequestId(clientId, getValueIfTagged(requestId));
+            case "PAPER" -> ExternalChannelUtils.getPaperByRequestId(clientId, getValueIfTagged(requestId));
+            default -> throw new IllegalArgumentException();
+        };
+        log.info(String.valueOf(response.getStatusCode()));
+        log.info(channel);
+        this.sRC = String.valueOf(response.getStatusCode());
+    }
+
+
+    //AND
+    @And("I prepare the following paper progress status event attachments:")
+    public void iPrepareTheFollowingPaperProgressStatusEventAttachments(DataTable dataTable) {
+        List<Map<String, String>> attachmentsList = dataTable.asMaps();
+        attachmentsList.forEach(map -> {
+            ConsolidatoreIngressPaperProgressStatusEventAttachments attachment = new ConsolidatoreIngressPaperProgressStatusEventAttachments()
+                    .uri(map.get("attachmentUri"))
+                    .sha256(RandomStringUtils.randomAlphanumeric(45))
+                    .documentType(map.get("attachmentDocumentType"))
+                    .id("id")
+                    .date(OffsetDateTime.now())
+                    .documentId("documentId");
+            this.paperProgressStatusEventAttachments.add(attachment);
+        });
+    }
 
     @And("I upload the following attachments:")
     public void uploadAttachments(DataTable dataTable) throws NoSuchAlgorithmException, IOException {
@@ -217,11 +268,59 @@ public class EcStepDefinitions {
         });
     }
 
+    @And("check if paper progress status requests have been accepted")
+    public void checkIfPaperProgressStatusRequestsHaveBeenAccepted() {
+        Assertions.assertEquals(200, sendPaperProgressStatusRespCode);
+        Assertions.assertEquals("200.00", sendPaperProgressStatusResultCode);
+        Assertions.assertEquals("Accepted", sendPaperProgressStatusResultDescription);
+        Assertions.assertNull(sendPaperProgressStatusErrorList);
+        Assertions.assertTrue(queuePoller.checkMessageAvailability(requestId, new ArrayList<>(statusesToCheck)));
+    }
+
+    @And("waiting for scheduling")
+    public void waitingForScheduling() {
+        LocalDateTime now = LocalDateTime.now();
+        int newMinute = (now.getMinute() / 5 + 1) * 5 + 1;
+        LocalDateTime nextSchedule;
+        if (newMinute < 60) {
+            nextSchedule = now.withMinute((now.getMinute() / 5 + 1) * 5).withSecond(0).withNano(0);
+        } else {
+            nextSchedule = now.plusHours(1).withMinute(0).withSecond(0).withNano(0);
+        }
+        Duration duration = Duration.between(now, nextSchedule);
+        try {
+            Thread.sleep(duration.toMillis() + 5000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    //THEN
+    @Then("check if the message has been sent")
+    public void checkStatusMessage() {
+        log.info("requestId {}", requestId);
+        boolean checked = switch (this.channel.toUpperCase()) {
+            case "SMS" ->
+                    queuePoller.checkMessageAvailability(requestId, List.of(CourtesyMessageProgressEvent.EventCodeEnum.S003.getValue()));
+            case "EMAIL" ->
+                    queuePoller.checkMessageAvailability(requestId, List.of(CourtesyMessageProgressEvent.EventCodeEnum.M003.getValue()));
+            case "PEC" ->
+                    queuePoller.checkMessageAvailability(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.C000.getValue()));
+            case "PAPER" -> queuePoller.checkMessageAvailability(requestId, List.of("P000"));
+            default ->
+                    throw new IllegalArgumentException(String.format("The given channel '%s' is not valid.", this.channel));
+        };
+        Assertions.assertTrue(checked);
+    }
+
+
     @Then("I send the following paper progress status requests:")
     public void sendPaperProgressStatusRequests(DataTable dataTable) {
         {
+            log.info("requestId {}", this.requestId);
             if (testStartTime == null) {
-                testStartTime = OffsetDateTime.now();
+                testStartTime = OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS);
             }
             List<ConsolidatoreIngressPaperProgressStatusEvent> events = new ArrayList<>();
             List<Map<String, String>> eventsList = dataTable.asMaps();
@@ -261,38 +360,12 @@ public class EcStepDefinitions {
                 events.add(event);
             });
             Response response = ExternalChannelUtils.sendRequestConsolidatore(this.clientId, this.apiKey, events);
+            log.info("response {}", response.getBody().asString());
             OperationResultCodeResponse operationResultCodeResponse = response.as(OperationResultCodeResponse.class);
             sendPaperProgressStatusRespCode = response.getStatusCode();
             sendPaperProgressStatusResultCode = operationResultCodeResponse.getResultCode();
             sendPaperProgressStatusResultDescription = operationResultCodeResponse.getResultDescription();
             sendPaperProgressStatusErrorList = operationResultCodeResponse.getErrorList();
-        }
-    }
-
-    @And("check if paper progress status requests have been accepted")
-    public void checkIfPaperProgressStatusRequestsHaveBeenAccepted() {
-        Assertions.assertEquals(200, sendPaperProgressStatusRespCode);
-        Assertions.assertEquals("200.00", sendPaperProgressStatusResultCode);
-        Assertions.assertEquals("Accepted", sendPaperProgressStatusResultDescription);
-        Assertions.assertNull(sendPaperProgressStatusErrorList);
-        Assertions.assertTrue(queuePoller.checkMessageAvailability(requestId, new ArrayList<>(statusesToCheck)));
-    }
-
-    @And("waiting for scheduling")
-    public void waitingForScheduling() {
-        LocalDateTime now = LocalDateTime.now();
-        int newMinute = (now.getMinute() / 5 + 1) * 5 + 1;
-        LocalDateTime nextSchedule;
-        if (newMinute < 60) {
-            nextSchedule = now.withMinute((now.getMinute() / 5 + 1) * 5).withSecond(0).withNano(0);
-        } else {
-            nextSchedule = now.plusHours(1).withMinute(0).withSecond(0).withNano(0);
-        }
-        Duration duration = Duration.between(now, nextSchedule);
-        try {
-            Thread.sleep(duration.toMillis() + 5000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -317,30 +390,18 @@ public class EcStepDefinitions {
         log.info("Error list: " + sendPaperProgressStatusErrorList);
     }
 
-    @Given("a {string} to send request")
-    public void aToSendRequest(String clientId) {
-        this.clientId = getValueIfTagged(clientId);
-        log.info(this.clientId);
-    }
-
-    @When("try to get client configurations")
-    public void tryToGetClientConfigurations() {
-        this.response = ExternalChannelUtils.getClient(this.clientId);
-        this.sRC = String.valueOf(response.getStatusCode());
-        log.info("Response status code {}", sRC);
-    }
-
-    @When("try to get all client configurations")
-    public void tryToGetAllClientConfigurations() {
-        this.response = ExternalChannelUtils.getClient(this.clientId);
-        this.sRC = String.valueOf(response.getStatusCode());
-        log.info("status: {}", response.getStatusCode());
-    }
 
     @Then("i get response {string}")
     public void iGetResponse(String sRC) {
-        Assertions.assertEquals(this.sRC, sRC);
+        Assertions.assertEquals(sRC, this.sRC);
     }
+
+    @Then("i get an error code {string}")
+    public void getError(String errorCode) {
+        log.info("src {}", errorCode);
+        Assertions.assertEquals(errorCode, String.valueOf(response.getStatusCode()));
+    }
+
 
 
     @AfterAll
@@ -349,5 +410,18 @@ public class EcStepDefinitions {
     }
 
 
-
+    @When("try to send digital message to {string}")
+    public void tryToSendDigitalMessageTo(String receiver) {
+        this.requestId = ExternalChannelUtils.generateRandomRequestId();
+        this.receiver = getValueIfTagged(receiver);
+        log.info("receiver address {}", this.receiver);
+        //switch sul canale
+        Response response = switch (channel.toUpperCase()) {
+            case "SMS" -> this.response = ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, this.receiver);
+            case "EMAIL" -> this.response = ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, this.receiver);
+            case "PEC" ->
+                   this.response = ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList, this.receiver);
+            default -> throw new IllegalArgumentException();
+        };
+    }
 }
