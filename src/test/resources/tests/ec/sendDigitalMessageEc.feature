@@ -11,7 +11,7 @@ Feature: Send Digital Message Ec
       | @clientId-delivery | @channel_sms | @sms.receiver.digital.address |
 
 
-  @PnEcSendMessage @invioPEC
+  @PnEcSendMessage @invioPEC @sendPec
   Scenario Outline: Invio pec e verifica della pubblicazione del messaggio nella coda di debug
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message to "<receiver>"
@@ -20,7 +20,7 @@ Feature: Send Digital Message Ec
       | clientId           | channel      | receiver                      |
       | @clientId-delivery | @channel_pec | @pec.receiver.digital.address |
 
-  @PnEcSendMessage @invioEMAIL @pec
+  @PnEcSendMessage @invioEMAIL
   Scenario Outline: Invio email e verifica della pubblicazione del messaggio nella coda di debug
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message to "<receiver>"
@@ -58,7 +58,14 @@ Feature: Send Digital Message Ec
 
 # --- TEST KO --- #
 
-
+  @PnEcSendMessage @invioSMS @invioSMS_ko
+  Scenario Outline: Invio sms e verifica della pubblicazione del messaggio nella coda di debug
+    Given a "<clientId>" and "<channel>" to send on
+    When try to send digital message to "<receiver>"
+    Then i get an error code "<rc>"
+    Examples:
+      | clientId          | channel      | receiver                      | rc  |
+      | @clientId-delivery | @channel_sms | @sms.receiver.digital.address | 400 |
 
   @PnEcSendMessage @invioPEC @complete_pec_ko
   Scenario Outline: Invio pec con allegati con una pec non valida e verifica della pubblicazione del messaggio di errore nella coda di debug
@@ -69,7 +76,7 @@ Feature: Send Digital Message Ec
     When try to send a digital message to "<receiver>"
     Then check if the message has event code error "<rc>"
     Examples:
-      | clientId           | channel      | receiver      | rc |
-      | @clientId-delivery | @channel_pec | .mario.ottone@arubapec.it | C011 |
-      | @clientId-delivery | @channel_pec | rossi.mario@gmail.it | C009 |
+      | clientId           | channel      | receiver                 | rc   |
+      | @clientId-delivery | @channel_pec | .mario.rossi@arubapec.it | C011 |
+      | @clientId-delivery | @channel_pec | rossi.mario@gmail.it     | C009 |
 

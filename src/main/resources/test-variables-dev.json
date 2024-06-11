@@ -3,6 +3,7 @@
   "apiKey_test": "pn-test_api_key",
   "clientId-unknown": "pn-unknown",
   "clientId-delivery": "pn-delivery",
+  "clientId-delivery-push": "pn-delivery-push",
   "clientId-cons": "pn-cons-000",
   "clientId-test": "pn-test",
   "clientId-pn-cn": "pn-cn",
@@ -15,8 +16,11 @@
   "channel_email": "EMAIL",
   "channel_pec": "PEC",
   "channel_paper": "PAPER",
-  "pec.receiver.digital.address": "rossi.m@arubapec.it",
-  "email.receiver.digital.address": "rossi.m@arubapec.it",
+  "pec.receiver.digital.address": "test.m@arubapec.it",
+  "email.receiver.digital.address": "test.m@arubapec.it",
   "sms.receiver.digital.address" : "+390000000000",
-  "paper.receiver.digital.address" : "Via Roma 1"
+  "paper.receiver.digital.address" : "Via Roma 1",
+  "requestId": "PnEcMsCucumberTest-eZky9I5g4XvnCuhloiYngzeQ1QTukI",
+  "messageId" : "cG4tZGVsaXZlcnk=~UEVDUmVxdWVzdC11aWVkcGRqeGRoLTEwMTU3NTc5OTM=@pagopa.it",
+  "fileKey" : "PN_LEGAL_FACTS-cabb314580c74d0bbe36f04b0ceb0d73.pdf"
 }
