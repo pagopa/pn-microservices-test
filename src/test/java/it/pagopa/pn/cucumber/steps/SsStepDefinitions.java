@@ -68,6 +68,12 @@ public class SsStepDefinitions {
         }
     }
 
+    @Given("{string} authenticated by {string}")
+    public void clientAuthentication(String sPNClient, String sPNClient_AK) {
+        this.sPNClient = parseIfTagged(sPNClient);
+        this.sPNClient_AK = parseIfTagged(sPNClient_AK);
+    }
+
     @Given("{string} authenticated by {string} try to upload a document of type {string} with content type {string} using {string}")
     public void a_file_to_upload(String sPNClient, String sPNClient_AK, String sDocumentType, String sMimeType, String sFileName) throws NoSuchAlgorithmException, IOException {
 
@@ -244,7 +250,7 @@ public class SsStepDefinitions {
 
     @Then("i found in S3")
     public void i_found_in_s3() {
-        Assertions.assertEquals(200, SafeStorageUtils.getPresignedURLDownload(sPNClient, sPNClient_AK, sKey,false).getStatusCode());// Ok
+        Assertions.assertEquals(200, SafeStorageUtils.getPresignedURLDownload(sPNClient, sPNClient_AK, sKey, false).getStatusCode());// Ok
         statusCode = 200;
     }
 
@@ -320,21 +326,23 @@ public class SsStepDefinitions {
 
     @When("request a presigned url to download the file")
     public void requestAPresignedUrlToDownloadTheFile() {
-        Response response = SafeStorageUtils.getPresignedURLDownload(sPNClient,sPNClient_AK,sKey,metadataOnly);
-        Assertions.assertEquals(200, response.getStatusCode());
-
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            FileDownloadResponse oFDR = objectMapper.readValue(response.getBody().asString(), FileDownloadResponse.class);
-            this.fileDownloadResponse= oFDR;
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+        Response response = SafeStorageUtils.getPresignedURLDownload(sPNClient, sPNClient_AK, sKey, metadataOnly);
+        this.statusCode = response.getStatusCode();
+        if (statusCode == 200) {
+            try {
+                ObjectMapper objectMapper = new ObjectMapper();
+                FileDownloadResponse oFDR = objectMapper.readValue(response.getBody().asString(), FileDownloadResponse.class);
+                this.fileDownloadResponse = oFDR;
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
     @Then("i get that presigned url")
     public void iGetThatPresignedUrl() {
         log.debug("fileDownloadResponse {}", fileDownloadResponse);
+        Assertions.assertEquals(200, statusCode);
         Assertions.assertNotNull(fileDownloadResponse);
         Assertions.assertNotNull(fileDownloadResponse.getDownload());
     }
@@ -342,6 +350,7 @@ public class SsStepDefinitions {
     @Then("i get file metadata")
     public void iGetFileMetadata() {
         log.debug("fileDownloadResponse {}", fileDownloadResponse);
+        Assertions.assertEquals(200, statusCode);
         Assertions.assertNotNull(fileDownloadResponse);
         Assertions.assertNull(fileDownloadResponse.getDownload());
     }
@@ -349,6 +358,41 @@ public class SsStepDefinitions {
     @Given("a document with fileKey {string}")
     public void aFileKey(String fileKey) {
         this.sKey = fileKey;
+    }
+
+    @When("I get documents configs")
+    public void iGetDocumentsConfigs() {
+        Response response = SafeStorageUtils.getDocumentsConfigs(sPNClient, sPNClient_AK);
+        this.statusCode = response.getStatusCode();
+        if (statusCode == 200) {
+            try {
+                ObjectMapper objectMapper = new ObjectMapper();
+                DocumentTypesConfigurations documentTypesConfigurations = objectMapper.readValue(response.getBody().asString(), DocumentTypesConfigurations.class);
+                log.info("DocumentTypesConfigurations {}", documentTypesConfigurations);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @When("I get current client config")
+    public void iGetCurrentClientConfig() {
+        Response response = SafeStorageUtils.getCurrentClientConfig(sPNClient, sPNClient_AK);
+        this.statusCode = response.getStatusCode();
+        if (statusCode == 200) {
+            try {
+                ObjectMapper objectMapper = new ObjectMapper();
+                UserConfiguration userConfiguration = objectMapper.readValue(response.getBody().asString(), UserConfiguration.class);
+                log.info("UserConfiguration: {}", userConfiguration);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @Then("I get {string} statusCode")
+    public void iGetStatusCode(String statusCode) {
+        Assertions.assertEquals(Integer.parseInt(statusCode), this.statusCode);
     }
 
 
@@ -360,9 +404,4 @@ public class SsStepDefinitions {
     private String parseIfTagged(String value) {
         return TestVariablesConfiguration.getInstance().getValueIfTagged(value);
     }
-
-
-
-
-
 }
