@@ -23,6 +23,19 @@ public class RequestTemplate {
         digitalCourtesySmsRequestFactory.channel(DigitalCourtesySmsRequest.ChannelEnum.SMS);
         return digitalCourtesySmsRequestFactory;
     }
+    public static DigitalCourtesySmsRequest createSmsRequestErr(String requestId, String receiver){
+        String defaultStringInit = "string";
+
+        DigitalCourtesySmsRequest digitalCourtesySmsRequestFactory= new DigitalCourtesySmsRequest();
+        digitalCourtesySmsRequestFactory.setRequestId(requestId);
+        digitalCourtesySmsRequestFactory.eventType(defaultStringInit);
+        digitalCourtesySmsRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now().plusSeconds(60)));
+        digitalCourtesySmsRequestFactory.setQos(DigitalCourtesySmsRequest.QosEnum.INTERACTIVE);
+        digitalCourtesySmsRequestFactory.setReceiverDigitalAddress(receiver);
+        digitalCourtesySmsRequestFactory.setMessageText(defaultStringInit);
+        digitalCourtesySmsRequestFactory.channel(DigitalCourtesySmsRequest.ChannelEnum.SMS);
+        return digitalCourtesySmsRequestFactory;
+    }
 
     //EMAIL
     public static DigitalCourtesyMailRequest createMailRequest(String requestId, String receiver) {
@@ -51,6 +64,25 @@ public class RequestTemplate {
         digitalNotificationRequestFactory.setRequestId(requestId);
         digitalNotificationRequestFactory.eventType(defaultStringInit);
         digitalNotificationRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now()));
+        digitalNotificationRequestFactory.setQos(DigitalNotificationRequest.QosEnum.INTERACTIVE);
+        digitalNotificationRequestFactory.setSenderDigitalAddress(System.getProperty("pec.sender.digital.address"));
+        digitalNotificationRequestFactory.setReceiverDigitalAddress(receiver);
+        digitalNotificationRequestFactory.setMessageText(defaultStringInit);
+        digitalNotificationRequestFactory.channel(DigitalNotificationRequest.ChannelEnum.PEC);
+        digitalNotificationRequestFactory.setSubjectText("test");
+        digitalNotificationRequestFactory.setTags(null);
+        digitalNotificationRequestFactory.setMessageContentType(DigitalNotificationRequest.MessageContentTypeEnum.PLAIN);
+        return digitalNotificationRequestFactory;
+    }
+
+    public static DigitalNotificationRequest createDigitalNotificationRequestErr(String requestId, String receiver){
+        String defaultStringInit = "string";
+
+
+        DigitalNotificationRequest digitalNotificationRequestFactory = new DigitalNotificationRequest();
+        digitalNotificationRequestFactory.setRequestId(requestId);
+        digitalNotificationRequestFactory.eventType(defaultStringInit);
+        digitalNotificationRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now().plusSeconds(60)));
         digitalNotificationRequestFactory.setQos(DigitalNotificationRequest.QosEnum.INTERACTIVE);
         digitalNotificationRequestFactory.setSenderDigitalAddress(System.getProperty("pec.sender.digital.address"));
         digitalNotificationRequestFactory.setReceiverDigitalAddress(receiver);

@@ -8,6 +8,7 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.response.Response;
 import it.pagopa.pn.configuration.Config;
+import it.pagopa.pn.cucumber.RequestTemplate;
 import it.pagopa.pn.cucumber.dto.pojo.Checksum;
 import it.pagopa.pn.cucumber.dto.pojo.PnAttachment;
 import it.pagopa.pn.cucumber.poller.PnEcQueuePoller;
@@ -99,6 +100,7 @@ public class EcStepDefinitions {
         this.requestId = ExternalChannelUtils.generateRandomRequestId();
         this.receiver = getValueIfTagged(receiver);
         log.info("receiver address {}", this.receiver);
+        log.info("-> requestId {}", this.requestId);
         //switch sul canale
         Response response = switch (channel.toUpperCase()) {
             case "SMS" -> ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, this.receiver);
@@ -183,6 +185,54 @@ public class EcStepDefinitions {
         };
         log.info(String.valueOf(response.getStatusCode()));
         log.info(channel);
+        this.sRC = String.valueOf(response.getStatusCode());
+    }
+
+    @When("try to send digital message to {string} with {string}")
+    public void tryToSendDigitalMessageTo(String receiver, String requestId) {
+        this.requestId = getValueIfTagged(requestId);
+        this.receiver = getValueIfTagged(receiver);
+        log.info("receiver address {}", this.receiver);
+        //switch sul canale
+        Response response = switch (channel.toUpperCase()) {
+            case "SMS" -> this.response = ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, this.receiver);
+            case "EMAIL" -> this.response = ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, this.receiver);
+            case "PEC" ->
+                    this.response = ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList, this.receiver);
+            default -> throw new IllegalArgumentException();
+        };
+        this.sRC = String.valueOf(response.getStatusCode());
+    }
+
+    @When("try to send a digital message to {string} with same requestId")
+    public void tryToSendADigitalMessageToWithSameRequestId(String receiver) {
+        this.receiver = getValueIfTagged(receiver);
+        log.info("--> request {}", this.requestId);
+        Response response = switch (channel.toUpperCase()) {
+            case "SMS" -> this.response = ExternalChannelUtils.sendSmsCourtesySimpleMessageErr(clientId, requestId, this.receiver);
+            case "EMAIL" -> this.response = ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, this.receiver);
+            case "PEC" ->
+                    this.response = ExternalChannelUtils.sendDigitalNotificationErr(clientId, requestId, attachmentsList, this.receiver);
+            default -> throw new IllegalArgumentException();
+
+        };
+        this.sRC = String.valueOf(response.getStatusCode());
+        log.info("--> sRC {}", this.sRC);
+
+    }
+
+    @When("try to send a digital message to {string} with no authorization")
+    public void tryToSendADigitalMessageToWithNoAuthorization(String receiver) {
+        this.receiver = getValueIfTagged(receiver);
+        this.requestId = ExternalChannelUtils.generateRandomRequestId();
+        Response response = switch (channel.toUpperCase()) {
+            case "SMS" -> this.response = ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, receiver);
+            case "EMAIL" -> this.response = ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, receiver);
+            case "PEC" ->
+                    this.response = ExternalChannelUtils.sendDigitalNotificationErr(clientId, requestId, attachmentsList, receiver);
+            default -> throw new IllegalArgumentException();
+
+        };
         this.sRC = String.valueOf(response.getStatusCode());
     }
 
@@ -410,18 +460,4 @@ public class EcStepDefinitions {
     }
 
 
-    @When("try to send digital message to {string}")
-    public void tryToSendDigitalMessageTo(String receiver) {
-        this.requestId = ExternalChannelUtils.generateRandomRequestId();
-        this.receiver = getValueIfTagged(receiver);
-        log.info("receiver address {}", this.receiver);
-        //switch sul canale
-        Response response = switch (channel.toUpperCase()) {
-            case "SMS" -> this.response = ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, this.receiver);
-            case "EMAIL" -> this.response = ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, this.receiver);
-            case "PEC" ->
-                   this.response = ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList, this.receiver);
-            default -> throw new IllegalArgumentException();
-        };
-    }
 }
