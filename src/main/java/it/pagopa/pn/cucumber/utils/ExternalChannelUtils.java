@@ -47,6 +47,19 @@ public class ExternalChannelUtils extends RequestTemplate {
 
         return response;
     }
+    public static Response sendSmsCourtesySimpleMessageErr(String clientId, String requestId, String receiver) {
+        log.info("requestId {}", requestId);
+        RequestSpecification oReq = stdReq()
+                .header("x-pagopa-extch-cx-id", clientId)
+                .pathParam("requestIdx", requestId);
+        DigitalCourtesySmsRequest digitalCourtesySmsRequest = createSmsRequestErr(requestId, receiver);
+    log.info(digitalCourtesySmsRequest.getRequestId());
+        oReq.body(digitalCourtesySmsRequest);
+         Response response = CommonUtils.myPut(oReq, RequestEndpoint.SMS_ENDPOINT);
+         log.info(oReq.get().asString());
+
+        return response;
+    }
 
     // EMAIL
     public static Response sendEmailCourtesySimpleMessage(String clientId, String requestId, String receiver) {
@@ -66,6 +79,17 @@ public class ExternalChannelUtils extends RequestTemplate {
                 .header("x-pagopa-extch-cx-id", clientId)
                 .pathParam("requestIdx", requestId);
         DigitalNotificationRequest digitalNotificationRequest = createDigitalNotificationRequest(requestId, receiver);
+        List<String> attachmentsUri = attachments.stream().map(PnAttachment::getUri).toList();
+        digitalNotificationRequest.setAttachmentUrls(attachmentsUri);
+
+        oReq.body(digitalNotificationRequest);
+        return CommonUtils.myPut(oReq,RequestEndpoint.PEC_ENDPOINT);
+    }
+    public static Response sendDigitalNotificationErr(String clientId, String requestId, List<PnAttachment> attachments, String receiver) {
+        RequestSpecification oReq = stdReq()
+                .header("x-pagopa-extch-cx-id", clientId)
+                .pathParam("requestIdx", requestId);
+        DigitalNotificationRequest digitalNotificationRequest = createDigitalNotificationRequestErr(requestId, receiver);
         List<String> attachmentsUri = attachments.stream().map(PnAttachment::getUri).toList();
         digitalNotificationRequest.setAttachmentUrls(attachmentsUri);
 
