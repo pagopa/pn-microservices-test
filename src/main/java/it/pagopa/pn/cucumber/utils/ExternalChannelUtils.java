@@ -22,6 +22,9 @@ import java.util.List;
 public class ExternalChannelUtils extends RequestTemplate {
     private static final String SEPARATORE = "~";
     public static final String DOMAIN = "@pagopa.it";
+    private static final String BASE_REQUEST_ID = "PnEcMsCucumberTest";
+    private static final int TARGET_STRING_LENGTH = 30;
+
 
     protected static RequestSpecification stdReq() {
         return RestAssured.given()
@@ -79,6 +82,7 @@ public class ExternalChannelUtils extends RequestTemplate {
                 .header("x-pagopa-extch-cx-id", clientId)
                 .pathParam("requestIdx", requestId);
         DigitalNotificationRequest digitalNotificationRequest = createDigitalNotificationRequest(requestId, receiver);
+
         List<String> attachmentsUri = attachments.stream().map(PnAttachment::getUri).toList();
         digitalNotificationRequest.setAttachmentUrls(attachmentsUri);
 
@@ -197,13 +201,11 @@ public class ExternalChannelUtils extends RequestTemplate {
         return CommonUtils.myGet(oReq, RequestEndpoint.GET_ATTACHMENT);
     }
 
-    public static String generateRandomRequestId() {
-        int targetStringLength = 30;
-        String requestId = "PnEcMsCucumberTest";
-        String generatedString = requestId.concat("-").concat(RandomStringUtils.randomAlphanumeric(targetStringLength));
-
-        log.info("requestId {} ", generatedString);
-        return generatedString;
+    public static String generateRandomRequestId(String clientId) {
+        String randomAlphanumeric = RandomStringUtils.randomAlphanumeric(TARGET_STRING_LENGTH);
+        String requestId = String.format("%s%s%s-%s", clientId, SEPARATORE, BASE_REQUEST_ID, randomAlphanumeric);
+        log.info("requestId {} ", requestId);
+        return requestId;
     }
 
     public static String encodeMessageId(String clientId, String requestId) {

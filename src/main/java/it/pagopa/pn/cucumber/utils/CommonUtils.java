@@ -54,7 +54,6 @@ public class CommonUtils {
 
 	@SneakyThrows(UnsupportedEncodingException.class)
 	public static Response uploadFile(String sURL, File oFile, String sSHA256, String sMD5, String sContentType, String sSecret, Checksum eCS) {
-		log.debug("In upload file");
 
 		log.debug("uploadFile(\"{}\", \"{}\", \"{}\", \"{}\", \"{}\", "+eCS.name()+")", sURL, sSHA256, sMD5, sContentType, sSecret);
 		EncoderConfig encoderConfig = new EncoderConfig();
@@ -84,7 +83,7 @@ public class CommonUtils {
 		String sMyURL = URLDecoder.decode(sURL, "utf-8");
 		Response oResp = oReq
 			.put(sMyURL);
-		log.debug("In upload file oResp --> " + oResp.getBody().asString());
+		//log.debug("In upload file oResp --> " + oResp.getBody().asString());
 
 		return oResp;
 	}
@@ -93,25 +92,22 @@ public class CommonUtils {
 		oReqSpec.given().baseUri(getBaseURL()).basePath(sURI);
 		QueryableRequestSpecification queryRequest = SpecificationQuerier.query(oReqSpec);
 		log.debug("GET {}", queryRequest.getURI());
-		Response oResp = oReqSpec.get();
-		log.debug("RC: {}", oResp.getStatusCode());
-		return oResp;
+        return oReqSpec.get();
 	}
 	
 	protected static Response myPost(RequestSpecification oReqSpec, String sURI) {
 
 		oReqSpec.given().baseUri(getBaseURL()).basePath(sURI);
 		QueryableRequestSpecification queryRequest = SpecificationQuerier.query(oReqSpec);
-		log.debug("POST ", queryRequest.getURI());
+		log.debug("POST {}", queryRequest.getURI());
 		log.debug(queryRequest.getBody().toString());
 		return oReqSpec.post();
 	}
 
 	protected static Response myPut(RequestSpecification oReqSpec, String sURI) {
 		oReqSpec.given().baseUri(getBaseURL()).basePath(sURI);
-		log.debug("base url request myPost: {}", oReqSpec.given().baseUri(getBaseURL()).basePath(sURI));
 		QueryableRequestSpecification queryRequest = SpecificationQuerier.query(oReqSpec);
-		log.debug("POST {}", queryRequest.getURI());
+		log.debug("PUT {}", queryRequest.getURI());
 		return oReqSpec.put();
 	}
 
