@@ -69,8 +69,9 @@ public class EcStepDefinitions {
     public void messageToSend(String clientId, String channel) {
         this.clientId = getValueIfTagged(clientId);
         this.channel = getValueIfTagged(channel);
-        log.debug("CHANNEL: " + channel.toUpperCase());
-        log.debug("CLIENTID: " + clientId);
+        log.info("ClientId {}", this.clientId);
+        log.debug("Channel {}", this.channel);
+
     }
 
     @Given("{string} authenticated by {string}")
@@ -82,25 +83,23 @@ public class EcStepDefinitions {
     @Given("a {string} to send request")
     public void aClientToSendRequest(String clientId) {
         this.clientId = getValueIfTagged(clientId);
-        log.info(this.clientId);
+        log.info("ClientId {}",this.clientId);
     }
 
 
     //WHEN
     @When("try to send a paper message")
     public void tryToSendAPaperMessage() {
-        this.requestId = ExternalChannelUtils.generateRandomRequestId();
-        String receiver = System.getProperty("paper.receiver.digital.address");
+        this.requestId = ExternalChannelUtils.generateRandomRequestId(clientId);
         Response response = ExternalChannelUtils.sendPaperMessage(clientId, requestId, attachmentsList);
         this.sendPaperMessageStatusCode = response.getStatusCode();
     }
 
     @When("try to send a digital message to {string}")
     public void presaInCarico(String receiver) {
-        this.requestId = ExternalChannelUtils.generateRandomRequestId();
+        this.requestId = ExternalChannelUtils.generateRandomRequestId(clientId);
         this.receiver = getValueIfTagged(receiver);
         log.info("receiver address {}", this.receiver);
-        log.info("-> requestId {}", this.requestId);
         //switch sul canale
         Response response = switch (channel.toUpperCase()) {
             case "SMS" -> ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, this.receiver);
@@ -109,14 +108,12 @@ public class EcStepDefinitions {
                     ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList, this.receiver);
             default -> throw new IllegalArgumentException();
         };
-        log.info(String.valueOf(response.getStatusCode()));
-        log.info(channel);
         assertEquals(200, response.getStatusCode());
     }
 
     @When("try to send a paper message to {string}")
     public void tryToSendAPaperMessage(String receiver) {
-        this.requestId = ExternalChannelUtils.generateRandomRequestId();
+        this.requestId = ExternalChannelUtils.generateRandomRequestId(clientId);
         this.receiver = getValueIfTagged(receiver);
         Response response = ExternalChannelUtils.sendPaperMessage(clientId, requestId, attachmentsList);
         this.sendPaperMessageStatusCode = response.getStatusCode();
@@ -145,7 +142,7 @@ public class EcStepDefinitions {
 
         if(Objects.equals(messageId, "messageIdNotFound")) {
             this.response = ExternalChannelUtils.getRequestByMessageId(ExternalChannelUtils.encodeMessageId(clientId,
-                    ExternalChannelUtils.generateRandomRequestId()));
+                    ExternalChannelUtils.generateRandomRequestId(clientId)));
 
         } else {
             this.response = ExternalChannelUtils.getRequestByMessageId(getValueIfTagged(messageId));
@@ -169,8 +166,7 @@ public class EcStepDefinitions {
             case "PAPER" -> ExternalChannelUtils.getPaperByRequestId(clientId, requestId);
             default -> throw new IllegalArgumentException();
         };
-        log.info(String.valueOf(response.getStatusCode()));
-        log.info(channel);
+        log.info("Channel {}",channel);
         this.sRC = String.valueOf(response.getStatusCode());
     }
 
@@ -183,8 +179,7 @@ public class EcStepDefinitions {
             case "PAPER" -> ExternalChannelUtils.getPaperByRequestId(clientId, getValueIfTagged(requestId));
             default -> throw new IllegalArgumentException();
         };
-        log.info(String.valueOf(response.getStatusCode()));
-        log.info(channel);
+        log.info("Channel {}",channel);
         this.sRC = String.valueOf(response.getStatusCode());
     }
 
@@ -207,7 +202,6 @@ public class EcStepDefinitions {
     @When("try to send a digital message to {string} with same requestId")
     public void tryToSendADigitalMessageToWithSameRequestId(String receiver) {
         this.receiver = getValueIfTagged(receiver);
-        log.info("--> request {}", this.requestId);
         Response response = switch (channel.toUpperCase()) {
             case "SMS" -> this.response = ExternalChannelUtils.sendSmsCourtesySimpleMessageErr(clientId, requestId, this.receiver);
             case "EMAIL" -> this.response = ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, this.receiver);
@@ -217,14 +211,14 @@ public class EcStepDefinitions {
 
         };
         this.sRC = String.valueOf(response.getStatusCode());
-        log.info("--> sRC {}", this.sRC);
+        log.info("sRC {}", this.sRC);
 
     }
 
     @When("try to send a digital message to {string} with no authorization")
     public void tryToSendADigitalMessageToWithNoAuthorization(String receiver) {
         this.receiver = getValueIfTagged(receiver);
-        this.requestId = ExternalChannelUtils.generateRandomRequestId();
+        this.requestId = ExternalChannelUtils.generateRandomRequestId(clientId);
         Response response = switch (channel.toUpperCase()) {
             case "SMS" -> this.response = ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, receiver);
             case "EMAIL" -> this.response = ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, receiver);
@@ -349,7 +343,6 @@ public class EcStepDefinitions {
     //THEN
     @Then("check if the message has been sent")
     public void checkStatusMessage() {
-        log.info("requestId {}", requestId);
         boolean checked = switch (this.channel.toUpperCase()) {
             case "SMS" ->
                     queuePoller.checkMessageAvailability(requestId, List.of(CourtesyMessageProgressEvent.EventCodeEnum.S003.getValue()));
@@ -410,7 +403,6 @@ public class EcStepDefinitions {
                 events.add(event);
             });
             Response response = ExternalChannelUtils.sendRequestConsolidatore(this.clientId, this.apiKey, events);
-            log.info("response {}", response.getBody().asString());
             OperationResultCodeResponse operationResultCodeResponse = response.as(OperationResultCodeResponse.class);
             sendPaperProgressStatusRespCode = response.getStatusCode();
             sendPaperProgressStatusResultCode = operationResultCodeResponse.getResultCode();
@@ -448,7 +440,7 @@ public class EcStepDefinitions {
 
     @Then("i get an error code {string}")
     public void getError(String errorCode) {
-        log.info("src {}", errorCode);
+        log.info("Error code {}", errorCode);
         Assertions.assertEquals(errorCode, String.valueOf(response.getStatusCode()));
     }
 

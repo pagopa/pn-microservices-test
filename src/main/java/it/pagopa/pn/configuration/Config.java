@@ -54,7 +54,7 @@ public class Config {
                 System.exit(1);
             }
             Map<String, String> properties = jsonStreamToMap(fileStream);
-            properties.forEach(log::debug);
+           // properties.forEach(log::debug);
             loadPropertiesIntoSystem(properties);
         } catch (IOException ex) {
             log.error("Errore nel caricamento delle properties JSON -> " + ex.getMessage());

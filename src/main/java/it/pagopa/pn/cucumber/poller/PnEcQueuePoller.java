@@ -59,7 +59,7 @@ public class PnEcQueuePoller extends QueuePoller {
                     documentStatusList.add(status);
                     this.messageMap.put(requestId, documentStatusList);
                 }
-                log.info("messageMap poll{} ", this.messageMap);
+              //  log.debug("messageMap poll{} ", this.messageMap);
 
             }
         } catch (JMSException e) {
@@ -77,8 +77,8 @@ public class PnEcQueuePoller extends QueuePoller {
 
         while (Instant.now().isBefore(timeLimit)) {
             statusesFound = this.messageMap.get(requestId);
-            log.info("this.messageMap {} ", this.messageMap);
-            log.info("statusFound: {} ", statusesFound);
+           // log.debug("this.messageMap {} ", this.messageMap);
+          //  log.debug("statusFound: {} ", statusesFound);
             if (statusesFound != null && statusesFound.containsAll(statusesToCheck)) {
                 check = true;
                 break;
@@ -89,6 +89,7 @@ public class PnEcQueuePoller extends QueuePoller {
                 Thread.currentThread().interrupt();
             }
         }
+        log.debug("Messages queue : {} ", this.messageMap);
         log.debug("Statuses found : {}", statusesFound);
         return check;
     }
