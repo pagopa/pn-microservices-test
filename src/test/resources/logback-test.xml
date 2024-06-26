@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE xml>
 <configuration scan="true" scanPeriod="30 seconds" >
+    <root level="OFF">
+        <appender-ref ref="STDOUT" />
+    </root>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
         <encoder>
@@ -9,7 +12,16 @@
     </appender>
     <logger name="it.pagopa.pn.cucumber.steps.SsStepDefinitions" level="INFO" />
     <logger name="it.pagopa.pn.tests" level="INFO" />
+    <logger name="it.pagopa.pn" level="DEBUG" />
     <root level="INFO">
         <appender-ref ref="STDOUT"/>
     </root>
 </configuration>
+
+
+
+
+
+
+
+
