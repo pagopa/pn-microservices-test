@@ -1,4 +1,4 @@
-package it.pagopa.pn.cucumber;
+package it.pagopa.pn.cucumber.dto.pojo;
 
 public enum Checksum {
 	MD5,
