@@ -73,6 +73,42 @@ public class SafeStorageUtils {
         return CommonUtils.myPost(oReq, "/safe-storage/v1/files");
     }
 
+    public static Response getPresignedURLUpload(String sCxId, String sAPIKey, String sContentType, String sDocType, String sSHA256, String sMD5, String sStatus, boolean boHeader, Checksum eCS, String tag) {
+        log.debug("getPresignedURLUpload(\"{}\",\"{}\",\"{}\", \"{}\", \"{}\", \"{}\", \"{}\", {}, {}, {})", sCxId, sAPIKey, sContentType, sDocType, sSHA256, sMD5, sStatus, (boHeader ? "header" : "body"), eCS.name(), tag);
+        RequestSpecification oReq = stdReq()
+                .header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
+                .header(X_API_KEY, sAPIKey);
+        if (boHeader) {
+            switch (eCS) {
+                case MD5:
+                    oReq.header(X_CHECKSUM_VALUE, sMD5);
+                    break;
+                case SHA256:
+                    oReq.header(X_CHECKSUM_VALUE, sSHA256);
+                    break;
+                default:
+                    break;
+            }
+        }
+        String sBody = "{ \"contentType\": \"" + sContentType + "\", \"documentType\": \"" + sDocType + "\", \"status\": \"" + sStatus + "\", \"tags\": \"" + tag + "\", \"  ";
+        if (!boHeader) {
+            switch (eCS) {
+                case MD5:
+                    sBody += ", \"checksumValue\": \"" + sMD5 + "\"";
+                    break;
+                case SHA256:
+                    sBody += ", \"checksumValue\": \"" + sSHA256 + "\"";
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        sBody += "}";
+        oReq.body(sBody);
+        return CommonUtils.myPost(oReq, "/safe-storage/v1/files");
+    }
+
     public static Response getPresignedURLUploadKo(String sCxId, String sAPIKey, String sContentType, String sDocType, String sSHA256, String sMD5, String sStatus, boolean boHeader, Checksum eCS) {
         log.debug("getPresignedURLUpload(\"{}\",\"{}\",\"{}\", \"{}\", \"{}\", \"{}\", \"{}\", {}, {})", sCxId, sAPIKey, sContentType, sDocType, sSHA256, sMD5, sStatus, (boHeader ? "header" : "body"), eCS.name());
         RequestSpecification oReq = stdReqKo()

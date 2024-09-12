@@ -189,6 +189,25 @@ public class SsStepDefinitions {
         }
     }
 
+    @When("request a presigned url to upload the file with {string}")
+    public void getUploadPresignedURLWithTagAndValue(String tag) {
+        tag = parseIfTagged(tag);
+        Response oResp;
+        oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256, tag);
+        iRC = oResp.getStatusCode();
+        log.debug("oResp body: " + oResp.getBody().asString());
+
+        log.debug("oResp uploadUrl: " + oResp.then().extract().path("uploadUrl"));
+        log.info("fileKey: " + oResp.then().extract().path("key"));
+        log.debug("oResp secret: " + oResp.then().extract().path("secret"));
+        log.debug("iRC: " + iRC);
+        if (iRC == 200) {
+            sURL = oResp.then().extract().path("uploadUrl");
+            sKey = oResp.then().extract().path("key");
+            sSecret = oResp.then().extract().path("secret");
+        }
+    }
+
     @When("request a presigned url to upload the file without traceId")
     public void getUploadPresignedURLWithoutTraceId() {
         Response oResp;
@@ -404,4 +423,5 @@ public class SsStepDefinitions {
     private String parseIfTagged(String value) {
         return TestVariablesConfiguration.getInstance().getValueIfTagged(value);
     }
+
 }
