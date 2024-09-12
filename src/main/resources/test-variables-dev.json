@@ -22,5 +22,6 @@
   "paper.receiver.digital.address" : "Via Roma 1",
   "requestId": "PnEcMsCucumberTest-eZky9I5g4XvnCuhloiYngzeQ1QTukI",
   "messageId" : "cG4tZGVsaXZlcnk=~UEVDUmVxdWVzdC11aWVkcGRqeGRoLTEwMTU3NTc5OTM=@pagopa.it",
-  "fileKey" : "PN_LEGAL_FACTS-cabb314580c74d0bbe36f04b0ceb0d73.pdf"
+  "fileKey" : "PN_LEGAL_FACTS-cabb314580c74d0bbe36f04b0ceb0d73.pdf",
+  "tag": "global_indexed_multivalue"
 }
