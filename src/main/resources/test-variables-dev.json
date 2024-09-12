@@ -9,5 +9,5 @@
   "delivery_api_key": "pn-delivery_api_key",
   "doc_type_notification_attachments": "PN_NOTIFICATION_ATTACHMENTS",
   "doc_type_legal_facts": "PN_LEGAL_FACTS_ST",
-  "tag": "IUN: XXXFEF3RFD"
+  "tag": "global_indexed_multivalue~test-value"
 }
