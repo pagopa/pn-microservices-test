@@ -8,5 +8,6 @@
   "apiKey-pn_cn": "pn-cn_api_key",
   "delivery_api_key": "pn-delivery_api_key",
   "doc_type_notification_attachments": "PN_NOTIFICATION_ATTACHMENTS",
-  "doc_type_legal_facts": "PN_LEGAL_FACTS_ST"
+  "doc_type_legal_facts": "PN_LEGAL_FACTS_ST",
+  "tag": "IUN: XXXFEF3RFD"
 }
