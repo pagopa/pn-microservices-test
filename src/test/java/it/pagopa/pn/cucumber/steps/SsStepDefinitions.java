@@ -172,14 +172,15 @@ public class SsStepDefinitions {
         Response oResp;
 
         oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256, null);
-
         iRC = oResp.getStatusCode();
         log.debug("oResp body: " + oResp.getBody().asString());
+        Assertions.assertEquals(200, iRC);
 
         log.debug("oResp uploadUrl: " + oResp.then().extract().path("uploadUrl"));
         log.info("fileKey: " + oResp.then().extract().path("key"));
         log.debug("oResp secret: " + oResp.then().extract().path("secret"));
         log.debug("iRC: " + iRC);
+
         if (iRC == 200) {
             sURL = oResp.then().extract().path("uploadUrl");
             sKey = oResp.then().extract().path("key");
@@ -202,6 +203,7 @@ public class SsStepDefinitions {
         log.info("fileKey: " + oResp.then().extract().path("key"));
         log.debug("oResp secret: " + oResp.then().extract().path("secret"));
         log.debug("iRC: " + iRC);
+        Assertions.assertEquals(200, iRC);
         if (iRC == 200) {
             sURL = oResp.then().extract().path("uploadUrl");
             sKey = oResp.then().extract().path("key");
