@@ -1,5 +1,6 @@
 package it.pagopa.pn.cucumber.steps;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.AfterAll;
 import io.cucumber.java.en.And;
@@ -260,7 +261,7 @@ public class EcStepDefinitions {
             File file = new File(fileName);
             var sha256 = getSHA256(file);
             var md5 = getMD5(file);
-            Response getPresignedUrlResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, mimeType, documentType, getSHA256(file), getMD5(file), "SAVED", true, Checksum.SHA256);
+            Response getPresignedUrlResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, mimeType, documentType, getSHA256(file), getMD5(file), "SAVED", true, Checksum.SHA256, null);
             assertEquals(200, getPresignedUrlResp.getStatusCode());
             String sURL = getPresignedUrlResp.then().extract().path("uploadUrl");
             String sKey = getPresignedUrlResp.then().extract().path("key");
@@ -281,7 +282,7 @@ public class EcStepDefinitions {
     }
 
     @And("I upload the following paper progress status event attachments:")
-    public void iUploadTheFollowingPaperProgressStatusEventAttachments(DataTable dataTable) {
+    public void iUploadTheFollowingPaperProgressStatusEventAttachments(DataTable dataTable) throws JsonProcessingException {
         var sPNClient = getValueIfTagged("@clientId-delivery");
         var sPNClient_AK = getValueIfTagged("@delivery_api_key");
 
@@ -293,7 +294,12 @@ public class EcStepDefinitions {
             File file = new File(fileName);
             var sha256 = getSHA256(file);
             var md5 = getMD5(file);
-            Response getPresignedUrlResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, mimeType, documentType, getSHA256(file), getMD5(file), "SAVED", true, Checksum.SHA256);
+            Response getPresignedUrlResp = null;
+            try {
+                getPresignedUrlResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, mimeType, documentType, getSHA256(file), getMD5(file), "SAVED", true, Checksum.SHA256, null);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
             assertEquals(200, getPresignedUrlResp.getStatusCode());
             String sURL = getPresignedUrlResp.then().extract().path("uploadUrl");
             String sKey = getPresignedUrlResp.then().extract().path("key");

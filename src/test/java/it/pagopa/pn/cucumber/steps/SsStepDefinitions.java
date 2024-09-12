@@ -31,8 +31,11 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 import static it.pagopa.pn.configuration.TestVariablesConfiguration.getValueIfTagged;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
@@ -165,11 +168,33 @@ public class SsStepDefinitions {
     }
 
     @When("request a presigned url to upload the file")
-    public void getUploadPresignedURL() {
+    public void getUploadPresignedURL() throws JsonProcessingException {
         Response oResp;
 
-        oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256);
+        oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256, null);
 
+        iRC = oResp.getStatusCode();
+        log.debug("oResp body: " + oResp.getBody().asString());
+
+        log.debug("oResp uploadUrl: " + oResp.then().extract().path("uploadUrl"));
+        log.info("fileKey: " + oResp.then().extract().path("key"));
+        log.debug("oResp secret: " + oResp.then().extract().path("secret"));
+        log.debug("iRC: " + iRC);
+        if (iRC == 200) {
+            sURL = oResp.then().extract().path("uploadUrl");
+            sKey = oResp.then().extract().path("key");
+            sSecret = oResp.then().extract().path("secret");
+        }
+    }
+
+    @When("request a presigned url to upload the file with {string}")
+    public void getUploadPresignedURLWithTagAndValue(String tag) throws JsonProcessingException {
+        tag = getValueIfTagged(tag);
+        Response oResp;
+
+        var tags = Map.of(tag, List.of("test-value" + randomAlphanumeric(5)));
+
+        oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256, tags);
         iRC = oResp.getStatusCode();
         log.debug("oResp body: " + oResp.getBody().asString());
 

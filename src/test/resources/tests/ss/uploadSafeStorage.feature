@@ -43,3 +43,15 @@ Feature: Upload SafeStorage
       | @clientId-test | @apiKey_test | @doc_type_legal_facts | src/main/resources/test.zip | application/zip | 200 |
       | @clientId-test | @apiKey_test | @doc_type_legal_facts | src/main/resources/test.pdf | application/pdf | 200 |
       | @clientId-test | @apiKey_test | @doc_type_legal_facts | src/main/resources/test.xml | application/xml | 200 |
+
+
+  @PnSsUpload @tag
+  Scenario Outline: Upload di un file con tag non sottoposto a trasformazione e verifica del messaggio di disponibilità del file
+    Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
+    When request a presigned url to upload the file with "<tag>"
+    And upload that file
+    Then i found in S3
+    And i check availability message "<rc>"
+    Examples:
+      | clientId       | APIKey       | documentType                       | fileName                    | MIMEType        | tag  | rc  |
+      | @clientId-test | @apiKey_test | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @tag | 200 |
