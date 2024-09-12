@@ -9,7 +9,9 @@ import it.pagopa.pn.cucumber.dto.pojo.Checksum;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
 import lombok.extern.slf4j.Slf4j;
 
-import static org.springframework.http.MediaType.APPLICATION_JSON;
+import java.util.List;
+import java.util.Map;
+
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 
@@ -73,8 +75,8 @@ public class SafeStorageUtils {
         return CommonUtils.myPost(oReq, "/safe-storage/v1/files");
     }
 
-    public static Response getPresignedURLUpload(String sCxId, String sAPIKey, String sContentType, String sDocType, String sSHA256, String sMD5, String sStatus, boolean boHeader, Checksum eCS, String tag) {
-        log.debug("getPresignedURLUpload(\"{}\",\"{}\",\"{}\", \"{}\", \"{}\", \"{}\", \"{}\", {}, {}, {})", sCxId, sAPIKey, sContentType, sDocType, sSHA256, sMD5, sStatus, (boHeader ? "header" : "body"), eCS.name(), tag);
+    public static Response getPresignedURLUpload(String sCxId, String sAPIKey, String sContentType, String sDocType, String sSHA256, String sMD5, String sStatus, boolean boHeader, Checksum eCS, Map<String, List<String>> tags) throws JsonProcessingException {
+        log.debug("getPresignedURLUpload(\"{}\",\"{}\",\"{}\", \"{}\", \"{}\", \"{}\", \"{}\", {}, {}, {})", sCxId, sAPIKey, sContentType, sDocType, sSHA256, sMD5, sStatus, (boHeader ? "header" : "body"), eCS.name(), tags);
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
                 .header(X_API_KEY, sAPIKey);
@@ -90,7 +92,9 @@ public class SafeStorageUtils {
                     break;
             }
         }
-        String sBody = "{ \"contentType\": \"" + sContentType + "\", \"documentType\": \"" + sDocType + "\", \"status\": \"" + sStatus + "\", \"tags\": \"" + tag + "\", \"  ";
+        ObjectMapper objectMapper = new ObjectMapper();
+        String tagsStr = objectMapper.writeValueAsString(tags);
+        String sBody = "{ \"contentType\": \"" + sContentType + "\", \"documentType\": \"" + sDocType + "\", \"status\": \"" + sStatus + "\", \"tags\": " + tagsStr;
         if (!boHeader) {
             switch (eCS) {
                 case MD5:

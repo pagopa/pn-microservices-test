@@ -53,6 +53,5 @@ Feature: Upload SafeStorage
     Then i found in S3
     And i check availability message "<rc>"
     Examples:
-      | clientId           | APIKey            | documentType                       | fileName                    | MIMEType       | tag | rc  |
-      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.zip | application/zip | @tag | 200 |
-      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @tag | 200 |
+      | clientId       | APIKey       | documentType                       | fileName                    | MIMEType        | tag  | rc  |
+      | @clientId-test | @apiKey_test | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @tag | 200 |

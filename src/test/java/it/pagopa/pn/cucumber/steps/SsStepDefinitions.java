@@ -28,6 +28,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -190,10 +192,14 @@ public class SsStepDefinitions {
     }
 
     @When("request a presigned url to upload the file with {string}")
-    public void getUploadPresignedURLWithTagAndValue(String tag) {
+    public void getUploadPresignedURLWithTagAndValue(String tag) throws JsonProcessingException {
         tag = parseIfTagged(tag);
         Response oResp;
-        oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256, tag);
+
+        String[] sTag = tag.split("~");
+        var tags = Map.of(sTag[0], List.of(sTag[1]));
+
+        oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256, tags);
         iRC = oResp.getStatusCode();
         log.debug("oResp body: " + oResp.getBody().asString());
 
