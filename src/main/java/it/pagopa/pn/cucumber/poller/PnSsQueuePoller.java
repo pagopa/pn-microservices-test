@@ -45,7 +45,6 @@ public class PnSsQueuePoller extends QueuePoller {
         }
     }
 
-
     public boolean checkMessageAvailability(String fileKey) {
         boolean check = false;
         long pollingInterval = Long.parseLong(System.getProperty("pn.ss.sqs.lookup.interval.millis"));
