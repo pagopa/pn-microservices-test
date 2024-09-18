@@ -9,6 +9,9 @@ import it.pagopa.pn.cucumber.dto.pojo.Checksum;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -37,8 +40,8 @@ public class SafeStorageUtils {
 				.header("Content-type", APPLICATION_JSON_VALUE);
 }
 
-	public static Response getPresignedURLUpload(String sCxId, String sAPIKey, String sContentType, String sDocType, String sSHA256, String sMD5, String sStatus, boolean boHeader, Checksum eCS) {
-		log.debug("getPresignedURLUpload(\"{}\",\"{}\",\"{}\", \"{}\", \"{}\", \"{}\", \"{}\", {}, {})", sCxId, sAPIKey, sContentType, sDocType, sSHA256, sMD5, sStatus, (boHeader?"header":"body"), eCS.name());		
+	public static Response getPresignedURLUpload(String sCxId, String sAPIKey, String sContentType, String sDocType, String sSHA256, String sMD5, String sStatus, boolean boHeader, Checksum eCS, Map<String, List<String>> tags) throws JsonProcessingException {
+		log.debug("getPresignedURLUpload(\"{}\",\"{}\",\"{}\", \"{}\", \"{}\", \"{}\", \"{}\", {}, {}, {})", sCxId, sAPIKey, sContentType, sDocType, sSHA256, sMD5, sStatus, (boHeader?"header":"body"), eCS.name(), tags);
 		RequestSpecification oReq = stdReq() 
 			.header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
 			.header(X_API_KEY, sAPIKey)
@@ -55,8 +58,13 @@ public class SafeStorageUtils {
 					break;
 			}
 		}
+		ObjectMapper objectMapper = new ObjectMapper();
+		String tagsStr = objectMapper.writeValueAsString(tags);
 		String sBody = "{ \"contentType\": \"" + sContentType+ "\", \"documentType\": \"" + sDocType + "\", \"status\": \"" + sStatus + "\"";
-		if( !boHeader) {
+		if (tags != null) {
+			sBody += ", \"tags\": " + tagsStr;
+		}
+		if (!boHeader) {
 			switch (eCS) {
 			case MD5:
 				sBody += ", \"checksumValue\": \""+sMD5+"\"";
