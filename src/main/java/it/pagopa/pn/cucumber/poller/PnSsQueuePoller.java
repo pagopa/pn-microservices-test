@@ -26,18 +26,22 @@ public class PnSsQueuePoller extends QueuePoller {
     }
 
     @Override
-    @SneakyThrows({JsonProcessingException.class, JMSException.class})
     public void onMessage(jakarta.jms.Message message) {
-        MessageBodyDto messageBodyDto = parseMessageBody(((TextMessage) message).getText());
-        NotificationMessage notificationMessage = objectMapper.readValue(messageBodyDto.getDetail(), NotificationMessage.class);
-        if (isSsMessage(messageBodyDto)) {
-            if (!this.messageMap.containsKey(notificationMessage.getKey()))
-                this.messageMap.put(notificationMessage.getKey(), new HashSet<>(List.of(notificationMessage.getDocumentStatus())));
-            else {
-                Set<String> documentStatusList = this.messageMap.get(notificationMessage.getKey());
-                documentStatusList.add(notificationMessage.getDocumentStatus());
-                this.messageMap.put(notificationMessage.getKey(), documentStatusList);
+        try {
+            MessageBodyDto messageBodyDto = parseMessageBody(((TextMessage) message).getText());
+            log.debug("Retrieved message from queue: " + messageBodyDto);
+            NotificationMessage notificationMessage = objectMapper.readValue(messageBodyDto.getDetail(), NotificationMessage.class);
+            if (isSsMessage(messageBodyDto)) {
+                if (!this.messageMap.containsKey(notificationMessage.getKey()))
+                    this.messageMap.put(notificationMessage.getKey(), new HashSet<>(List.of(notificationMessage.getDocumentStatus())));
+                else {
+                    Set<String> documentStatusList = this.messageMap.get(notificationMessage.getKey());
+                    documentStatusList.add(notificationMessage.getDocumentStatus());
+                    this.messageMap.put(notificationMessage.getKey(), documentStatusList);
+                }
             }
+        } catch (Exception e) {
+            log.error("Error while receiving message from queue", e);
         }
     }
 
