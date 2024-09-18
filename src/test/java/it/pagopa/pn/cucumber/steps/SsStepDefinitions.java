@@ -15,7 +15,10 @@ import it.pagopa.pn.cucumber.dto.pojo.Checksum;
 import it.pagopa.pn.cucumber.utils.CommonUtils;
 import it.pagopa.pn.cucumber.utils.SafeStorageUtils;
 import it.pagopa.pn.cucumber.poller.PnSsQueuePoller;
-import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.*;
+import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.Document;
+import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.DocumentResponse;
+import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileDownloadResponse;
+import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
 import jakarta.jms.JMSException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
@@ -31,6 +34,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import static it.pagopa.pn.configuration.TestVariablesConfiguration.getValueIfTagged;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
@@ -58,11 +63,9 @@ public class SsStepDefinitions {
     UpdateFileMetadataRequest requestBody = new UpdateFileMetadataRequest();
     private boolean metadataOnly;
 
-    private FileDownloadResponse fileDownloadResponse;
-
     static {
         try {
-            Config.getInstance();
+            Config.getInstance().loadProperties();
             queuePoller = new PnSsQueuePoller();
             queuePoller.startPolling();
         } catch (JMSException e) {
@@ -72,18 +75,18 @@ public class SsStepDefinitions {
 
     @Given("{string} authenticated by {string}")
     public void clientAuthentication(String sPNClient, String sPNClient_AK) {
-        this.sPNClient = parseIfTagged(sPNClient);
-        this.sPNClient_AK = parseIfTagged(sPNClient_AK);
+        this.sPNClient = getValueIfTagged(sPNClient);
+        this.sPNClient_AK = getValueIfTagged(sPNClient_AK);
     }
 
     @Given("{string} authenticated by {string} try to upload a document of type {string} with content type {string} using {string}")
     public void a_file_to_upload(String sPNClient, String sPNClient_AK, String sDocumentType, String sMimeType, String sFileName) throws NoSuchAlgorithmException, IOException {
 
-        sPNClient = parseIfTagged(sPNClient);
-        sPNClient_AK = parseIfTagged(sPNClient_AK);
-        sDocumentType = parseIfTagged(sDocumentType);
-        sMimeType = parseIfTagged(sMimeType);
-        sFileName = parseIfTagged(sFileName);
+        sPNClient = getValueIfTagged(sPNClient);
+        sPNClient_AK = getValueIfTagged(sPNClient_AK);
+        sDocumentType = getValueIfTagged(sDocumentType);
+        sMimeType = getValueIfTagged(sMimeType);
+        sFileName = getValueIfTagged(sFileName);
         log.debug("pn-client {}", sPNClient);
 
         this.sPNClient = sPNClient;
@@ -109,11 +112,11 @@ public class SsStepDefinitions {
     @Given("{string} authenticated by {string} try to update the document using {string} and {string} but has invalid or null {string}")
     public void no_file_to_update(String sPNClientUp, String sPNClient_AKUp, String status, String retentionUntil, String fileKey) {
 
-        sPNClientUp = parseIfTagged(sPNClientUp);
-        sPNClient_AKUp = parseIfTagged(sPNClient_AKUp);
-        status = parseIfTagged(status);
-        retentionUntil = parseIfTagged(retentionUntil);
-        fileKey = parseIfTagged(fileKey);
+        sPNClientUp = getValueIfTagged(sPNClientUp);
+        sPNClient_AKUp = getValueIfTagged(sPNClient_AKUp);
+        status = getValueIfTagged(status);
+        retentionUntil = getValueIfTagged(retentionUntil);
+        fileKey = getValueIfTagged(fileKey);
 
         this.status = status;
         this.retentionUntil = retentionUntil;
@@ -145,10 +148,11 @@ public class SsStepDefinitions {
     @When("{string} authenticated by {string} try to update the document using {string} and {string}")
     public void a_file_to_update(String sPNClientUp, String sPNClient_AKUp, String status, String retentionUntil) {
 
-        sPNClientUp = parseIfTagged(sPNClientUp);
-        sPNClient_AKUp = parseIfTagged(sPNClient_AKUp);
-        status = parseIfTagged(status);
-        retentionUntil = parseIfTagged(retentionUntil);
+        sPNClientUp = getValueIfTagged(sPNClientUp);
+        sPNClient_AKUp = getValueIfTagged(sPNClient_AKUp);
+        status = getValueIfTagged(status);
+        retentionUntil = getValueIfTagged(retentionUntil);
+
 
         this.status = status;
         this.retentionUntil = retentionUntil;
@@ -172,13 +176,13 @@ public class SsStepDefinitions {
     }
 
     @When("request a presigned url to upload the file")
-    public void getUploadPresignedURL() {
+    public void getUploadPresignedURL() throws JsonProcessingException {
         Response oResp;
 
-        oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256);
-
+        oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256, null);
         iRC = oResp.getStatusCode();
         log.debug("oResp body: " + oResp.getBody().asString());
+        Assertions.assertEquals(200, iRC);
 
         log.debug("oResp uploadUrl: " + oResp.then().extract().path("uploadUrl"));
         log.info("fileKey: " + oResp.then().extract().path("key"));
@@ -193,11 +197,10 @@ public class SsStepDefinitions {
 
     @When("request a presigned url to upload the file with {string}")
     public void getUploadPresignedURLWithTagAndValue(String tag) throws JsonProcessingException {
-        tag = parseIfTagged(tag);
+        tag = getValueIfTagged(tag);
         Response oResp;
 
-        String[] sTag = tag.split("~");
-        var tags = Map.of(sTag[0], List.of(sTag[1]));
+        var tags = Map.of(tag, List.of("test-value" + randomAlphanumeric(5)));
 
         oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256, tags);
         iRC = oResp.getStatusCode();
@@ -207,6 +210,7 @@ public class SsStepDefinitions {
         log.info("fileKey: " + oResp.then().extract().path("key"));
         log.debug("oResp secret: " + oResp.then().extract().path("secret"));
         log.debug("iRC: " + iRC);
+        Assertions.assertEquals(200, iRC);
         if (iRC == 200) {
             sURL = oResp.then().extract().path("uploadUrl");
             sKey = oResp.then().extract().path("key");
@@ -424,10 +428,6 @@ public class SsStepDefinitions {
     @AfterAll
     public static void doFinally() throws JMSException {
         queuePoller.close();
-    }
-
-    private String parseIfTagged(String value) {
-        return TestVariablesConfiguration.getInstance().getValueIfTagged(value);
     }
 
 }
