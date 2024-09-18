@@ -19,6 +19,10 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @Slf4j
 public class SafeStorageUtils {
 
+	public static final String METADATA_ONLY = "metadataOnly";
+	public static final String FILE_KEY = "fileKey";
+	public static final String CHECKSUM_VALUE = "checksumValue";
+
 	private SafeStorageUtils() {
 		throw new IllegalStateException("SafeStorageUtils is a utility class");
 	}
@@ -67,10 +71,10 @@ public class SafeStorageUtils {
 		if (!boHeader) {
 			switch (eCS) {
 			case MD5:
-				sBody += ", \"checksumValue\": \""+sMD5+"\"";
+				sBody += ", \"" + CHECKSUM_VALUE + "\": \"" +sMD5+"\"";
 				break;	
 			case SHA256:
-				sBody += ", \"checksumValue\": \""+sSHA256+"\"";
+				sBody += ", \"" + CHECKSUM_VALUE + "\": \"" +sSHA256+"\"";
 				break;	
 			default:
 				break;
@@ -103,10 +107,10 @@ public class SafeStorageUtils {
 		if( !boHeader) {
 			switch (eCS) {
 				case MD5:
-					sBody += ", \"checksumValue\": \""+sMD5+"\"";
+					sBody += ", \"" + CHECKSUM_VALUE + "\": \"" +sMD5+"\"";
 					break;
 				case SHA256:
-					sBody += ", \"checksumValue\": \""+sSHA256+"\"";
+					sBody += ", \"" + CHECKSUM_VALUE + "\": \"" +sSHA256+"\"";
 					break;
 				default:
 					break;
@@ -120,30 +124,31 @@ public class SafeStorageUtils {
 	}
 
 
-	public static Response getPresignedURLDownload(String sCxId, String sAPIKey, String sFileKey) {
-		log.debug("getPresignedURLDownload(\"{}\",\"{}\",\"{}\")", sCxId, sAPIKey, sFileKey);		
-		RequestSpecification oReq = stdReq() 
-			.header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
-			.header(X_API_KEY, sAPIKey);
-		
-		return CommonUtils.myGet(oReq, "/safe-storage/v1/files/"+sFileKey);
-	}
+    public static Response getPresignedURLDownload(String sCxId, String sAPIKey, String sFileKey, boolean metadataOnly) {
+        log.debug("getPresignedURLDownload(\"{}\",\"{}\",\"{}\")", sCxId, sAPIKey, sFileKey);
+        RequestSpecification oReq = stdReq()
+                .param(METADATA_ONLY, metadataOnly)
+                .header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
+                .header(X_API_KEY, sAPIKey);
+
+        return CommonUtils.myGet(oReq, "/safe-storage/v1/files/" + sFileKey);
+    }
 
 	public static Response getObjectMetadata(String sCxId, String sAPIKey, String sFileKey) {
 		log.debug("getObjectMetadata(\"{}\",\"{}\",\"{}\")", sCxId, sAPIKey, sFileKey);		
 		RequestSpecification oReq = stdReq() 
 			.header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
 			.header(X_API_KEY, sAPIKey)
-			.pathParam("fileKey", sFileKey)
-			.param("metadataOnly", true);
+			.pathParam(FILE_KEY, sFileKey)
+			.param(METADATA_ONLY, true);
 		
 		return CommonUtils.myGet(oReq, "/safe-storage/v1/files/{fileKey}");
 	}
 
 	public static Response getDocument(String sFileKey) {
 		RequestSpecification oReq = stdReq()
-				.pathParam("fileKey", sFileKey)
-				.param("metadataOnly", true);
+				.pathParam(FILE_KEY, sFileKey)
+				.param(METADATA_ONLY, true);
 
 		return CommonUtils.myGet(oReq, "/safestorage/internal/v1/documents/{fileKey}");
 	}
@@ -162,11 +167,25 @@ public class SafeStorageUtils {
 		RequestSpecification oReq = stdReq()
 				.header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
 				.header(X_API_KEY, sAPIKey)
-				.pathParam("fileKey", sFileKey)
+				.pathParam(FILE_KEY, sFileKey)
 				.body(body);
 
 		return CommonUtils.myPost(oReq, "/safe-storage/v1/files/{fileKey}");
 	}
 
+    public static Response getDocumentsConfigs(String sCxId, String sAPIKey) {
+        RequestSpecification oReq = stdReq()
+                .header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
+                .header(X_API_KEY, sAPIKey);
 
+        return CommonUtils.myGet(oReq, "/safe-storage/v1/configurations/documents-types");
+    }
+
+    public static Response getCurrentClientConfig(String sCxId, String sAPIKey) {
+        RequestSpecification oReq = stdReq()
+                .header(X_API_KEY, sAPIKey)
+                .pathParam("clientId", sCxId);
+
+        return CommonUtils.myGet(oReq, "/safe-storage/v1/configurations/clients/{clientId}");
+    }
 }
