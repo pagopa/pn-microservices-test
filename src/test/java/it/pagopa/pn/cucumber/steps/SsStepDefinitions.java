@@ -15,10 +15,7 @@ import it.pagopa.pn.cucumber.dto.pojo.Checksum;
 import it.pagopa.pn.cucumber.utils.CommonUtils;
 import it.pagopa.pn.cucumber.utils.SafeStorageUtils;
 import it.pagopa.pn.cucumber.poller.PnSsQueuePoller;
-import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.Document;
-import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.DocumentResponse;
-import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileDownloadResponse;
-import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
+import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.*;
 import jakarta.jms.JMSException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
@@ -62,6 +59,7 @@ public class SsStepDefinitions {
     private static PnSsQueuePoller queuePoller;
     UpdateFileMetadataRequest requestBody = new UpdateFileMetadataRequest();
     private boolean metadataOnly;
+    private FileDownloadResponse fileDownloadResponse;
 
     static {
         try {
@@ -286,16 +284,16 @@ public class SsStepDefinitions {
 
     @And("i check availability message {string}")
     public void i_check_availability_messages(String sRC) {
-        int status;
+        int sCode;
         boolean check = queuePoller.checkMessageAvailability(sKey);
         if (!check) {
-            status = 404;
+            sCode = 404;
             log.info("Message not found for key {} ", sKey);
         } else {
-            status = 200;
+            sCode = 200;
             log.debug("Message found for key {} ", sKey);
         }
-        Assertions.assertEquals(Integer.parseInt(sRC), status);
+        Assertions.assertEquals(Integer.parseInt(sRC), sCode);
     }
 
     @Then("i get an error {string}")
@@ -346,8 +344,8 @@ public class SsStepDefinitions {
 
     @Given("{string} authenticated by {string} try to get a file with key {string} and metadataOnly as {string}")
     public void getPresignedUrlByFileKey(String sPNClient, String sPNClient_AK, String fileKey, String metadataOnly) {
-        this.sPNClient = parseIfTagged(sPNClient);
-        this.sPNClient_AK = parseIfTagged(sPNClient_AK);
+        this.sPNClient = getValueIfTagged(sPNClient);
+        this.sPNClient_AK = getValueIfTagged(sPNClient_AK);
         this.sKey = fileKey;
         this.metadataOnly = Boolean.parseBoolean(metadataOnly);
 
