@@ -9,7 +9,7 @@ Feature: Download SafeStorage
 
   @PnSsDownload
   Scenario Outline: Richiesta di presignedUrl di download.
-    Given "<clientId>" authenticated by "<APIKey>"
+    Given the SafeStorage client "<clientId>" authenticated by "<APIKey>"
     When request a presigned url to download the file
     Then i get that presigned url
     Examples:
@@ -18,7 +18,7 @@ Feature: Download SafeStorage
 
   @PnSsDownload @notAuthorized
   Scenario Outline: Richiesta di presignedUrl di download con client non autorizzato sul documentType
-    Given "<clientId>" authenticated by "<APIKey>"
+    Given the SafeStorage client "<clientId>" authenticated by "<APIKey>"
     When request a presigned url to download the file
     Then I get "<statusCode>" statusCode
     Examples:

@@ -15,10 +15,12 @@ import it.pagopa.pn.cucumber.dto.pojo.PnAttachment;
 import it.pagopa.pn.cucumber.poller.PnEcQueuePoller;
 import it.pagopa.pn.cucumber.utils.*;
 import it.pagopa.pn.ec.rest.v1.api.*;
+import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileCreationRequest;
 import jakarta.jms.JMSException;
 import lombok.CustomLog;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Assertions;
+import org.slf4j.MDC;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +33,7 @@ import java.util.*;
 
 import static it.pagopa.pn.configuration.TestVariablesConfiguration.getValueIfTagged;
 import static it.pagopa.pn.cucumber.utils.CommonUtils.*;
+import static it.pagopa.pn.cucumber.utils.LogUtils.MDC_CORR_ID_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @CustomLog
@@ -48,8 +51,8 @@ public class EcStepDefinitions {
     private String sendPaperProgressStatusResultCode;
     private String sendPaperProgressStatusResultDescription;
     private List<String> sendPaperProgressStatusErrorList;
-    private List<ConsolidatoreIngressPaperProgressStatusEventAttachments> paperProgressStatusEventAttachments = new ArrayList<>();
-    private static PnEcQueuePoller queuePoller;
+    private final List<ConsolidatoreIngressPaperProgressStatusEventAttachments> paperProgressStatusEventAttachments = new ArrayList<>();
+    private static final PnEcQueuePoller queuePoller;
     private String sRC;
     private Response response;
     private OffsetDateTime testStartTime;
@@ -57,6 +60,7 @@ public class EcStepDefinitions {
 
     static {
         try {
+            MDC.clear();
             Config.getInstance().loadProperties();
             queuePoller = new PnEcQueuePoller();
             queuePoller.startPolling();
@@ -72,10 +76,19 @@ public class EcStepDefinitions {
         this.channel = getValueIfTagged(channel);
         log.info("ClientId {}", this.clientId);
         log.debug("Channel {}", this.channel);
-
     }
 
-    @Given("{string} authenticated by {string}")
+    @Given("a {string} authenticated by {string} and {string} to send on")
+    public void messageToSendWithAuthentication(String clientId, String apiKey, String channel) {
+        this.clientId = getValueIfTagged(clientId);
+        this.apiKey = getValueIfTagged(apiKey);
+        this.channel = getValueIfTagged(channel);
+        log.info("ClientId {}", this.clientId);
+        log.info("ApiKey {}", this.apiKey);
+        log.debug("Channel {}", this.channel);
+    }
+
+    @Given("the ExternalChannel client {string} authenticated by {string}")
     public void authenticatedBy(String clientId, String apiKey) {
         this.clientId = getValueIfTagged(clientId);
         this.apiKey = getValueIfTagged(apiKey);
@@ -91,14 +104,16 @@ public class EcStepDefinitions {
     //WHEN
     @When("try to send a paper message")
     public void tryToSendAPaperMessage() {
-        this.requestId = ExternalChannelUtils.generateRandomRequestId(clientId);
+        this.requestId = ExternalChannelUtils.generateRandomRequestId();
+        MDC.put(MDC_CORR_ID_KEY, requestId);
         Response response = ExternalChannelUtils.sendPaperMessage(clientId, requestId, attachmentsList);
         this.sendPaperMessageStatusCode = response.getStatusCode();
     }
 
     @When("try to send a digital message to {string}")
     public void presaInCarico(String receiver) {
-        this.requestId = ExternalChannelUtils.generateRandomRequestId(clientId);
+        this.requestId = ExternalChannelUtils.generateRandomRequestId();
+        MDC.put(MDC_CORR_ID_KEY, requestId);
         this.receiver = getValueIfTagged(receiver);
         log.info("receiver address {}", this.receiver);
         //switch sul canale
@@ -114,7 +129,8 @@ public class EcStepDefinitions {
 
     @When("try to send a paper message to {string}")
     public void tryToSendAPaperMessage(String receiver) {
-        this.requestId = ExternalChannelUtils.generateRandomRequestId(clientId);
+        this.requestId = ExternalChannelUtils.generateRandomRequestId();
+        MDC.put(MDC_CORR_ID_KEY, requestId);
         this.receiver = getValueIfTagged(receiver);
         Response response = ExternalChannelUtils.sendPaperMessage(clientId, requestId, attachmentsList);
         this.sendPaperMessageStatusCode = response.getStatusCode();
@@ -143,7 +159,7 @@ public class EcStepDefinitions {
 
         if(Objects.equals(messageId, "messageIdNotFound")) {
             this.response = ExternalChannelUtils.getRequestByMessageId(ExternalChannelUtils.encodeMessageId(clientId,
-                    ExternalChannelUtils.generateRandomRequestId(clientId)));
+                    ExternalChannelUtils.generateRandomRequestId()));
 
         } else {
             this.response = ExternalChannelUtils.getRequestByMessageId(getValueIfTagged(messageId));
@@ -219,7 +235,8 @@ public class EcStepDefinitions {
     @When("try to send a digital message to {string} with no authorization")
     public void tryToSendADigitalMessageToWithNoAuthorization(String receiver) {
         this.receiver = getValueIfTagged(receiver);
-        this.requestId = ExternalChannelUtils.generateRandomRequestId(clientId);
+        this.requestId = ExternalChannelUtils.generateRandomRequestId();
+        MDC.put(MDC_CORR_ID_KEY, requestId);
         Response response = switch (channel.toUpperCase()) {
             case "SMS" -> this.response = ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, receiver);
             case "EMAIL" -> this.response = ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, receiver);
@@ -248,11 +265,11 @@ public class EcStepDefinitions {
         });
     }
 
-    @And("I upload the following attachments:")
-    public void uploadAttachments(DataTable dataTable) throws NoSuchAlgorithmException, IOException {
+    @And("{string} authenticated by {string} uploads the following attachments:")
+    public void uploadAttachments(String clientId, String apiKey, DataTable dataTable) {
+        String ssClientId = getValueIfTagged(clientId);
+        String ssApiKey = getValueIfTagged(apiKey);
         List<List<String>> rows = dataTable.asLists(String.class);
-        var sPNClient = getValueIfTagged("@clientId-delivery");
-        var sPNClient_AK = getValueIfTagged("@delivery_api_key");
         for (List<String> row : rows.subList(1, rows.size())) {
             String documentType = getValueIfTagged(row.get(0));
             String fileName = row.get(1);
@@ -261,7 +278,8 @@ public class EcStepDefinitions {
             File file = new File(fileName);
             var sha256 = getSHA256(file);
             var md5 = getMD5(file);
-            Response getPresignedUrlResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, mimeType, documentType, getSHA256(file), getMD5(file), "SAVED", true, Checksum.SHA256, null);
+            FileCreationRequest fileCreationRequest = new FileCreationRequest().status("SAVED").contentType(mimeType).documentType(documentType);
+            Response getPresignedUrlResp = SafeStorageUtils.getPresignedURLUpload(ssClientId, ssApiKey, fileCreationRequest, getSHA256(file), getMD5(file), true, Checksum.SHA256, true);
             assertEquals(200, getPresignedUrlResp.getStatusCode());
             String sURL = getPresignedUrlResp.then().extract().path("uploadUrl");
             String sKey = getPresignedUrlResp.then().extract().path("key");
@@ -281,11 +299,10 @@ public class EcStepDefinitions {
         }
     }
 
-    @And("I upload the following paper progress status event attachments:")
-    public void iUploadTheFollowingPaperProgressStatusEventAttachments(DataTable dataTable) throws JsonProcessingException {
-        var sPNClient = getValueIfTagged("@clientId-delivery");
-        var sPNClient_AK = getValueIfTagged("@delivery_api_key");
-
+    @And("{string} authenticated by {string} uploads the following paper progress status event attachments:")
+    public void iUploadTheFollowingPaperProgressStatusEventAttachments(String clientId, String apiKey, DataTable dataTable) {
+        String ssClientId = getValueIfTagged(clientId);
+        String ssApiKey = getValueIfTagged(apiKey);
         List<Map<String, String>> attachmentsList = dataTable.asMaps();
         attachmentsList.forEach(map -> {
             String documentType = getValueIfTagged(map.get("documentType"));
@@ -294,12 +311,8 @@ public class EcStepDefinitions {
             File file = new File(fileName);
             var sha256 = getSHA256(file);
             var md5 = getMD5(file);
-            Response getPresignedUrlResp = null;
-            try {
-                getPresignedUrlResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, mimeType, documentType, getSHA256(file), getMD5(file), "SAVED", true, Checksum.SHA256, null);
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
+            FileCreationRequest fileCreationRequest = new FileCreationRequest().status("SAVED").contentType(mimeType).documentType(documentType);
+            Response getPresignedUrlResp = SafeStorageUtils.getPresignedURLUpload(ssClientId, ssApiKey, fileCreationRequest, getSHA256(file), getMD5(file), true, Checksum.SHA256, true);
             assertEquals(200, getPresignedUrlResp.getStatusCode());
             String sURL = getPresignedUrlResp.then().extract().path("uploadUrl");
             String sKey = getPresignedUrlResp.then().extract().path("key");
@@ -391,15 +404,9 @@ public class EcStepDefinitions {
                 OffsetDateTime now = OffsetDateTime.now();
                 String statusDateTime = map.get("statusDateTime");
                 switch (statusDateTime) {
-                    case "@testStartTime":
-                        event.setStatusDateTime(testStartTime);
-                        break;
-                    case "@now":
-                        event.setStatusDateTime(now);
-                        break;
-                    default:
-                        event.setStatusDateTime(OffsetDateTime.parse(statusDateTime));
-
+                    case "@testStartTime" -> event.setStatusDateTime(testStartTime);
+                    case "@now" -> event.setStatusDateTime(now);
+                    default -> event.setStatusDateTime(OffsetDateTime.parse(statusDateTime));
                 }
                 event.setClientRequestTimeStamp(now);
 
@@ -435,7 +442,7 @@ public class EcStepDefinitions {
     @Then("I get {string} result code")
     public void i_get_result_code(String sRC) {
         Assertions.assertEquals(sRC, sendPaperProgressStatusResultCode);
-        log.info("Error list: " + sendPaperProgressStatusErrorList);
+        log.debug("Error list: " + sendPaperProgressStatusErrorList);
     }
 
 
@@ -446,11 +453,9 @@ public class EcStepDefinitions {
 
     @Then("i get an error code {string}")
     public void getError(String errorCode) {
-        log.info("Error code {}", errorCode);
+        log.debug("Error code {}", errorCode);
         Assertions.assertEquals(errorCode, String.valueOf(response.getStatusCode()));
     }
-
-
 
     @AfterAll
     public static void doFinally() throws JMSException {

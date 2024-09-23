@@ -19,6 +19,7 @@ import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.*;
 import jakarta.jms.JMSException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
+import org.slf4j.MDC;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 import static it.pagopa.pn.configuration.TestVariablesConfiguration.getValueIfTagged;
+import static it.pagopa.pn.cucumber.utils.LogUtils.MDC_CORR_ID_KEY;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -56,13 +58,14 @@ public class SsStepDefinitions {
     private String retentionUntil = "";
     private Date retentionDate = null;
     private static String nomeCoda;
-    private static PnSsQueuePoller queuePoller;
+    private static final PnSsQueuePoller queuePoller;
     UpdateFileMetadataRequest requestBody = new UpdateFileMetadataRequest();
     private boolean metadataOnly;
     private FileDownloadResponse fileDownloadResponse;
 
     static {
         try {
+            MDC.clear();
             Config.getInstance().loadProperties();
             queuePoller = new PnSsQueuePoller();
             queuePoller.startPolling();
@@ -71,7 +74,7 @@ public class SsStepDefinitions {
         }
     }
 
-    @Given("{string} authenticated by {string}")
+    @Given("the SafeStorage client {string} authenticated by {string}")
     public void clientAuthentication(String sPNClient, String sPNClient_AK) {
         this.sPNClient = getValueIfTagged(sPNClient);
         this.sPNClient_AK = getValueIfTagged(sPNClient_AK);
@@ -85,7 +88,6 @@ public class SsStepDefinitions {
         sDocumentType = getValueIfTagged(sDocumentType);
         sMimeType = getValueIfTagged(sMimeType);
         sFileName = getValueIfTagged(sFileName);
-        log.debug("pn-client {}", sPNClient);
 
         this.sPNClient = sPNClient;
         this.sPNClient_AK = sPNClient_AK;
@@ -122,13 +124,10 @@ public class SsStepDefinitions {
         this.sPNClient_AKUp = sPNClient_AKUp;
         if (fileKey != null && !fileKey.isEmpty()) {
             this.sKey = fileKey;
+            MDC.put(MDC_CORR_ID_KEY, fileKey);
         } else {
             this.sKey = "";
         }
-
-
-        log.debug("Client utilizzato: " + sPNClientUp);
-
         Response oResp;
 
         if (retentionUntil != null && !retentionUntil.isEmpty()) {
@@ -136,11 +135,8 @@ public class SsStepDefinitions {
         }
         requestBody.setStatus(status);
 
-        CommonUtils.checkDump(oResp = SafeStorageUtils.updateObjectMetadata(sPNClientUp, sPNClient_AKUp, fileKey, requestBody), true);
+        oResp = SafeStorageUtils.updateObjectMetadata(sPNClientUp, sPNClient_AKUp, fileKey, requestBody);
         iRC = oResp.getStatusCode();
-        log.debug("file key: " + fileKey);
-        log.debug("new status: " + status);
-        log.debug("new retentionUntil: " + retentionUntil);
     }
 
     @When("{string} authenticated by {string} try to update the document using {string} and {string}")
@@ -168,24 +164,14 @@ public class SsStepDefinitions {
 
         oResp = SafeStorageUtils.updateObjectMetadata(sPNClientUp, sPNClient_AKUp, sKey, requestBody);
         iRC = oResp.getStatusCode();
-        log.debug("new status: " + status);
-        log.debug("new retentionUntil: " + retentionUntil);
-
     }
 
     @When("request a presigned url to upload the file")
     public void getUploadPresignedURL() throws JsonProcessingException {
         Response oResp;
-
-        oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256, null);
+        FileCreationRequest fileCreationRequest = new FileCreationRequest().contentType(sMimeType).documentType(sDocumentType).status("SAVED");
+        oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, fileCreationRequest, sSHA256, sMD5, boHeader, Checksum.SHA256, true);
         iRC = oResp.getStatusCode();
-        log.debug("oResp body: " + oResp.getBody().asString());
-        Assertions.assertEquals(200, iRC);
-
-        log.debug("oResp uploadUrl: " + oResp.then().extract().path("uploadUrl"));
-        log.info("fileKey: " + oResp.then().extract().path("key"));
-        log.debug("oResp secret: " + oResp.then().extract().path("secret"));
-        log.debug("iRC: " + iRC);
         if (iRC == 200) {
             sURL = oResp.then().extract().path("uploadUrl");
             sKey = oResp.then().extract().path("key");
@@ -194,20 +180,13 @@ public class SsStepDefinitions {
     }
 
     @When("request a presigned url to upload the file with {string}")
-    public void getUploadPresignedURLWithTagAndValue(String tag) throws JsonProcessingException {
+    public void getUploadPresignedURLWithTagAndValue(String tag) {
         tag = getValueIfTagged(tag);
         Response oResp;
-
         var tags = Map.of(tag, List.of("test-value" + randomAlphanumeric(5)));
-
-        oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256, tags);
+        FileCreationRequest fileCreationRequest = new FileCreationRequest().contentType(sMimeType).documentType(sDocumentType).status("SAVED").tags(tags);
+        oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, fileCreationRequest, sSHA256, sMD5, boHeader, Checksum.SHA256, true);
         iRC = oResp.getStatusCode();
-        log.debug("oResp body: " + oResp.getBody().asString());
-
-        log.debug("oResp uploadUrl: " + oResp.then().extract().path("uploadUrl"));
-        log.info("fileKey: " + oResp.then().extract().path("key"));
-        log.debug("oResp secret: " + oResp.then().extract().path("secret"));
-        log.debug("iRC: " + iRC);
         Assertions.assertEquals(200, iRC);
         if (iRC == 200) {
             sURL = oResp.then().extract().path("uploadUrl");
@@ -219,16 +198,9 @@ public class SsStepDefinitions {
     @When("request a presigned url to upload the file without traceId")
     public void getUploadPresignedURLWithoutTraceId() {
         Response oResp;
-
-        oResp = SafeStorageUtils.getPresignedURLUploadKo(sPNClient, sPNClient_AK, sMimeType, sDocumentType, sSHA256, sMD5, "SAVED", boHeader, Checksum.SHA256);
-        log.debug("CLIENT: " + sPNClient);
-
+        FileCreationRequest fileCreationRequest = new FileCreationRequest().contentType(sMimeType).documentType(sDocumentType).status("SAVED");
+        oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, fileCreationRequest, sSHA256, sMD5, boHeader, Checksum.SHA256, false);
         iRC = oResp.getStatusCode();
-        log.debug("oResp body: " + oResp.getBody().asString());
-        log.debug("oResp uploadUrl: " + oResp.then().extract().path("uploadUrl"));
-        log.debug("file key: " + oResp.then().extract().path("key"));
-        log.debug("oResp secret: " + oResp.then().extract().path("secret"));
-        log.debug("iRC: " + iRC);
         if (iRC == 200) {
             sURL = oResp.then().extract().path("uploadUrl");
             sKey = oResp.then().extract().path("key");
@@ -238,8 +210,7 @@ public class SsStepDefinitions {
 
 
     @When("upload that file")
-    public void uploadFile() throws MalformedURLException, UnsupportedEncodingException {
-        log.debug("sURL: " + sURL);
+    public void uploadFile() {
         Assertions.assertNotNull(sURL);
         iRC = CommonUtils.uploadFile(sURL, oFile, sSHA256, sMD5, sMimeType, sSecret, Checksum.SHA256).getStatusCode();
     }
@@ -288,10 +259,10 @@ public class SsStepDefinitions {
         boolean check = queuePoller.checkMessageAvailability(sKey);
         if (!check) {
             sCode = 404;
-            log.info("Message not found for key {} ", sKey);
+            log.info("Message not found for key {}", sKey);
         } else {
             sCode = 200;
-            log.debug("Message found for key {} ", sKey);
+            log.debug("Message found for key {}", sKey);
         }
         Assertions.assertEquals(Integer.parseInt(sRC), sCode);
     }
@@ -315,9 +286,7 @@ public class SsStepDefinitions {
             statusCode = oResp.getStatusCode();
             if (statusCode == 200) {
                 ObjectMapper objectMapper = new ObjectMapper();
-                log.debug("response body: " + oResp.getBody().asString());
                 FileDownloadResponse oFDR = objectMapper.readValue(oResp.getBody().asString(), FileDownloadResponse.class);
-                log.debug("file download response: " + oFDR);
 
                 boolean condition = false;
 
@@ -327,9 +296,6 @@ public class SsStepDefinitions {
                         condition = true;
                     }
                 }
-
-                log.debug("retentionDate: " + retentionDate);
-                log.debug("status: " + status);
 
                 if (oFDR.getDocumentStatus().equalsIgnoreCase(status)) {
                     condition = true;
@@ -347,6 +313,7 @@ public class SsStepDefinitions {
         this.sPNClient = getValueIfTagged(sPNClient);
         this.sPNClient_AK = getValueIfTagged(sPNClient_AK);
         this.sKey = fileKey;
+        MDC.put(MDC_CORR_ID_KEY, fileKey);
         this.metadataOnly = Boolean.parseBoolean(metadataOnly);
 
     }
@@ -358,8 +325,7 @@ public class SsStepDefinitions {
         if (statusCode == 200) {
             try {
                 ObjectMapper objectMapper = new ObjectMapper();
-                FileDownloadResponse oFDR = objectMapper.readValue(response.getBody().asString(), FileDownloadResponse.class);
-                this.fileDownloadResponse = oFDR;
+                this.fileDownloadResponse = objectMapper.readValue(response.getBody().asString(), FileDownloadResponse.class);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
@@ -385,6 +351,7 @@ public class SsStepDefinitions {
     @Given("a document with fileKey {string}")
     public void aFileKey(String fileKey) {
         this.sKey = fileKey;
+        MDC.put(MDC_CORR_ID_KEY, fileKey);
     }
 
     @When("I get documents configs")
@@ -395,7 +362,7 @@ public class SsStepDefinitions {
             try {
                 ObjectMapper objectMapper = new ObjectMapper();
                 DocumentTypesConfigurations documentTypesConfigurations = objectMapper.readValue(response.getBody().asString(), DocumentTypesConfigurations.class);
-                log.info("DocumentTypesConfigurations {}", documentTypesConfigurations);
+                log.debug("DocumentTypesConfigurations {}", documentTypesConfigurations);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
@@ -410,7 +377,7 @@ public class SsStepDefinitions {
             try {
                 ObjectMapper objectMapper = new ObjectMapper();
                 UserConfiguration userConfiguration = objectMapper.readValue(response.getBody().asString(), UserConfiguration.class);
-                log.info("UserConfiguration: {}", userConfiguration);
+                log.debug("UserConfiguration: {}", userConfiguration);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }

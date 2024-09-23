@@ -29,7 +29,7 @@ public class PnSsQueuePoller extends QueuePoller {
     public void onMessage(jakarta.jms.Message message) {
         try {
             MessageBodyDto messageBodyDto = parseMessageBody(((TextMessage) message).getText());
-            log.debug("Retrieved message from queue: " + messageBodyDto);
+            log.trace("Retrieved message from queue: " + messageBodyDto);
             NotificationMessage notificationMessage = objectMapper.readValue(messageBodyDto.getDetail(), NotificationMessage.class);
             if (isSsMessage(messageBodyDto)) {
                 if (!this.messageMap.containsKey(notificationMessage.getKey()))
@@ -41,7 +41,7 @@ public class PnSsQueuePoller extends QueuePoller {
                 }
             }
         } catch (Exception e) {
-            log.error("Error while receiving message from queue", e);
+            log.error("Error while receiving message from SS queue", e);
         }
     }
 
