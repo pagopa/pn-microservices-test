@@ -2,7 +2,7 @@ Feature: Get configurations
 
   @GetConfigurations @getDocumentsConfigs
   Scenario Outline: Reperimento tipologie di documenti e caratteristiche di storage.
-    Given "<clientId>" authenticated by "<APIKey>"
+    Given the SafeStorage client "<clientId>" authenticated by "<APIKey>"
     When I get documents configs
     Then I get "<statusCode>" statusCode
     Examples:
@@ -13,7 +13,7 @@ Feature: Get configurations
 
   @GetConfigurations @getCurrentClientConfig
   Scenario Outline: Reperimento dei dettagli di configurazione di un client.
-    Given "<clientId>" authenticated by "<APIKey>"
+    Given the SafeStorage client "<clientId>" authenticated by "<APIKey>"
     When I get current client config
     Then I get "<statusCode>" statusCode
     Examples:

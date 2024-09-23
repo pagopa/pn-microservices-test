@@ -26,9 +26,7 @@ public class Config {
 
     public void loadProperties() {
         loadPropertiesIntoSystem(APPLICATION_TEST_PROPERTIES);
-      //  loadPropertiesIntoSystem(PROFILE_PROPERTIES_FILE_PREFIX + System.getProperty(SPRING_PROFILE) + PROFILE_PROPERTIES_FILE_SUFFIX);
         loadJsonPropertiesIntoSystem(PROFILE_PROPERTIES_FILE_PREFIX + System.getProperty(SPRING_PROFILE) + PROFILE_PROPERTIES_FILE_SUFFIX);
-
     }
 
     private void loadPropertiesIntoSystem(String propertyFileName) {
@@ -48,13 +46,13 @@ public class Config {
     }
 
     private void loadJsonPropertiesIntoSystem(String propertyFileName) {
-        try (InputStream fileStream = this.getClass().getClassLoader().getResourceAsStream(propertyFileName)) {
+        try {
+            InputStream fileStream = this.getClass().getClassLoader().getResourceAsStream(propertyFileName);
             if (fileStream == null) {
-                log.error("JSON "+FILE_NOT_FOUND);
+                log.error("JSON " + FILE_NOT_FOUND);
                 System.exit(1);
             }
             Map<String, String> properties = jsonStreamToMap(fileStream);
-           // properties.forEach(log::debug);
             loadPropertiesIntoSystem(properties);
         } catch (IOException ex) {
             log.error("Errore nel caricamento delle properties JSON -> " + ex.getMessage());

@@ -5,6 +5,7 @@ import it.pagopa.pn.ec.rest.v1.api.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.*;
 
 public class RequestTemplate {
@@ -46,11 +47,12 @@ public class RequestTemplate {
         digitalCourtesyMailRequestFactory.eventType(defaultStringInit);
         digitalCourtesyMailRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now()));
         digitalCourtesyMailRequestFactory.setQos(DigitalCourtesyMailRequest.QosEnum.INTERACTIVE);
-        digitalCourtesyMailRequestFactory.setSenderDigitalAddress(System.getProperty("email.sender.digital.address"));
+        //digitalCourtesyMailRequestFactory.setSenderDigitalAddress(System.getProperty("email.sender.digital.address"));
         digitalCourtesyMailRequestFactory.setReceiverDigitalAddress(receiver);
         digitalCourtesyMailRequestFactory.setMessageText(defaultStringInit);
         digitalCourtesyMailRequestFactory.channel(DigitalCourtesyMailRequest.ChannelEnum.EMAIL);
         digitalCourtesyMailRequestFactory.setMessageContentType(DigitalCourtesyMailRequest.MessageContentTypeEnum.PLAIN);
+        digitalCourtesyMailRequestFactory.setAttachmentUrls(List.of());
         digitalCourtesyMailRequestFactory.setSubjectText("test");
         return digitalCourtesyMailRequestFactory;
     }
@@ -65,7 +67,7 @@ public class RequestTemplate {
         digitalNotificationRequestFactory.eventType(defaultStringInit);
         digitalNotificationRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now()));
         digitalNotificationRequestFactory.setQos(DigitalNotificationRequest.QosEnum.INTERACTIVE);
-        digitalNotificationRequestFactory.setSenderDigitalAddress(System.getProperty("pec.sender.digital.address"));
+        digitalNotificationRequestFactory.setSenderDigitalAddress("default");
         digitalNotificationRequestFactory.setReceiverDigitalAddress(receiver);
         digitalNotificationRequestFactory.setMessageText(defaultStringInit);
         digitalNotificationRequestFactory.channel(DigitalNotificationRequest.ChannelEnum.PEC);
@@ -84,7 +86,7 @@ public class RequestTemplate {
         digitalNotificationRequestFactory.eventType(defaultStringInit);
         digitalNotificationRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now().plusSeconds(60)));
         digitalNotificationRequestFactory.setQos(DigitalNotificationRequest.QosEnum.INTERACTIVE);
-        digitalNotificationRequestFactory.setSenderDigitalAddress(System.getProperty("pec.sender.digital.address"));
+        digitalNotificationRequestFactory.setSenderDigitalAddress("default");
         digitalNotificationRequestFactory.setReceiverDigitalAddress(receiver);
         digitalNotificationRequestFactory.setMessageText(defaultStringInit);
         digitalNotificationRequestFactory.channel(DigitalNotificationRequest.ChannelEnum.PEC);
@@ -126,7 +128,7 @@ public class RequestTemplate {
         paperEngageRequestFactory.setProductType("AR");
         paperEngageRequestFactory.setPrintType("BN_FRONTE_RETRO");
         paperEngageRequestFactory.setRequestId(requestId);
-        paperEngageRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now()));
+        paperEngageRequestFactory.setClientRequestTimeStamp(OffsetDateTime.now());
         return paperEngageRequestFactory;
 
     }
