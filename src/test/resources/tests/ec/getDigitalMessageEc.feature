@@ -71,22 +71,22 @@ Feature: Get Digital Message Ec
 
   @PnEcGetMessage @getPaper @getPaper_ok
   Scenario Outline: Get di un cartaceo tramite requestId
-    Given a "<clientId>" and "<channel>" to send on
-    When I upload the following attachments:
-      | documentType                       | fileName                    | mimeType        |
-      | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
+    Given a "<ecClientId>" and "<channel>" to send on
+    When "<ssClientId>" authenticated by "<ssApiKey>" uploads the following attachments:
+      | documentType  | fileName                    | mimeType        |
+      | @doc_type_aar | src/test/resources/test.pdf | application/pdf |
     When try to send a paper message to "<receiver>"
     * waiting for scheduling
     And check if the message has been sent
     And try to get result
     Then i get response "<rc>"
     Examples:
-      | clientId       | channel        | receiver                        | rc  |
-      | @clientId-cons | @channel_paper | @paper.receiver.digital.address | 200 |
+      | ecClientId     | ssClientId              | ssApiKey              | channel        | receiver                        | rc  |
+      | @clientId-cons | @clientId-delivery-push | @apiKey-delivery-push | @channel_paper | @paper.receiver.digital.address | 200 |
 
   @PnEcGetMessage @getAttachments @getAttachment_ok
   Scenario Outline: Get di un allegato tramite fileKey
-    Given "<clientId>" authenticated by "<apiKey>"
+    Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
     When try to get attachment with a "<fileKey>"
     Then i get response "<rc>"
     Examples:
@@ -161,7 +161,7 @@ Feature: Get Digital Message Ec
 
   @PnEcGetMessage @getAttachments @getAttachment_ko
   Scenario Outline: Get di un allegato tramite fileKey
-    Given "<clientId>" authenticated by "<apiKey>"
+    Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
     When try to get attachment with a "<fileKey>"
     Then i get response "<rc>"
     Examples:
