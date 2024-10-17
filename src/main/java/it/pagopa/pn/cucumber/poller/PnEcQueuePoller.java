@@ -32,8 +32,7 @@ public class PnEcQueuePoller extends QueuePoller {
         try {
             MessageBodyDto messageBodyDto = parseMessageBody(((TextMessage) message).getText());
             SingleStatusUpdate singleStatusUpdate = objectMapper.readValue(messageBodyDto.getDetail(), SingleStatusUpdate.class);
-            log.debug("SingleStatusUpdate : {}", singleStatusUpdate);
-
+            log.trace("Retrieved message from queue: " + messageBodyDto);
             String requestId = "";
             String status = "";
             if (isEcMessage(messageBodyDto)) {
@@ -59,26 +58,20 @@ public class PnEcQueuePoller extends QueuePoller {
                     documentStatusList.add(status);
                     this.messageMap.put(requestId, documentStatusList);
                 }
-              //  log.debug("messageMap poll{} ", this.messageMap);
-
             }
-        } catch (JMSException e) {
-            e.printStackTrace();
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            log.error("Error while receiving message from EC queue", e);
         }
     }
 
     public boolean checkMessageAvailability(String requestId, List<String> statusesToCheck) {
         boolean check = false;
-        long pollingInterval = Long.parseLong(System.getProperty("pn.ss.sqs.lookup.interval.millis"));
-        Instant timeLimit = Instant.now().plusMillis(Long.parseLong(System.getProperty("pn.ss.sqs.lookup.timeout.millis")));
+        long pollingInterval = Long.parseLong(System.getProperty("pn.ec.sqs.lookup.interval.millis"));
+        Instant timeLimit = Instant.now().plusMillis(Long.parseLong(System.getProperty("pn.ec.sqs.lookup.timeout.millis")));
         Set<String> statusesFound = null;
 
         while (Instant.now().isBefore(timeLimit)) {
             statusesFound = this.messageMap.get(requestId);
-           // log.debug("this.messageMap {} ", this.messageMap);
-          //  log.debug("statusFound: {} ", statusesFound);
             if (statusesFound != null && statusesFound.containsAll(statusesToCheck)) {
                 check = true;
                 break;

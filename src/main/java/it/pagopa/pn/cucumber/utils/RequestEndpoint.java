@@ -1,6 +1,11 @@
 package it.pagopa.pn.cucumber.utils;
 
 public class RequestEndpoint {
+
+    private RequestEndpoint() {
+        throw new IllegalStateException("RequestEndpoint is a utility class");
+    }
+
     protected static final String SMS_ENDPOINT =
             "/external-channels/v1/digital-deliveries/courtesy-simple-message-requests/{requestIdx}";
     protected static final String EMAIL_ENDPOINT =
@@ -21,4 +26,10 @@ public class RequestEndpoint {
             "/external-channel/gestoreRepository/requests/messageId/{messageId}";
     protected static final String GET_ATTACHMENT =
             "/consolidatore-ingress/v1/get-attachment/{fileKey}";
+    protected static final String SAFESTORAGE_FILES_UPLOAD_ENDPOINT = "/safe-storage/v1/files";
+    protected static final String SAFESTORAGE_FILES_DOWNLOAD_ENDPOINT = "/safe-storage/v1/files/{fileKey}";
+    protected static final String SAFESTORAGE_UPDATE_METADATA_ENDPOINT = SAFESTORAGE_FILES_DOWNLOAD_ENDPOINT;
+    protected static final String SAFESTORAGE_INTERNAL_DOCUMENTS_GET_ENDPOINT = "/safestorage/internal/v1/documents/{fileKey}";
+    protected static final String SAFESTORAGE_DOCUMENT_TYPES_GET_ENDPOINT = "/safe-storage/v1/configurations/documents-types";
+    protected static final String SAFESTORAGE_CONFIGURATION_CLIENT_GET_ENDPOINT = "/safe-storage/v1/configurations/clients/{clientId}";
 }

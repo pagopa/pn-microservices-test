@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
@@ -42,25 +43,13 @@ public class CommonUtils {
 		}
 		return baseURL;
 	}
-	
-	public static int checkDump(Response oResp, boolean boDumpBody) {
-		int iRc = oResp.getStatusCode();
-
-		if (boDumpBody && log.isDebugEnabled()) {
-			oResp.then().log().all();
-		}
-		return iRc;
-	}
-
-	@SneakyThrows(UnsupportedEncodingException.class)
 	public static Response uploadFile(String sURL, File oFile, String sSHA256, String sMD5, String sContentType, String sSecret, Checksum eCS) {
 
-		log.debug("uploadFile(\"{}\", \"{}\", \"{}\", \"{}\", \"{}\", "+eCS.name()+")", sURL, sSHA256, sMD5, sContentType, sSecret);
+		log.trace("uploadFile('{}', '{}', '{}', '{}', '{}')", sURL, sSHA256, sMD5, sContentType, sSecret);
 		EncoderConfig encoderConfig = new EncoderConfig();
 		RequestSpecification oReq = RestAssured.given()
-			.config(RestAssured.config()
-                    .encoderConfig(encoderConfig.appendDefaultContentCharsetToContentTypeIfUndefined(false)))
-			.header("content-type", sContentType);
+				.config(RestAssured.config().encoderConfig(encoderConfig.appendDefaultContentCharsetToContentTypeIfUndefined(false)))
+				.header("content-type", sContentType);
 		switch (eCS) {
 			case MD5:
 				oReq.header("Content-MD5", sMD5);
@@ -71,21 +60,12 @@ public class CommonUtils {
 			default:
 				break;
 		}
-		if( sSecret != null ) {
-
+		if (sSecret != null) {
 			oReq.header("x-amz-meta-secret", sSecret);
 		}
 		oReq.body(oFile);
-
-		if (log.isDebugEnabled() ) {
-			oReq.log().all();
-		}
-		String sMyURL = URLDecoder.decode(sURL, "utf-8");
-		Response oResp = oReq
-			.put(sMyURL);
-		//log.debug("In upload file oResp --> " + oResp.getBody().asString());
-
-		return oResp;
+		String sMyURL = URLDecoder.decode(sURL, StandardCharsets.UTF_8);
+		return oReq.put(sMyURL);
 	}
 
 	protected static Response myGet(RequestSpecification oReqSpec, String sURI) {
@@ -94,43 +74,41 @@ public class CommonUtils {
 		log.debug("GET {}", queryRequest.getURI());
         return oReqSpec.get();
 	}
-	
-	protected static Response myPost(RequestSpecification oReqSpec, String sURI) {
 
+	protected static Response myPost(RequestSpecification oReqSpec, String sURI) {
 		oReqSpec.given().baseUri(getBaseURL()).basePath(sURI);
 		QueryableRequestSpecification queryRequest = SpecificationQuerier.query(oReqSpec);
-		log.debug("POST {}", queryRequest.getURI());
-		log.debug(queryRequest.getBody().toString());
+		log.debug("POST {}. Request body -> {}", queryRequest.getURI(), queryRequest.getBody().toString());
 		return oReqSpec.post();
 	}
 
 	protected static Response myPut(RequestSpecification oReqSpec, String sURI) {
 		oReqSpec.given().baseUri(getBaseURL()).basePath(sURI);
 		QueryableRequestSpecification queryRequest = SpecificationQuerier.query(oReqSpec);
-		log.debug("PUT {}", queryRequest.getURI());
+		log.debug("PUT {}. Request body -> {}", queryRequest.getURI(), queryRequest.getBody().toString());
 		return oReqSpec.put();
 	}
 
 	@SneakyThrows({NoSuchAlgorithmException.class, IOException.class})
 	public static String getSHA256(File file) {
-		FileInputStream oFIS = new FileInputStream(file);
-		byte[] baFile = oFIS.readAllBytes();
-		oFIS.close();
-		MessageDigest md = MessageDigest.getInstance("SHA256");
-		md.update(baFile);
-		byte[] digest = md.digest();
-		return Base64.getEncoder().encodeToString(digest);
+		try (FileInputStream oFIS = new FileInputStream(file)) {
+			byte[] baFile = oFIS.readAllBytes();
+			MessageDigest md = MessageDigest.getInstance("SHA256");
+			md.update(baFile);
+			byte[] digest = md.digest();
+			return Base64.getEncoder().encodeToString(digest);
+		}
 	}
 
 	@SneakyThrows({NoSuchAlgorithmException.class, IOException.class})
 	public static String getMD5(File file) {
-		FileInputStream oFIS = new FileInputStream(file);
-		byte[] baFile = oFIS.readAllBytes();
-		oFIS.close();
-		MessageDigest md = MessageDigest.getInstance("MD5");
-		md.update(baFile);
-		byte[] digest = md.digest();
-		return Base64.getEncoder().encodeToString(digest);
+		try (FileInputStream oFIS = new FileInputStream(file)) {
+			byte[] baFile = oFIS.readAllBytes();
+			MessageDigest md = MessageDigest.getInstance("MD5");
+			md.update(baFile);
+			byte[] digest = md.digest();
+			return Base64.getEncoder().encodeToString(digest);
+		}
 	}
 
 	public static String getValueOrDefault(Map<String, String> map, String key, String defaultValue) {
