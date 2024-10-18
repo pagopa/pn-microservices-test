@@ -60,7 +60,10 @@ public class Config {
         }
     }
     private void loadPropertiesIntoSystem(Map<String, String> properties) {
-        properties.forEach(System::setProperty);
+        properties.forEach((k, v) -> {
+            if (System.getProperty(k) == null)
+                System.setProperty(k, v);
+        });
     }
 
     private Map<String, String> jsonStreamToMap(InputStream environmentInputStream) throws IOException {
