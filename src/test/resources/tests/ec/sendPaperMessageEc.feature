@@ -17,8 +17,8 @@ Feature: Send Paper Message Ec
   Scenario Outline: Invio di un messaggio cartaceo con allegati da rasterizzare, verifica della pubblicazione del messaggio nella coda di debug e verifica dello stato di avanzamento
     Given a "<clientId>" and "<channel>" to send on
     When "<clientId>" authenticated by "<apiKey>" uploads the following attachments:
-      | documentType                       | fileName                    | mimeType        |
-      | @doc_type_notification_attachments | src/test/resources/test-raster.pdf | application/pdf |
+      | documentType        | fileName                           | mimeType        |
+      | @doc_type_to_raster | src/test/resources/test-raster.pdf | application/pdf |
     And try to send a paper message to "<receiver>"
     # Bisogna aspettare 2 volte la schedulazione, la prima per lavorare la richiesta con gli allegati ancora da convertire,
     # la seconda per lavorare la richiesta con gli allegati ormai rasterizzati.
