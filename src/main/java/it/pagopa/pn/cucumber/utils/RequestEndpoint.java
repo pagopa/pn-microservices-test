@@ -30,6 +30,7 @@ public class RequestEndpoint {
     protected static final String SAFESTORAGE_FILES_DOWNLOAD_ENDPOINT = "/safe-storage/v1/files/{fileKey}";
     protected static final String SAFESTORAGE_UPDATE_METADATA_ENDPOINT = SAFESTORAGE_FILES_DOWNLOAD_ENDPOINT;
     protected static final String SAFESTORAGE_INTERNAL_DOCUMENTS_GET_ENDPOINT = "/safestorage/internal/v1/documents/{fileKey}";
+    protected static final String SAFESTORAGE_INTERNAL_DOCUMENTS_PATCH_ENDPOINT = SAFESTORAGE_INTERNAL_DOCUMENTS_GET_ENDPOINT;
     protected static final String SAFESTORAGE_DOCUMENT_TYPES_GET_ENDPOINT = "/safe-storage/v1/configurations/documents-types";
     protected static final String SAFESTORAGE_CONFIGURATION_CLIENT_GET_ENDPOINT = "/safe-storage/v1/configurations/clients/{clientId}";
 }
