@@ -13,6 +13,7 @@
   "delivery_api_key": "pn-delivery_api_key",
   "doc_type_notification_attachments": "PN_NOTIFICATION_ATTACHMENTS",
   "doc_type_legal_facts": "PN_LEGAL_FACTS_ST",
+  "doc_type_dummy": "PN_LEGAL_FACTS",
   "doc_type_external_legal-facts": "PN_EXTERNAL_LEGAL_FACTS",
   "doc_type_aar": "PN_AAR",
   "channel_sms": "SMS",
