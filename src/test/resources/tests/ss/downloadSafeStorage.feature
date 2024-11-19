@@ -16,6 +16,20 @@ Feature: Download SafeStorage
       | clientId       | APIKey       |
       | @clientId-test | @apiKey_test |
 
+  # In questo scenario, forziamo il passaggio di stato di un documento a "freezed" e simuliamo l'evento di restore sul file S3.
+  # Questo consente alla lambda del gestore bucket di eseguire il passaggio di stato da "freezed" ad "available" e generare l'evento di disponibilità corretto.
+  @PnSsDownload @Glacier
+  Scenario Outline: Download di un file in Glacier con conseguente restore e verifica di disponibilità del file.
+    Given the SafeStorage client "<clientId>" authenticated by "<APIKey>"
+    * I change document state to "freezed"
+    * I send restore event to main bucket events queue
+    * i check glacier restore availability message "200"
+    When request a presigned url to download the file
+    Then i get that presigned url
+    Examples:
+      | clientId       | APIKey       |
+      | @clientId-test | @apiKey_test |
+
   @PnSsDownload @notAuthorized
   Scenario Outline: Richiesta di presignedUrl di download con client non autorizzato sul documentType
     Given the SafeStorage client "<clientId>" authenticated by "<APIKey>"

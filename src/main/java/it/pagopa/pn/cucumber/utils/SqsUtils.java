@@ -12,13 +12,13 @@ public class SqsUtils {
     }
 
     public static final String EVENT_BUS_SOURCE_AVAILABLE_DOCUMENT = "SafeStorageOutcomeEvent";
+    public static final String EVENT_BUS_SOURCE_GLACIER_DOCUMENTS = "SafeStorageGlacierRestoreEvent";
     public static final String EVENT_BUS_SOURCE_DIGITAL_MESSAGE = "ExternalChannelOutcomeEvent";
     public static final String GESTORE_DISPONIBILITA_EVENT_NAME = "GESTORE DISPONIBILITA";
     public static final String NOTIFICATION_TRACKER_EVENT_NAME = "NOTIFICATION TRACKER";
 
     public static boolean isSsMessage(MessageBodyDto messageBodyDto) {
-        return messageBodyDto.getSource().equals(GESTORE_DISPONIBILITA_EVENT_NAME) &&
-                messageBodyDto.getDetailType().equals(EVENT_BUS_SOURCE_AVAILABLE_DOCUMENT);
+        return messageBodyDto.getSource().equals(GESTORE_DISPONIBILITA_EVENT_NAME);
     }
 
     public static boolean isEcMessage(MessageBodyDto messageBodyDto) {
