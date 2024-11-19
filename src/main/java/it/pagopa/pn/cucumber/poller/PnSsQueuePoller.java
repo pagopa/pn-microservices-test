@@ -20,6 +20,7 @@ import static it.pagopa.pn.cucumber.utils.SqsUtils.parseMessageBody;
 public class PnSsQueuePoller extends QueuePoller {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final List<String> availableStatuses = List.of("SAVED", "PRELOADED");
 
     public PnSsQueuePoller() {
         super(System.getProperty("pn.ss.gestore.disponibilita.queue.name"));
@@ -29,14 +30,16 @@ public class PnSsQueuePoller extends QueuePoller {
     public void onMessage(jakarta.jms.Message message) {
         try {
             MessageBodyDto messageBodyDto = parseMessageBody(((TextMessage) message).getText());
+            String detailType = messageBodyDto.getDetailType();
             log.trace("Retrieved message from queue: " + messageBodyDto);
             NotificationMessage notificationMessage = objectMapper.readValue(messageBodyDto.getDetail(), NotificationMessage.class);
+            String documentStatus = notificationMessage.getDocumentStatus();
             if (isSsMessage(messageBodyDto)) {
                 if (!this.messageMap.containsKey(notificationMessage.getKey()))
-                    this.messageMap.put(notificationMessage.getKey(), new HashSet<>(List.of(notificationMessage.getDocumentStatus())));
+                    this.messageMap.put(notificationMessage.getKey(), new HashSet<>(List.of(concatStatusWithDetailType(documentStatus, detailType))));
                 else {
                     Set<String> documentStatusList = this.messageMap.get(notificationMessage.getKey());
-                    documentStatusList.add(notificationMessage.getDocumentStatus());
+                    documentStatusList.add(concatStatusWithDetailType(documentStatus, detailType));
                     this.messageMap.put(notificationMessage.getKey(), documentStatusList);
                 }
             }
@@ -45,15 +48,15 @@ public class PnSsQueuePoller extends QueuePoller {
         }
     }
 
-    public boolean checkMessageAvailability(String fileKey) {
+    public boolean checkMessageAvailability(String fileKey, String detailType) {
         boolean check = false;
         long pollingInterval = Long.parseLong(System.getProperty("pn.ss.sqs.lookup.interval.millis"));
         Instant timeLimit = Instant.now().plusMillis(Long.parseLong(System.getProperty("pn.ss.sqs.lookup.timeout.millis")));
         while (Instant.now().isBefore(timeLimit)) {
             var result = this.messageMap.get(fileKey);
-            if (result != null && (result.contains("SAVED") || result.contains("PRELOADED"))) {
-                check = true;
-                break;
+            if (result != null) {
+                check = availableStatuses.stream().anyMatch(availableStatus -> result.contains(concatStatusWithDetailType(availableStatus, detailType)));
+                if (check) break;
             }
             try {
                 Thread.sleep(pollingInterval);
@@ -62,6 +65,10 @@ public class PnSsQueuePoller extends QueuePoller {
             }
         }
         return check;
+    }
+
+    private String concatStatusWithDetailType(String status, String detailType) {
+        return status + "~" + detailType;
     }
 
 }
