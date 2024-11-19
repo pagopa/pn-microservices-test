@@ -89,6 +89,13 @@ public class CommonUtils {
 		return oReqSpec.put();
 	}
 
+	protected static Response myPatch(RequestSpecification oReqSpec, String sURI) {
+		oReqSpec.given().baseUri(getBaseURL()).basePath(sURI);
+		QueryableRequestSpecification queryRequest = SpecificationQuerier.query(oReqSpec);
+		log.debug("PATCH {}. Request body -> {}", queryRequest.getURI(), queryRequest.getBody().toString());
+		return oReqSpec.patch();
+	}
+
 	@SneakyThrows({NoSuchAlgorithmException.class, IOException.class})
 	public static String getSHA256(File file) {
 		try (FileInputStream oFIS = new FileInputStream(file)) {
