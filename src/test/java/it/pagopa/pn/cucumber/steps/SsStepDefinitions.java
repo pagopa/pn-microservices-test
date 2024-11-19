@@ -3,26 +3,26 @@ package it.pagopa.pn.cucumber.steps;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.java.AfterAll;
-import io.cucumber.java.BeforeAll;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.response.Response;
 import it.pagopa.pn.configuration.Config;
-import it.pagopa.pn.configuration.TestVariablesConfiguration;
 import it.pagopa.pn.cucumber.dto.pojo.Checksum;
 import it.pagopa.pn.cucumber.utils.CommonUtils;
+import it.pagopa.pn.cucumber.utils.S3Utils;
 import it.pagopa.pn.cucumber.utils.SafeStorageUtils;
 import it.pagopa.pn.cucumber.poller.PnSsQueuePoller;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.*;
+import it.pagopa.pn.service.impl.SqsServiceImpl;
 import jakarta.jms.JMSException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.MDC;
+import software.amazon.awssdk.eventnotifications.s3.model.S3EventNotification;
 
 import java.io.*;
-import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
@@ -34,6 +34,9 @@ import java.util.Map;
 
 import static it.pagopa.pn.configuration.TestVariablesConfiguration.getValueIfTagged;
 import static it.pagopa.pn.cucumber.utils.LogUtils.MDC_CORR_ID_KEY;
+import static it.pagopa.pn.cucumber.utils.S3Utils.OBJECT_RESTORE_COMPLETED;
+import static it.pagopa.pn.cucumber.utils.SqsUtils.EVENT_BUS_SOURCE_AVAILABLE_DOCUMENT;
+import static it.pagopa.pn.cucumber.utils.SqsUtils.EVENT_BUS_SOURCE_GLACIER_DOCUMENTS;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -59,6 +62,7 @@ public class SsStepDefinitions {
     private Date retentionDate = null;
     private static String nomeCoda;
     private static final PnSsQueuePoller queuePoller;
+    private final SqsServiceImpl sqsService = new SqsServiceImpl();
     UpdateFileMetadataRequest requestBody = new UpdateFileMetadataRequest();
     private boolean metadataOnly;
     private FileDownloadResponse fileDownloadResponse;
@@ -254,9 +258,18 @@ public class SsStepDefinitions {
 
 
     @And("i check availability message {string}")
-    public void i_check_availability_messages(String sRC) {
+    public void i_check_availability_message(String sRC) {
+        checkAvailabilityMessage(sRC, sKey, EVENT_BUS_SOURCE_AVAILABLE_DOCUMENT);
+    }
+
+    @And("i check glacier restore availability message {string}")
+    public void i_check_glacier_restore_availability_message(String sRC) {
+        checkAvailabilityMessage(sRC, sKey, EVENT_BUS_SOURCE_GLACIER_DOCUMENTS);
+    }
+
+    private void checkAvailabilityMessage(String statusCode, String fileKey, String detailType) {
         int sCode;
-        boolean check = queuePoller.checkMessageAvailability(sKey);
+        boolean check = queuePoller.checkMessageAvailability(fileKey, detailType);
         if (!check) {
             sCode = 404;
             log.info("Message not found for key {}", sKey);
@@ -264,7 +277,7 @@ public class SsStepDefinitions {
             sCode = 200;
             log.debug("Message found for key {}", sKey);
         }
-        Assertions.assertEquals(Integer.parseInt(sRC), sCode);
+        Assertions.assertEquals(Integer.parseInt(statusCode), sCode);
     }
 
     @Then("i get an error {string}")
@@ -330,6 +343,19 @@ public class SsStepDefinitions {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    @When("I send restore event to main bucket events queue")
+    public void sendRestoreEventToAvailabilityEventsQueue() {
+        String bucketEventsQueue = System.getProperty("pn.ss.main.bucket.events.queue.name");
+        S3EventNotification eventNotification = S3Utils.createS3EventNotification(sKey, OBJECT_RESTORE_COMPLETED);
+        sqsService.send(bucketEventsQueue, eventNotification.toJson());
+    }
+
+    @When("I change document state to {string}")
+    public void iChangeDocumentState(String status) {
+        Response response = SafeStorageUtils.patchDocument(sPNClient, sPNClient_AK, sKey, new DocumentChanges().documentState(status));
+        Assertions.assertEquals(200, response.getStatusCode());
     }
 
     @Then("i get that presigned url")

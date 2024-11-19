@@ -6,13 +6,10 @@ import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import it.pagopa.pn.cucumber.dto.pojo.Checksum;
+import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.DocumentChanges;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileCreationRequest;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import static it.pagopa.pn.cucumber.utils.LogUtils.*;
@@ -98,6 +95,15 @@ public class SafeStorageUtils {
 				.pathParam(FILE_KEY, sFileKey)
 				.param(METADATA_ONLY, true);
 		return CommonUtils.myGet(oReq, SAFESTORAGE_INTERNAL_DOCUMENTS_GET_ENDPOINT);
+	}
+
+	public static Response patchDocument(String sCxId, String sAPIKey, String sFileKey, DocumentChanges documentChanges) {
+		RequestSpecification oReq = stdReq()
+				.body(documentChanges)
+				.header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
+				.header(X_API_KEY, sAPIKey)
+				.pathParam(FILE_KEY, sFileKey);
+		return CommonUtils.myPatch(oReq, SAFESTORAGE_INTERNAL_DOCUMENTS_PATCH_ENDPOINT);
 	}
 
 	public static Response updateObjectMetadata (String sCxId, String sAPIKey, String sFileKey, UpdateFileMetadataRequest requestBody) {
