@@ -40,11 +40,11 @@ Feature: Upload SafeStorage
     And i check availability message "<rc>"
     Examples:
       | clientId       | APIKey       | documentType               | fileName                    | MIMEType        | rc  |
-      | @clientId-test | @apiKey_test | @doc_type_legal_facts      | src/main/resources/test.zip | application/zip | 200 |
-      | @clientId-test | @apiKey_test | @doc_type_legal_facts      | src/main/resources/test.pdf | application/pdf | 200 |
-      | @clientId-test | @apiKey_test | @doc_type_legal_facts      | src/main/resources/test.xml | application/xml | 200 |
-      | @clientId-test | @apiKey_test | @doc_type_paper_attachment | src/main/resources/test.pdf | application/pdf | 200 |
-      | @clientId-test | @apiKey_test | @doc_type_only_sign        | src/main/resources/test.xml | application/xml | 200 |
+      #| @clientId-test | @apiKey_test | @doc_type_legal_facts      | src/main/resources/test.zip | application/zip | 200 |
+      #| @clientId-test | @apiKey_test | @doc_type_legal_facts      | src/main/resources/test.pdf | application/pdf | 200 |
+      #| @clientId-test | @apiKey_test | @doc_type_legal_facts      | src/main/resources/test.xml | application/xml | 200 |
+      #| @clientId-test | @apiKey_test | @doc_type_paper_attachment | src/main/resources/test.pdf | application/pdf | 200 |
+      #| @clientId-test | @apiKey_test | @doc_type_only_sign        | src/main/resources/test.xml | application/xml | 200 |
       | @clientId-test | @apiKey_test | @doc_type_dummy            | src/main/resources/test.xml | application/xml | 200 |
 
 

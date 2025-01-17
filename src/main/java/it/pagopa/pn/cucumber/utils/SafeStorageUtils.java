@@ -12,6 +12,7 @@ import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetada
 import lombok.extern.slf4j.Slf4j;
 import java.util.stream.Stream;
 
+import static it.pagopa.pn.cucumber.utils.CommonUtils.PN_SS;
 import static it.pagopa.pn.cucumber.utils.LogUtils.*;
 import static it.pagopa.pn.cucumber.utils.RequestEndpoint.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -67,7 +68,7 @@ public class SafeStorageUtils {
 			}
 		}
 		oReq.body(fileCreationRequest);
-		return CommonUtils.myPost(oReq, SAFESTORAGE_FILES_UPLOAD_ENDPOINT);
+		return CommonUtils.myPost(oReq, SAFESTORAGE_FILES_UPLOAD_ENDPOINT,PN_SS);
 	}
 
 	public static Response getPresignedURLDownload(String sCxId, String sAPIKey, String sFileKey, boolean metadataOnly) {
@@ -77,7 +78,7 @@ public class SafeStorageUtils {
 				.param(METADATA_ONLY, metadataOnly)
 				.header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
 				.header(X_API_KEY, sAPIKey);
-		return CommonUtils.myGet(oReq, SAFESTORAGE_FILES_DOWNLOAD_ENDPOINT);
+		return CommonUtils.myGet(oReq, SAFESTORAGE_FILES_DOWNLOAD_ENDPOINT,PN_SS);
 	}
 
 	public static Response getObjectMetadata(String sCxId, String sAPIKey, String sFileKey) {
@@ -87,14 +88,14 @@ public class SafeStorageUtils {
 				.header(X_API_KEY, sAPIKey)
 				.pathParam(FILE_KEY, sFileKey)
 				.param(METADATA_ONLY, true);
-		return CommonUtils.myGet(oReq, SAFESTORAGE_FILES_DOWNLOAD_ENDPOINT);
+		return CommonUtils.myGet(oReq, SAFESTORAGE_FILES_DOWNLOAD_ENDPOINT,PN_SS);
 	}
 
 	public static Response getDocument(String sFileKey) {
 		RequestSpecification oReq = stdReq()
 				.pathParam(FILE_KEY, sFileKey)
 				.param(METADATA_ONLY, true);
-		return CommonUtils.myGet(oReq, SAFESTORAGE_INTERNAL_DOCUMENTS_GET_ENDPOINT);
+		return CommonUtils.myGet(oReq, SAFESTORAGE_INTERNAL_DOCUMENTS_GET_ENDPOINT,PN_SS);
 	}
 
 	public static Response patchDocument(String sCxId, String sAPIKey, String sFileKey, DocumentChanges documentChanges) {
@@ -103,7 +104,7 @@ public class SafeStorageUtils {
 				.header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
 				.header(X_API_KEY, sAPIKey)
 				.pathParam(FILE_KEY, sFileKey);
-		return CommonUtils.myPatch(oReq, SAFESTORAGE_INTERNAL_DOCUMENTS_PATCH_ENDPOINT);
+		return CommonUtils.myPatch(oReq, SAFESTORAGE_INTERNAL_DOCUMENTS_PATCH_ENDPOINT,PN_SS);
 	}
 
 	public static Response updateObjectMetadata (String sCxId, String sAPIKey, String sFileKey, UpdateFileMetadataRequest requestBody) {
@@ -120,20 +121,20 @@ public class SafeStorageUtils {
 				.header(X_API_KEY, sAPIKey)
 				.pathParam(FILE_KEY, sFileKey)
 				.body(body);
-		return CommonUtils.myPost(oReq, SAFESTORAGE_UPDATE_METADATA_ENDPOINT);
+		return CommonUtils.myPost(oReq, SAFESTORAGE_UPDATE_METADATA_ENDPOINT,PN_SS);
 	}
 
     public static Response getDocumentsConfigs(String sCxId, String sAPIKey) {
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
                 .header(X_API_KEY, sAPIKey);
-        return CommonUtils.myGet(oReq, SAFESTORAGE_DOCUMENT_TYPES_GET_ENDPOINT);
+        return CommonUtils.myGet(oReq, SAFESTORAGE_DOCUMENT_TYPES_GET_ENDPOINT,PN_SS);
     }
 
     public static Response getCurrentClientConfig(String sCxId, String sAPIKey) {
         RequestSpecification oReq = stdReq()
                 .header(X_API_KEY, sAPIKey)
                 .pathParam("clientId", sCxId);
-        return CommonUtils.myGet(oReq, SAFESTORAGE_CONFIGURATION_CLIENT_GET_ENDPOINT);
+        return CommonUtils.myGet(oReq, SAFESTORAGE_CONFIGURATION_CLIENT_GET_ENDPOINT,PN_SS);
     }
 }
