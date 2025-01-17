@@ -24,7 +24,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.Map;
 
-
 @Slf4j
 public class CommonUtils {
 
@@ -33,16 +32,45 @@ public class CommonUtils {
 	}
 
 	private static String baseURL = null;
+	private static String pnEcPort = System.getProperty("pn.ec.port") == null ? "" : System.getProperty("pn.ec.port");
+	private static String pnSsPort = System.getProperty("pn.ss.port") == null ? "" : System.getProperty("pn.ss.port");
+	public static final String PN_EC = "pnEc";
+	public static final String PN_SS = "pnSs";
 
-	protected static String getBaseURL() {
-		if( baseURL == null ) {
-			baseURL = System.getProperty("baseURL");
-			if( baseURL == null ) {
-				baseURL="";
+	protected static String getPort(String service) {
+		if( service.equals(PN_EC) ) {
+			return pnEcPort;
+		} else if( service.equals(PN_SS) ) {
+			return pnSsPort;
+		} else {
+			return "";
+		}
+	}
+
+	protected static String getBaseURL(String service, String path) {
+		String url = baseURL;
+		if (url == null) {
+			url = System.getProperty("baseURL");
+			if (url == null) {
+				url = "http://localhost";
 			}
 		}
-		return baseURL;
+
+		String port = getPort(service);
+		if (port != null && !port.isEmpty()) {
+			url += ":" + port;
+		}
+
+		if (path != null && !path.isEmpty()) {
+			if (!path.startsWith("/")) {
+				url += "/";
+			}
+			url += path;
+		}
+
+		return url;
 	}
+
 	public static Response uploadFile(String sURL, File oFile, String sSHA256, String sMD5, String sContentType, String sSecret, Checksum eCS) {
 
 		log.trace("uploadFile('{}', '{}', '{}', '{}', '{}')", sURL, sSHA256, sMD5, sContentType, sSecret);
@@ -68,29 +96,29 @@ public class CommonUtils {
 		return oReq.put(sMyURL);
 	}
 
-	protected static Response myGet(RequestSpecification oReqSpec, String sURI) {
-		oReqSpec.given().baseUri(getBaseURL()).basePath(sURI);
+	protected static Response myGet(RequestSpecification oReqSpec, String sURI, String service) {
+		oReqSpec.given().baseUri(getBaseURL(service, baseURL)).basePath(sURI);
 		QueryableRequestSpecification queryRequest = SpecificationQuerier.query(oReqSpec);
 		log.debug("GET {}", queryRequest.getURI());
-        return oReqSpec.get();
+		return oReqSpec.get();
 	}
 
-	protected static Response myPost(RequestSpecification oReqSpec, String sURI) {
-		oReqSpec.given().baseUri(getBaseURL()).basePath(sURI);
+	protected static Response myPost(RequestSpecification oReqSpec, String sURI, String service) {
+		oReqSpec.given().baseUri(getBaseURL(service, baseURL)).basePath(sURI);
 		QueryableRequestSpecification queryRequest = SpecificationQuerier.query(oReqSpec);
 		log.debug("POST {}. Request body -> {}", queryRequest.getURI(), queryRequest.getBody().toString());
 		return oReqSpec.post();
 	}
 
-	protected static Response myPut(RequestSpecification oReqSpec, String sURI) {
-		oReqSpec.given().baseUri(getBaseURL()).basePath(sURI);
+	protected static Response myPut(RequestSpecification oReqSpec, String sURI, String service) {
+		oReqSpec.given().baseUri(getBaseURL(service, baseURL)).basePath(sURI);
 		QueryableRequestSpecification queryRequest = SpecificationQuerier.query(oReqSpec);
 		log.debug("PUT {}. Request body -> {}", queryRequest.getURI(), queryRequest.getBody().toString());
 		return oReqSpec.put();
 	}
 
-	protected static Response myPatch(RequestSpecification oReqSpec, String sURI) {
-		oReqSpec.given().baseUri(getBaseURL()).basePath(sURI);
+	protected static Response myPatch(RequestSpecification oReqSpec, String sURI, String service) {
+		oReqSpec.given().baseUri(getBaseURL(service, baseURL)).basePath(sURI);
 		QueryableRequestSpecification queryRequest = SpecificationQuerier.query(oReqSpec);
 		log.debug("PATCH {}. Request body -> {}", queryRequest.getURI(), queryRequest.getBody().toString());
 		return oReqSpec.patch();
