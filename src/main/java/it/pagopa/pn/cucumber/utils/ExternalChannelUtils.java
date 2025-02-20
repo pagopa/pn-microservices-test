@@ -53,7 +53,7 @@ public class ExternalChannelUtils extends RequestTemplate {
         DigitalCourtesySmsRequest digitalCourtesySmsRequest = createSmsRequest(requestId, receiver);
     log.info(digitalCourtesySmsRequest.getRequestId());
         oReq.body(digitalCourtesySmsRequest);
-         Response response = CommonUtils.myPut(oReq, RequestEndpoint.SMS_ENDPOINT);
+         Response response = CommonUtils.myPut(oReq, RequestEndpoint.SMS_ENDPOINT,CommonUtils.PN_EC);
          log.info(oReq.get().asString());
 
         return response;
@@ -66,7 +66,7 @@ public class ExternalChannelUtils extends RequestTemplate {
         DigitalCourtesySmsRequest digitalCourtesySmsRequest = createSmsRequestErr(requestId, receiver);
     log.info(digitalCourtesySmsRequest.getRequestId());
         oReq.body(digitalCourtesySmsRequest);
-         Response response = CommonUtils.myPut(oReq, RequestEndpoint.SMS_ENDPOINT);
+         Response response = CommonUtils.myPut(oReq, RequestEndpoint.SMS_ENDPOINT,CommonUtils.PN_EC);
          log.info(oReq.get().asString());
 
         return response;
@@ -80,7 +80,7 @@ public class ExternalChannelUtils extends RequestTemplate {
         DigitalCourtesyMailRequest digitalCourtesyMailRequest = createMailRequest(requestId, receiver);
         oReq.body(digitalCourtesyMailRequest);
 
-        return CommonUtils.myPut(oReq,RequestEndpoint.EMAIL_ENDPOINT);
+        return CommonUtils.myPut(oReq,RequestEndpoint.EMAIL_ENDPOINT,CommonUtils.PN_EC);
     }
 
 
@@ -95,7 +95,7 @@ public class ExternalChannelUtils extends RequestTemplate {
         digitalNotificationRequest.setAttachmentUrls(attachmentsUri);
 
         oReq.body(digitalNotificationRequest);
-        return CommonUtils.myPut(oReq,RequestEndpoint.PEC_ENDPOINT);
+        return CommonUtils.myPut(oReq,RequestEndpoint.PEC_ENDPOINT,CommonUtils.PN_EC);
     }
     public static Response sendDigitalNotificationErr(String clientId, String requestId, List<PnAttachment> attachments, String receiver) {
         RequestSpecification oReq = stdReq()
@@ -106,7 +106,7 @@ public class ExternalChannelUtils extends RequestTemplate {
         digitalNotificationRequest.setAttachmentUrls(attachmentsUri);
 
         oReq.body(digitalNotificationRequest);
-        return CommonUtils.myPut(oReq,RequestEndpoint.PEC_ENDPOINT);
+        return CommonUtils.myPut(oReq,RequestEndpoint.PEC_ENDPOINT,CommonUtils.PN_EC);
     }
 
     //CARTACEO
@@ -125,7 +125,7 @@ public class ExternalChannelUtils extends RequestTemplate {
         }).toList();
         paperEngageRequest.setAttachments(paperEngageRequestAttachmentsList);
         oReq.body(paperEngageRequest);
-        return CommonUtils.myPut(oReq, RequestEndpoint.CARTACEO_ENDPOINT);
+        return CommonUtils.myPut(oReq, RequestEndpoint.CARTACEO_ENDPOINT,CommonUtils.PN_EC);
     }
 
     //API Consolidatore
@@ -134,7 +134,7 @@ public class ExternalChannelUtils extends RequestTemplate {
                 .header(X_PAGOPA_EXTCH_SERVICE_ID, clientId)
                 .header(X_API_KEY, apiKey);
         oReq.body(events);
-        return CommonUtils.myPut(oReq, RequestEndpoint.CONSOLIDATORE_ENDPOINT);
+        return CommonUtils.myPut(oReq, RequestEndpoint.CONSOLIDATORE_ENDPOINT,CommonUtils.PN_EC);
     }
 
     //CLIENT
@@ -143,13 +143,13 @@ public class ExternalChannelUtils extends RequestTemplate {
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId);
         ClientConfigurationDto clientConfigurationDto = createClientConfigurationRequest();
         oReq.body(clientConfigurationDto);
-        return CommonUtils.myGet(oReq, RequestEndpoint.GET_CONFIGURATIONS_ENDPOINT);
+        return CommonUtils.myGet(oReq, RequestEndpoint.GET_CONFIGURATIONS_ENDPOINT,CommonUtils.PN_EC);
     }
 
     public static Response getClient(String clientId){
         RequestSpecification oReq = stdReq()
                 .pathParam(X_PAGOPA_EXTCH_CX_ID, clientId);
-        return CommonUtils.myGet(oReq, RequestEndpoint.GET_CLIENT_ENDPOINT);
+        return CommonUtils.myGet(oReq, RequestEndpoint.GET_CLIENT_ENDPOINT,CommonUtils.PN_EC);
     }
 
     //GET REQUEST
@@ -157,13 +157,13 @@ public class ExternalChannelUtils extends RequestTemplate {
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
-        return CommonUtils.myGet(oReq, RequestEndpoint.GET_REQUEST_ENDPOINT);
+        return CommonUtils.myGet(oReq, RequestEndpoint.GET_REQUEST_ENDPOINT,CommonUtils.PN_EC);
     }
 
     public static Response getRequestByMessageId(String messageId) {
         RequestSpecification oReq = stdReq()
                 .pathParam("messageId", messageId);
-        return CommonUtils.myGet(oReq, RequestEndpoint.GET_REQUEST_MESSAGE_ID_ENDPOINT);
+        return CommonUtils.myGet(oReq, RequestEndpoint.GET_REQUEST_MESSAGE_ID_ENDPOINT,CommonUtils.PN_EC);
     }
 
 
@@ -172,7 +172,7 @@ public class ExternalChannelUtils extends RequestTemplate {
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
-        return CommonUtils.myGet(oReq, RequestEndpoint.PEC_ENDPOINT);
+        return CommonUtils.myGet(oReq, RequestEndpoint.PEC_ENDPOINT,CommonUtils.PN_EC);
     }
 
     //GET EMAIL
@@ -180,7 +180,7 @@ public class ExternalChannelUtils extends RequestTemplate {
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
-        return CommonUtils.myGet(oReq, RequestEndpoint.EMAIL_ENDPOINT);
+        return CommonUtils.myGet(oReq, RequestEndpoint.EMAIL_ENDPOINT,CommonUtils.PN_EC);
     }
 
     //GET SMS
@@ -188,7 +188,7 @@ public class ExternalChannelUtils extends RequestTemplate {
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
-        return CommonUtils.myGet(oReq, RequestEndpoint.SMS_ENDPOINT);
+        return CommonUtils.myGet(oReq, RequestEndpoint.SMS_ENDPOINT,CommonUtils.PN_EC);
     }
 
     //GET PAPER
@@ -196,7 +196,7 @@ public class ExternalChannelUtils extends RequestTemplate {
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
-        return CommonUtils.myGet(oReq, RequestEndpoint.CARTACEO_ENDPOINT);
+        return CommonUtils.myGet(oReq, RequestEndpoint.CARTACEO_ENDPOINT,CommonUtils.PN_EC);
     }
 
     //GET ATTACHMENTS
@@ -206,7 +206,7 @@ public class ExternalChannelUtils extends RequestTemplate {
                 .pathParam(FILE_KEY, fileKey)
                 .header(X_PAGOPA_EXTCH_SERVICE_ID, clientId)
                 .header(X_API_KEY, apiKey);
-        return CommonUtils.myGet(oReq, RequestEndpoint.GET_ATTACHMENT);
+        return CommonUtils.myGet(oReq, RequestEndpoint.GET_ATTACHMENT,CommonUtils.PN_EC);
     }
 
     public static String generateRandomRequestId() {
