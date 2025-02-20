@@ -35,8 +35,7 @@ import java.util.Map;
 import static it.pagopa.pn.configuration.TestVariablesConfiguration.getValueIfTagged;
 import static it.pagopa.pn.cucumber.utils.LogUtils.MDC_CORR_ID_KEY;
 import static it.pagopa.pn.cucumber.utils.S3Utils.OBJECT_RESTORE_COMPLETED;
-import static it.pagopa.pn.cucumber.utils.SqsUtils.EVENT_BUS_SOURCE_AVAILABLE_DOCUMENT;
-import static it.pagopa.pn.cucumber.utils.SqsUtils.EVENT_BUS_SOURCE_GLACIER_DOCUMENTS;
+import static it.pagopa.pn.cucumber.utils.SqsUtils.*;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -260,6 +259,11 @@ public class SsStepDefinitions {
     @And("i check availability message {string}")
     public void i_check_availability_message(String sRC) {
         checkAvailabilityMessage(sRC, sKey, EVENT_BUS_SOURCE_AVAILABLE_DOCUMENT);
+    }
+
+    @And("i check unavailability message {string}")
+    public void i_check_unavailability_message(String sRC) {
+        checkAvailabilityMessage(sRC, sKey, EVENT_BUS_SOURCE_UNAVAILABILITY_EVENT);
     }
 
     @And("i check glacier restore availability message {string}")
