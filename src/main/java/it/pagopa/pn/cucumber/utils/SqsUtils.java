@@ -12,6 +12,7 @@ public class SqsUtils {
     }
 
     public static final String EVENT_BUS_SOURCE_AVAILABLE_DOCUMENT = "SafeStorageOutcomeEvent";
+    public static final String EVENT_BUS_SOURCE_UNAVAILABILITY_EVENT = "SafeStorageTransformEvent";
     public static final String EVENT_BUS_SOURCE_GLACIER_DOCUMENTS = "SafeStorageGlacierRestoreEvent";
     public static final String EVENT_BUS_SOURCE_DIGITAL_MESSAGE = "ExternalChannelOutcomeEvent";
     public static final String GESTORE_DISPONIBILITA_EVENT_NAME = "GESTORE DISPONIBILITA";
