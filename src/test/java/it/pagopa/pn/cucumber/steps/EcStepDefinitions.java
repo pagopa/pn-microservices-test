@@ -1,15 +1,14 @@
 package it.pagopa.pn.cucumber.steps;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.AfterAll;
+import io.cucumber.java.BeforeAll;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.response.Response;
 import it.pagopa.pn.configuration.Config;
-import it.pagopa.pn.cucumber.RequestTemplate;
 import it.pagopa.pn.cucumber.dto.pojo.Checksum;
 import it.pagopa.pn.cucumber.dto.pojo.PnAttachment;
 import it.pagopa.pn.cucumber.poller.PnEcQueuePoller;
@@ -23,8 +22,6 @@ import org.junit.jupiter.api.Assertions;
 import org.slf4j.MDC;
 
 import java.io.File;
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -52,13 +49,13 @@ public class EcStepDefinitions {
     private String sendPaperProgressStatusResultDescription;
     private List<String> sendPaperProgressStatusErrorList;
     private final List<ConsolidatoreIngressPaperProgressStatusEventAttachments> paperProgressStatusEventAttachments = new ArrayList<>();
-    private static final PnEcQueuePoller queuePoller;
+    private static PnEcQueuePoller queuePoller;
     private String sRC;
     private Response response;
     private OffsetDateTime testStartTime;
 
-
-    static {
+    @BeforeAll
+    public static void init() {
         try {
             MDC.clear();
             Config.getInstance().loadProperties();
@@ -459,7 +456,8 @@ public class EcStepDefinitions {
 
     @AfterAll
     public static void doFinally() throws JMSException {
-        queuePoller.close();
+        if (queuePoller != null)
+            queuePoller.close();
     }
 
 

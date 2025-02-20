@@ -30,7 +30,7 @@ Feature: Upload SafeStorage
       | clientId           | APIKey            | documentType   | fileName                    | MIMEType        | rc  |
       | @clientId-delivery | @delivery_api_key | PN_LEGAL_FACTS | src/main/resources/test.zip | application/zip | 403 |
 
-  @PnSsUpload
+  @PnSsUpload @Transformation
   Scenario Outline: Upload di un file da sottoporre a trasformazione e verifica del messaggio di disponibilità del file
     Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
     When request a presigned url to upload the file
@@ -40,26 +40,24 @@ Feature: Upload SafeStorage
     And i check availability message "<rc>"
     Examples:
       | clientId       | APIKey       | documentType               | fileName                    | MIMEType        | rc  |
-      #| @clientId-test | @apiKey_test | @doc_type_legal_facts      | src/main/resources/test.zip | application/zip | 200 |
-      #| @clientId-test | @apiKey_test | @doc_type_legal_facts      | src/main/resources/test.pdf | application/pdf | 200 |
-      #| @clientId-test | @apiKey_test | @doc_type_legal_facts      | src/main/resources/test.xml | application/xml | 200 |
-      #| @clientId-test | @apiKey_test | @doc_type_paper_attachment | src/main/resources/test.pdf | application/pdf | 200 |
-      #| @clientId-test | @apiKey_test | @doc_type_only_sign        | src/main/resources/test.xml | application/xml | 200 |
+      | @clientId-test | @apiKey_test | @doc_type_legal_facts      | src/main/resources/test.zip | application/zip | 200 |
+      | @clientId-test | @apiKey_test | @doc_type_legal_facts      | src/main/resources/test.pdf | application/pdf | 200 |
+      | @clientId-test | @apiKey_test | @doc_type_legal_facts      | src/main/resources/test.xml | application/xml | 200 |
+      | @clientId-test | @apiKey_test | @doc_type_paper_attachment | src/main/resources/test.pdf | application/pdf | 200 |
+      | @clientId-test | @apiKey_test | @doc_type_only_sign        | src/main/resources/test.xml | application/xml | 200 |
       | @clientId-test | @apiKey_test | @doc_type_dummy            | src/main/resources/test.xml | application/xml | 200 |
 
-  # Attualmente il test è valido solo se la libreria di firma e marca restituisce un errore di autenticazione, ovvero le credenziali nel secret Pn-SS-SignAndTimemark sono errate.
-  @PnSsUpload @ignore
+  # Forniamo un file vuoto per far lanciare un'eccezione permanente alla libreria di firma e marca.
+  @PnSsUpload @Transformation
   Scenario Outline: Upload di un file da sottoporre a trasformazione. La trasformazione fallisce permanentemente e viene verificato l'arrivo dell'evento di indisponibilità del file.
     Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
     When request a presigned url to upload the file
     And upload that file
-    And it's available
-    Then i found in S3
-    And i check unavailability message "<rc>"
+    Then i check unavailability message "<rc>"
     Examples:
       | clientId       | APIKey       | documentType               | fileName                    | MIMEType        | rc  |
-      | @clientId-test | @apiKey_test | @doc_type_legal_facts      | src/main/resources/test.pdf | application/pdf | 200 |
-      | @clientId-test | @apiKey_test | @doc_type_only_sign        | src/main/resources/test.pdf | application/pdf | 200 |
+      | @clientId-test | @apiKey_test | @doc_type_legal_facts      | src/main/resources/empty.pdf | application/pdf | 200 |
+      | @clientId-test | @apiKey_test | @doc_type_only_sign        | src/main/resources/empty.pdf | application/pdf | 200 |
 
   @PnSsUpload @tag
   Scenario Outline: Upload di un file con tag non sottoposto a trasformazione e verifica del messaggio di disponibilità del file
