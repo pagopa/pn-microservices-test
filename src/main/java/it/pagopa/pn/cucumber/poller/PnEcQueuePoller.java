@@ -32,7 +32,7 @@ public class PnEcQueuePoller extends QueuePoller {
         try {
             MessageBodyDto messageBodyDto = parseMessageBody(((TextMessage) message).getText());
             SingleStatusUpdate singleStatusUpdate = objectMapper.readValue(messageBodyDto.getDetail(), SingleStatusUpdate.class);
-            log.trace("Retrieved message from queue: " + messageBodyDto);
+            log.debug("Retrieved message from queue: " + messageBodyDto);
             String requestId = "";
             String status = "";
             if (isEcMessage(messageBodyDto)) {
