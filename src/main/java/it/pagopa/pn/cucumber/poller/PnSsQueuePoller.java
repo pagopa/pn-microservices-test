@@ -1,12 +1,10 @@
 package it.pagopa.pn.cucumber.poller;
 
 import it.pagopa.pn.cucumber.dto.NotificationMessage;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.cucumber.dto.MessageBodyDto;
 import jakarta.jms.*;
 import lombok.CustomLog;
-import lombok.SneakyThrows;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -20,7 +18,6 @@ import static it.pagopa.pn.cucumber.utils.SqsUtils.parseMessageBody;
 public class PnSsQueuePoller extends QueuePoller {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final List<String> availableStatuses = List.of("SAVED", "PRELOADED");
 
     public PnSsQueuePoller() {
         super(System.getProperty("pn.ss.gestore.disponibilita.queue.name"));
@@ -31,15 +28,14 @@ public class PnSsQueuePoller extends QueuePoller {
         try {
             MessageBodyDto messageBodyDto = parseMessageBody(((TextMessage) message).getText());
             String detailType = messageBodyDto.getDetailType();
-            log.trace("Retrieved message from queue: " + messageBodyDto);
+            log.debug("Retrieved message from queue: " + messageBodyDto);
             NotificationMessage notificationMessage = objectMapper.readValue(messageBodyDto.getDetail(), NotificationMessage.class);
-            String documentStatus = notificationMessage.getDocumentStatus();
             if (isSsMessage(messageBodyDto)) {
                 if (!this.messageMap.containsKey(notificationMessage.getKey()))
-                    this.messageMap.put(notificationMessage.getKey(), new HashSet<>(List.of(concatStatusWithDetailType(documentStatus, detailType))));
+                    this.messageMap.put(notificationMessage.getKey(), new HashSet<>(List.of(detailType)));
                 else {
                     Set<String> documentStatusList = this.messageMap.get(notificationMessage.getKey());
-                    documentStatusList.add(concatStatusWithDetailType(documentStatus, detailType));
+                    documentStatusList.add(detailType);
                     this.messageMap.put(notificationMessage.getKey(), documentStatusList);
                 }
             }
@@ -55,7 +51,7 @@ public class PnSsQueuePoller extends QueuePoller {
         while (Instant.now().isBefore(timeLimit)) {
             var result = this.messageMap.get(fileKey);
             if (result != null) {
-                check = availableStatuses.stream().anyMatch(availableStatus -> result.contains(concatStatusWithDetailType(availableStatus, detailType)));
+                check = result.contains(detailType);
                 if (check) break;
             }
             try {
@@ -65,10 +61,6 @@ public class PnSsQueuePoller extends QueuePoller {
             }
         }
         return check;
-    }
-
-    private String concatStatusWithDetailType(String status, String detailType) {
-        return status + "~" + detailType;
     }
 
 }

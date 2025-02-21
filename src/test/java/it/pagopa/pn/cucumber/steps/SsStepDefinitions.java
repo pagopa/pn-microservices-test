@@ -3,6 +3,7 @@ package it.pagopa.pn.cucumber.steps;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.java.AfterAll;
+import io.cucumber.java.BeforeAll;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -60,13 +61,14 @@ public class SsStepDefinitions {
     private String retentionUntil = "";
     private Date retentionDate = null;
     private static String nomeCoda;
-    private static final PnSsQueuePoller queuePoller;
+    private static PnSsQueuePoller queuePoller;
     private final SqsServiceImpl sqsService = new SqsServiceImpl();
     UpdateFileMetadataRequest requestBody = new UpdateFileMetadataRequest();
     private boolean metadataOnly;
     private FileDownloadResponse fileDownloadResponse;
 
-    static {
+    @BeforeAll
+    public static void init() {
         try {
             MDC.clear();
             Config.getInstance().loadProperties();
@@ -178,6 +180,7 @@ public class SsStepDefinitions {
         if (iRC == 200) {
             sURL = oResp.then().extract().path("uploadUrl");
             sKey = oResp.then().extract().path("key");
+            MDC.put(MDC_CORR_ID_KEY, sKey);
             sSecret = oResp.then().extract().path("secret");
         }
     }
@@ -232,7 +235,7 @@ public class SsStepDefinitions {
             iRC = oResp.getStatusCode();
             if (iRC == 200) {
                 ObjectMapper objectMapper = new ObjectMapper();
-                log.debug(oResp.getBody().asString());
+                log.trace(oResp.getBody().asString());
                 DocumentResponse oFDR = objectMapper.readValue(oResp.getBody().asString(), DocumentResponse.class);
                 Document document = oFDR.getDocument();
                 assert document != null;
@@ -422,7 +425,8 @@ public class SsStepDefinitions {
 
     @AfterAll
     public static void doFinally() throws JMSException {
-        queuePoller.close();
+        if (queuePoller != null)
+            queuePoller.close();
     }
 
 }
