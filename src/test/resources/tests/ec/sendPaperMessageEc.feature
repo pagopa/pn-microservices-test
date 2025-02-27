@@ -41,12 +41,21 @@ Feature: Send Paper Message Ec
     * waiting for scheduling
     * waiting for scheduling
     Then check if the message has been sent
-    # Il secondo esempio è il caso in cui avviene la rasterizzazione
+    # I casi con applyRasterization=true oppure con requestPaId note sono quelli in cui avviene la rasterizzazione:
+    # primo caso in cui non esiste la pa ed il flag è false (nessuna conversione);
+    # secondo caso in cui non esiste la paId ed il flag è true (nessuna conversione);
+    # terzo caso in cui non esiste la paId ed il flag non è impostato (nessuna conversione);
+    # quarto caso in cui esiste la paId ed il flag è impostato a true (conversione);
+    # quinto caso in cui esiste la paId ed il flag è impostato a false (conversione);
+    # quinto caso in cui esiste la paId ed il flag non è impostato (conversione);
     Examples:
       | clientId           | apiKey            | channel        | receiver                        | requestPaId     | applyRasterization |
       | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | 19289210        |       false        |
-      | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | 15376371009     |       true         |
+      | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | requestPaId2    |       true         |
       | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | requestPaId2    |                    |
+      | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | 15376371009     |       true         |
+      | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | 15376371009     |       false        |
+      | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | 15376371009     |                    |
 
   @PnEcSendMessage @PAPER @invioCartaceo @testKo
   Scenario Outline: Invio di un messaggio cartaceo con clientId non valido e verifica dello statusCode
