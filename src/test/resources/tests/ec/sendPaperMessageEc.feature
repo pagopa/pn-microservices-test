@@ -29,6 +29,25 @@ Feature: Send Paper Message Ec
       | clientId           | apiKey            | channel        | receiver                        |
       | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address |
 
+  @PnEcSendMessage @PAPER @invioCartaceo @raster @testFlagRasterization
+  Scenario Outline: Invio di un messaggio cartaceo con allegati da rasterizzare, verifica della pubblicazione del messaggio nella coda di debug e verifica dello stato di avanzamento per soli flag attivi
+    Given a "<clientId>" and "<channel>" to send on
+    When "<clientId>" authenticated by "<apiKey>" uploads the following attachments:
+      | documentType        | fileName                           | mimeType        |
+      | @doc_type_to_raster | src/test/resources/test-raster.pdf | application/pdf |
+    When try to send a paper message to "<receiver>" with "<requestPaId>" and "<applyRasterization>"
+    # Bisogna aspettare 2 volte la schedulazione, la prima per lavorare la richiesta con gli allegati ancora da convertire,
+    # la seconda per lavorare la richiesta con gli allegati ormai rasterizzati.
+    * waiting for scheduling
+    * waiting for scheduling
+    Then check if the message has been sent
+    # Il secondo esempio è il caso in cui avviene la rasterizzazione
+    Examples:
+      | clientId           | apiKey            | channel        | receiver                        | requestPaId     | applyRasterization |
+      | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | 19289210        |       false        |
+      | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | 15376371009     |       true         |
+      | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | requestPaId2    |                    |
+
   @PnEcSendMessage @PAPER @invioCartaceo @testKo
   Scenario Outline: Invio di un messaggio cartaceo con clientId non valido e verifica dello statusCode
     Given a "<clientId>" and "<channel>" to send on
