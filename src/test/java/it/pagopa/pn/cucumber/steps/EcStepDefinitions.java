@@ -355,6 +355,17 @@ public class EcStepDefinitions {
         }
     }
 
+    @And("try to send a paper message to {string} with {string} and {string}")
+    public void tryToSendAPaperMessageToWithAnd(String receiver, String requestPaId, String applyRasterization) {
+
+
+        this.requestId = ExternalChannelUtils.generateRandomRequestId();
+        MDC.put(MDC_CORR_ID_KEY, requestId);
+        this.receiver = getValueIfTagged(receiver);
+        Response response = ExternalChannelUtils.sendPaperMessageRasterFlag(clientId, requestId, requestPaId, Boolean.parseBoolean(applyRasterization), attachmentsList);
+        this.sendPaperMessageStatusCode = response.getStatusCode();
+
+    }
 
     //THEN
     @Then("check if the message has been sent")
@@ -453,6 +464,7 @@ public class EcStepDefinitions {
         log.debug("Error code {}", errorCode);
         Assertions.assertEquals(errorCode, String.valueOf(response.getStatusCode()));
     }
+
 
     @AfterAll
     public static void doFinally() throws JMSException {
