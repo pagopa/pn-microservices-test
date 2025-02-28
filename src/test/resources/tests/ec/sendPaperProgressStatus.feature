@@ -1,7 +1,7 @@
 Feature: Send Paper Progress Status
 
   Background:
-    Given a "@clientId-delivery-push" and "@channel_paper" to send on
+    Given a "@clientId-cons" and "@channel_paper" to send on
     When "@clientId-delivery-push" authenticated by "@apiKey-delivery-push" uploads the following attachments:
       | documentType  | fileName                    | mimeType        |
       | @doc_type_aar | src/test/resources/test.pdf | application/pdf |
@@ -28,17 +28,21 @@ Feature: Send Paper Progress Status
   Scenario Outline: Verifica semantica nell'avanzamento dei progressi di postalizzazione
     Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
     When I send the following paper progress status requests:
-      | statusCode   | deliveryFailureCause   | iun   | statusDateTime   |
-      | <statusCode> | <deliveryFailureCause> | <iun> | <statusDateTime> |
+      | statusCode   | deliveryFailureCause   | iun   | statusDateTime   | clientRequestTimestamp   |
+      | <statusCode> | <deliveryFailureCause> | <iun> | <statusDateTime> | <clientRequestTimestamp> |
     Then I get "<rc>" result code
     Examples:
-      | clientId                | apiKey                | statusCode | deliveryFailureCause | iun        | statusDateTime           | rc     |
-      | @clientId-delivery-push | @apiKey-delivery-push | FakeStatus |                      | @requestId | @now                     | 400.02 |
-      | @clientId-delivery-push | @apiKey-delivery-push | CON080     | FakeDFC              | @requestId | @now                     | 400.02 |
-      | @clientId-delivery-push | @apiKey-delivery-push | CON080     |                      | FakeIun    | @now                     | 400.02 |
-      | @clientId-delivery-push | @apiKey-delivery-push | CON080     |                      | @requestId | 2022-07-11T13:02:25.206Z | 400.02 |
-      | @clientId-delivery-push | @apiKey-delivery-push | RECRS002A  | M01                  | @requestId | @now                     | 400.02 |
-      | @clientId-delivery-push | @apiKey-delivery-push | RECRS002A  | M02                  | @requestId | @now                     | 200.00 |
+      | clientId       | apiKey       | statusCode | deliveryFailureCause | iun        | statusDateTime           | clientRequestTimestamp   | rc     |
+      # Verifica consistenza dati
+      | @clientId-cons | @apiKey-cons | CON080     |                      | FakeIun    | @now                     | @now                     | 400.02 |
+      | @clientId-cons | @apiKey-cons | FakeStatus |                      | @requestId | @now                     | @now                     | 400.02 |
+      | @clientId-cons | @apiKey-cons | CON080     | FakeDFC              | @requestId | @now                     | @now                     | 400.02 |
+      | @clientId-cons | @apiKey-cons | RECRS002A  | M01                  | @requestId | @now                     | @now                     | 400.02 |
+      | @clientId-cons | @apiKey-cons | RECRS002A  | M02                  | @requestId | @now                     | @now                     | 200.00 |
+      # Verifiche temporali
+      | @clientId-cons | @apiKey-cons | CON080     |                      | @requestId | 2022-07-11T13:02:25.206Z | @now                     | 400.02 |
+      | @clientId-cons | @apiKey-cons | CON080     |                      | @requestId | 2100-07-11T13:02:25.206Z | @now                     | 400.02 |
+      | @clientId-cons | @apiKey-cons | CON080     |                      | @requestId | @now                     | 2100-07-11T13:02:25.206Z | 400.02 |
 
   @PnEcSendMessage @PAPER @verificaAttachments
   Scenario Outline: Verifica degli allegati nell'avanzamento dei progressi di postalizzazione
@@ -51,14 +55,14 @@ Feature: Send Paper Progress Status
       | CON080     |                      | @requestId | @now           |
     Then I get "<rc>" result code
     Examples:
-      | clientId                | apiKey                | attachmentUri                    | attachmentDocumentType | rc     |
-      | @clientId-delivery-push | @apiKey-delivery-push | InvalidUri                       | AR                     | 400.02 |
-      | @clientId-delivery-push | @apiKey-delivery-push | safestorage://NonExistentFileKey | AR                     | 400.02 |
+      | clientId       | apiKey       | attachmentUri                    | attachmentDocumentType | rc     |
+      | @clientId-cons | @apiKey-cons | InvalidUri                       | AR                     | 400.02 |
+      | @clientId-cons | @apiKey-cons | safestorage://NonExistentFileKey | AR                     | 400.02 |
 
   @PnEcSendMessage @PAPER @verificaAttachmentsREC
   Scenario Outline: Verifica dei documentType degli allegati nell'avanzamento degli stati di tipo REC
     Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
-    And "<clientId>" authenticated by "<apiKey>" uploads the following paper progress status event attachments:
+    And "@clientId-delivery" authenticated by "@delivery_api_key" uploads the following paper progress status event attachments:
       | documentType  | fileName                    | mimeType        | attachmentDocumentType |
       | @doc_type_aar | src/test/resources/test.pdf | application/pdf | NO                     |
     When I send the following paper progress status requests:
@@ -66,8 +70,8 @@ Feature: Send Paper Progress Status
       | RECAG010   |                      | @requestId | @now           |
     Then I get "<rc>" result code
     Examples:
-      | clientId                | apiKey                | rc     |
-      | @clientId-delivery-push | @apiKey-delivery-push | 400.02 |
+      | clientId       | apiKey       | rc     |
+      | @clientId-cons | @apiKey-cons | 400.02 |
 
 #TODO: Test non valido per mancata gestione degli eventi duplicati cartacei su develop. La modifica è ancora in feature/PN-11182
 #  @PnEcSendMessage @PAPER @verificaDuplicati
