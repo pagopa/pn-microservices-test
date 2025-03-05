@@ -128,7 +128,7 @@ public class RequestTemplate {
         paperEngageRequestFactory.setProductType("AR");
         paperEngageRequestFactory.setPrintType("BN_FRONTE_RETRO");
         paperEngageRequestFactory.setRequestId(requestId);
-        paperEngageRequestFactory.setClientRequestTimeStamp(OffsetDateTime.now());
+        paperEngageRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now()));
         return paperEngageRequestFactory;
 
     }
