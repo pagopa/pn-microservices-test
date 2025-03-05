@@ -36,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @CustomLog
 public class EcStepDefinitions {
 
+    public static final String NOW_PARAMETER = "@now";
     private String clientId;
     private String apiKey;
     private String requestId;
@@ -402,10 +403,14 @@ public class EcStepDefinitions {
                 String statusDateTime = map.get("statusDateTime");
                 switch (statusDateTime) {
                     case "@testStartTime" -> event.setStatusDateTime(testStartTime);
-                    case "@now" -> event.setStatusDateTime(now);
+                    case NOW_PARAMETER -> event.setStatusDateTime(now);
                     default -> event.setStatusDateTime(OffsetDateTime.parse(statusDateTime));
                 }
-                event.setClientRequestTimeStamp(now);
+                String clientRequestTimestampStr = map.get("clientRequestTimestamp");
+                OffsetDateTime clientRequestTimestamp = clientRequestTimestampStr != null && !clientRequestTimestampStr.equals(NOW_PARAMETER) ?
+                        OffsetDateTime.parse(clientRequestTimestampStr) :
+                        now;
+                event.setClientRequestTimeStamp(clientRequestTimestamp);
 
                 if (!this.paperProgressStatusEventAttachments.isEmpty())
                     event.setAttachments(this.paperProgressStatusEventAttachments);
