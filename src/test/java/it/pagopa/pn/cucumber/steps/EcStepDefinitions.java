@@ -1,5 +1,6 @@
 package it.pagopa.pn.cucumber.steps;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.AfterAll;
 import io.cucumber.java.BeforeAll;
@@ -282,7 +283,6 @@ public class EcStepDefinitions {
             String sURL = getPresignedUrlResp.then().extract().path("uploadUrl");
             String sKey = getPresignedUrlResp.then().extract().path("key");
             String sSecret = getPresignedUrlResp.then().extract().path("secret");
-
             PnAttachment pnAttachment = new PnAttachment();
             pnAttachment.setUri("safestorage://" + sKey);
             pnAttachment.setDate(OffsetDateTime.now());
@@ -356,17 +356,21 @@ public class EcStepDefinitions {
         }
     }
 
-    @And("try to send a paper message to {string} with {string} and {string}")
+    @When("try to send a paper message to {string} with {string} and {string}")
     public void tryToSendAPaperMessageToWithAnd(String receiver, String requestPaId, String applyRasterization) {
-
-
         this.requestId = ExternalChannelUtils.generateRandomRequestId();
         MDC.put(MDC_CORR_ID_KEY, requestId);
         this.receiver = getValueIfTagged(receiver);
-        Response response = ExternalChannelUtils.sendPaperMessageRasterFlag(clientId, requestId, requestPaId, Boolean.parseBoolean(applyRasterization), attachmentsList);
-        this.sendPaperMessageStatusCode = response.getStatusCode();
 
+        try {
+            response = ExternalChannelUtils.sendPaperMessageRasterFlag(clientId, requestId, requestPaId, applyRasterization, attachmentsList);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        this.sendPaperMessageStatusCode = response.getStatusCode();
     }
+
 
     //THEN
     @Then("check if the message has been sent")
