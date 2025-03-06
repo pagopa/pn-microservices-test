@@ -362,11 +362,8 @@ public class EcStepDefinitions {
         MDC.put(MDC_CORR_ID_KEY, requestId);
         this.receiver = getValueIfTagged(receiver);
 
-        try {
             response = ExternalChannelUtils.sendPaperMessageRasterFlag(clientId, requestId, requestPaId, applyRasterization, attachmentsList);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+
 
         this.sendPaperMessageStatusCode = response.getStatusCode();
     }
