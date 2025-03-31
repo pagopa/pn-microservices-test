@@ -111,10 +111,14 @@ public class ExternalChannelUtils extends RequestTemplate {
 
     //CARTACEO
     public static Response sendPaperMessage(String clientId, String requestId, List<PnAttachment> attachments) {
+        return sendPaperMessage(clientId, requestId, attachments, System.getProperty("paper.receiver.digital.address"));
+    }
+
+    public static Response sendPaperMessage(String clientId, String requestId, List<PnAttachment> attachments, String receiver) {
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
-        PaperEngageRequest paperEngageRequest = createPaperEngageRequest(requestId);
+        PaperEngageRequest paperEngageRequest = createPaperEngageRequest(requestId, receiver);
         List<PaperEngageRequestAttachments> paperEngageRequestAttachmentsList = attachments.stream().map(attachment -> {
             PaperEngageRequestAttachments paperEngageRequestAttachments = new PaperEngageRequestAttachments();
             paperEngageRequestAttachments.setDocumentType(attachment.getDocumentType());
@@ -132,7 +136,7 @@ public class ExternalChannelUtils extends RequestTemplate {
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
-        PaperEngageRequest paperEngageRequest = createPaperEngageRequest(requestId);
+        PaperEngageRequest paperEngageRequest = createPaperEngageRequest(requestId, System.getProperty("paper.receiver.digital.address"));
         List<PaperEngageRequestAttachments> paperEngageRequestAttachmentsList = attachments.stream().map(attachment -> {
             PaperEngageRequestAttachments paperEngageRequestAttachments = new PaperEngageRequestAttachments();
             paperEngageRequestAttachments.setDocumentType(attachment.getDocumentType());
