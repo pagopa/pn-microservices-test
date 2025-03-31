@@ -65,3 +65,36 @@ Feature: Send Paper Message Ec
     Examples:
       | clientId     | channel        | rc  | receiver |
       | FakeClientId | @channel_paper | 403 | @paper.receiver.digital.address |
+
+
+  # I test seguenti sono attualmente validi solo in localdev. Utilizzano una configurazione mockata del consolidatore,
+  # tramite mockserver (vedi https://github.com/pagopa/pn-localdev/commit/0ad3976bb25d1d91559ec77690c1621aa012c477).
+  # La stringa alla fine del receiver indica il comportamento che si vuole ottenere dal mockserver.
+  # Per eseguirli, rimuovere temporaneamente il tag @ignore.
+
+  @PnEcSendMessage @PAPER @invioCartaceo @ignore
+  Scenario Outline: Invio di un messaggio cartaceo, verifica di inoltro progresso alla piattaforma esterna
+    Given a "<clientId>" and "<channel>" to send on
+    When try to send a paper message to "<receiver>"
+    * waiting for scheduling
+    Then check if the message has "<expectedStatus>" status code
+    Examples:
+      | clientId       | channel        | receiver                | expectedStatus |
+      | @clientId-cons | @channel_paper | Via Roma                | P000           |
+      | @clientId-cons | @channel_paper | Via Roma @syntaxError   | P011           |
+      | @clientId-cons | @channel_paper | Via Roma @semanticError | P012           |
+
+  @PnEcSendMessage @PAPER @invioCartaceo @ignore
+  Scenario Outline: Invio di un messaggio cartaceo, verifica di cambio stato del documento
+    Given a "<clientId>" and "<channel>" to send on
+    When try to send a paper message to "<receiver>"
+    * waiting for scheduling
+    Then check if the request is in "<requestStatus>" state
+    Examples:
+      | clientId       | channel        | receiver                           | requestStatus       |
+      | @clientId-cons | @channel_paper | Via Roma @duplicatedRequest        | duplicatedRequest   |
+      | @clientId-cons | @channel_paper | Via Roma @authenticationError      | authenticationError |
+      | @clientId-cons | @channel_paper | Via Roma @400_unrecognized_payload | error               |
+      # La richiesta entra nel ciclo di retry.
+      | @clientId-cons | @channel_paper | Via Roma @500_unrecognized_payload | retry               |
+      | @clientId-cons | @channel_paper | Via Roma @internalError            | retry               |
