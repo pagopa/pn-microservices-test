@@ -1,5 +1,6 @@
 package it.pagopa.pn.cucumber.steps;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.AfterAll;
 import io.cucumber.java.BeforeAll;
@@ -15,6 +16,7 @@ import it.pagopa.pn.cucumber.poller.PnEcQueuePoller;
 import it.pagopa.pn.cucumber.utils.*;
 import it.pagopa.pn.ec.rest.v1.api.*;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileCreationRequest;
+import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileCreationResponse;
 import jakarta.jms.JMSException;
 import lombok.CustomLog;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -23,6 +25,7 @@ import org.slf4j.MDC;
 
 import java.io.File;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
@@ -130,7 +133,7 @@ public class EcStepDefinitions {
         this.requestId = ExternalChannelUtils.generateRandomRequestId();
         MDC.put(MDC_CORR_ID_KEY, requestId);
         this.receiver = getValueIfTagged(receiver);
-        Response response = ExternalChannelUtils.sendPaperMessage(clientId, requestId, attachmentsList);
+        Response response = ExternalChannelUtils.sendPaperMessage(clientId, requestId, attachmentsList, receiver);
         this.sendPaperMessageStatusCode = response.getStatusCode();
     }
 
@@ -279,9 +282,11 @@ public class EcStepDefinitions {
             FileCreationRequest fileCreationRequest = new FileCreationRequest().status("SAVED").contentType(mimeType).documentType(documentType);
             Response getPresignedUrlResp = SafeStorageUtils.getPresignedURLUpload(ssClientId, ssApiKey, fileCreationRequest, getSHA256(file), getMD5(file), true, Checksum.SHA256, true);
             assertEquals(200, getPresignedUrlResp.getStatusCode());
-            String sURL = getPresignedUrlResp.then().extract().path("uploadUrl");
-            String sKey = getPresignedUrlResp.then().extract().path("key");
-            String sSecret = getPresignedUrlResp.then().extract().path("secret");
+
+            FileCreationResponse fileCreationResponse = getPresignedUrlResp.as(FileCreationResponse.class);
+            String sURL = fileCreationResponse.getUploadUrl();
+            String sKey = fileCreationResponse.getKey();
+            String sSecret = fileCreationResponse.getSecret();
 
             PnAttachment pnAttachment = new PnAttachment();
             pnAttachment.setUri("safestorage://" + sKey);
@@ -368,6 +373,33 @@ public class EcStepDefinitions {
 
     }
 
+    @Then("check if the request is in {string} state")
+    public void checkRequestStatus(String statusToCheck) throws InterruptedException {
+        Response oResp;
+        int iRC = 0;
+        //Set a time limit for the availability check.
+        Instant timeLimit = Instant.now().plusSeconds(Long.parseLong(System.getProperty("pn.ec.check.document.state.timeout.millis")));
+        boolean hasBeenFound = false;
+        //Check if the document is available every x seconds.
+        //Time limit represent a timeout for the check.
+        while (Instant.now().isBefore(timeLimit)) {
+            oResp =  ExternalChannelUtils.getRequest(clientId, getValueIfTagged(requestId));
+            iRC = oResp.getStatusCode();
+            if (iRC == 200) {
+                log.trace(oResp.getBody().asString());
+                String statusCode = oResp.getBody().path("statusRequest");
+                //If the document is available, exit the loop.
+                if (statusCode.equalsIgnoreCase(statusToCheck)) {
+                    hasBeenFound = true;
+                    break;
+                }
+            }
+            Thread.sleep(Long.parseLong(System.getProperty("pn.ec.check.document.state.interval.millis")));
+        }
+        //If the document is not available after the timeout, the test will fail.
+        Assertions.assertTrue(hasBeenFound);
+    }
+
     //THEN
     @Then("check if the message has been sent")
     public void checkStatusMessage() {
@@ -382,6 +414,12 @@ public class EcStepDefinitions {
             default ->
                     throw new IllegalArgumentException(String.format("The given channel '%s' is not valid.", this.channel));
         };
+        Assertions.assertTrue(checked);
+    }
+
+    @Then("check if the message has {string} status code")
+    public void checkStatusMessage(String statusCode) {
+        boolean checked = queuePoller.checkMessageAvailability(requestId, List.of(statusCode));
         Assertions.assertTrue(checked);
     }
 

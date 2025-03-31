@@ -2,12 +2,13 @@ package it.pagopa.pn.cucumber;
 
 import it.pagopa.pn.cucumber.dto.ClientConfigurationInternalDto;
 import it.pagopa.pn.ec.rest.v1.api.*;
+import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.*;
 
+@Slf4j
 public class RequestTemplate {
 
     //SMS
@@ -47,7 +48,6 @@ public class RequestTemplate {
         digitalCourtesyMailRequestFactory.eventType(defaultStringInit);
         digitalCourtesyMailRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now()));
         digitalCourtesyMailRequestFactory.setQos(DigitalCourtesyMailRequest.QosEnum.INTERACTIVE);
-        //digitalCourtesyMailRequestFactory.setSenderDigitalAddress(System.getProperty("email.sender.digital.address"));
         digitalCourtesyMailRequestFactory.setReceiverDigitalAddress(receiver);
         digitalCourtesyMailRequestFactory.setMessageText(defaultStringInit);
         digitalCourtesyMailRequestFactory.channel(DigitalCourtesyMailRequest.ChannelEnum.EMAIL);
@@ -98,12 +98,12 @@ public class RequestTemplate {
 
     //CARTACEO
 
-    public static PaperEngageRequest createPaperEngageRequest(String requestId) {
+    public static PaperEngageRequest createPaperEngageRequest(String requestId, String receiver) {
         PaperEngageRequest paperEngageRequestFactory = new PaperEngageRequest();
 
         paperEngageRequestFactory.setReceiverName("Paolo Rossi");
         paperEngageRequestFactory.setReceiverNameRow2("c/o famiglia Bianchi");
-        paperEngageRequestFactory.setReceiverAddress(System.getProperty("paper.receiver.digital.address"));
+        paperEngageRequestFactory.setReceiverAddress(receiver);
         paperEngageRequestFactory.setReceiverAddressRow2("scala A interno 4");
         paperEngageRequestFactory.setReceiverCap("00017");
         paperEngageRequestFactory.setReceiverCity("Roma");
@@ -151,21 +151,5 @@ public class RequestTemplate {
         clientConfigurationDto.setPecReplyTo("");
         return clientConfigurationDto;
     }
-
-    private static List<PaperEngageRequestAttachments> getPaperEngageRequestAttachments() {
-        PaperEngageRequestAttachments paperEngageRequestAttachments = new PaperEngageRequestAttachments();
-        String defaultAttachmentUrl = "safestorage://test.pdf";
-        paperEngageRequestAttachments.setUri(defaultAttachmentUrl);
-        paperEngageRequestAttachments.setOrder(BigDecimal.valueOf(1));
-        paperEngageRequestAttachments.setDocumentType("ATTO");
-        paperEngageRequestAttachments.setSha256("stringstringstringstringstringstringstri");
-
-        List<PaperEngageRequestAttachments> paperEngageRequestAttachmentsList = new ArrayList<>();
-        paperEngageRequestAttachmentsList.add(paperEngageRequestAttachments);
-        return paperEngageRequestAttachmentsList;
-    }
-
-
-
 
 }
