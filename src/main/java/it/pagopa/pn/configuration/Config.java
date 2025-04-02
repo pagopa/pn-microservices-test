@@ -16,17 +16,19 @@ public class Config {
 
     private static Config instance = null;
 
-    private static final String APPLICATION_TEST_PROPERTIES = "application-test.properties";
+    private static final String APPLICATION_TEST_PROPERTIES = "application.properties";
     private static final String FILE_NOT_FOUND = "File properties non trovato";
     private static final String SPRING_PROFILE = "spring.profiles.active";
-    private static final String PROFILE_PROPERTIES_FILE_PREFIX = "test-variables-";
-    private static final String PROFILE_PROPERTIES_FILE_SUFFIX = ".json";
+    private static final String PROFILE_PROPERTIES_FILE_PREFIX = "application-";
+    private static final String PROFILE_PROPERTIES_FILE_SUFFIX = ".properties";
 
     private Config() {}
 
     public void loadProperties() {
+        // Load the application.properties file
         loadPropertiesIntoSystem(APPLICATION_TEST_PROPERTIES);
-        loadJsonPropertiesIntoSystem(PROFILE_PROPERTIES_FILE_PREFIX + System.getProperty(SPRING_PROFILE) + PROFILE_PROPERTIES_FILE_SUFFIX);
+        // Load the application-{profile}.properties file
+        loadPropertiesIntoSystem(PROFILE_PROPERTIES_FILE_PREFIX + System.getProperty(SPRING_PROFILE) + PROFILE_PROPERTIES_FILE_SUFFIX);
     }
 
     private void loadPropertiesIntoSystem(String propertyFileName) {
@@ -43,30 +45,6 @@ public class Config {
             log.error("Errore nel caricamento delle properties -> " + ex.getMessage());
             System.exit(1);
         }
-    }
-
-    private void loadJsonPropertiesIntoSystem(String propertyFileName) {
-        try {
-            InputStream fileStream = this.getClass().getClassLoader().getResourceAsStream(propertyFileName);
-            if (fileStream == null) {
-                log.error("JSON " + FILE_NOT_FOUND);
-                System.exit(1);
-            }
-            Map<String, String> properties = jsonStreamToMap(fileStream);
-            loadPropertiesIntoSystem(properties);
-        } catch (IOException ex) {
-            log.error("Errore nel caricamento delle properties JSON -> " + ex.getMessage());
-            System.exit(1);
-        }
-    }
-    private void loadPropertiesIntoSystem(Map<String, String> properties) {
-        properties.forEach(System::setProperty);
-    }
-
-    private Map<String, String> jsonStreamToMap(InputStream environmentInputStream) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        return objectMapper.readValue(environmentInputStream, new TypeReference<Map<String, String>>() {
-        });
     }
 
     public static Config getInstance() {

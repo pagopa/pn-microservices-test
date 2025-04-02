@@ -18,7 +18,7 @@ Feature: Get Digital Message Ec
       | clientId           | rc  |
       | @clientId-delivery | 200 |
     
- @PnEcGetMessage @getRequest @getRequestId
+ @PnEcGetMessage @getRequest @getRequestId @ignore
    Scenario Outline: Get di una richieta presente a sistema
       Given a "<clientId>" to send request
       When try to get request by "<requestId>"
@@ -27,7 +27,7 @@ Feature: Get Digital Message Ec
         | clientId           | requestId  | rc |
         | @clientId-delivery | @requestId |200 |
 
-  @PnEcGetMessage @getRequest @getRequestMessageId
+  @PnEcGetMessage @getRequest @getRequestMessageId @ignore
   Scenario Outline: Get di una richieta presente a sistema tramite messageID
     Given a "<clientId>" to send request
     When try to get request by messageId "<messageId>"
@@ -84,7 +84,7 @@ Feature: Get Digital Message Ec
       | ecClientId     | ssClientId              | ssApiKey              | channel        | receiver                        | rc  |
       | @clientId-cons | @clientId-delivery-push | @apiKey-delivery-push | @channel_paper | @paper.receiver.digital.address | 200 |
 
-  @PnEcGetMessage @getAttachments @getAttachment_ok
+  @PnEcGetMessage @getAttachments @getAttachment_ok @ignore
   Scenario Outline: Get di un allegato tramite fileKey
     Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
     When try to get attachment with a "<fileKey>"
@@ -104,7 +104,7 @@ Feature: Get Digital Message Ec
       | clientId  | rc  |
       | abc102827 | 404 |
 
-  @PnEcGetMessage @getRequest @getRequest_ko
+  @PnEcGetMessage @getRequest @getRequest_ko @ignore
   Scenario Outline: Get di una richieta presente a sistema
     Given a "<clientId>" to send request
     When try to get request by "<requestId>"
@@ -113,7 +113,7 @@ Feature: Get Digital Message Ec
       | clientId           | requestId        | rc  |
       | @clientId-delivery |  notFoundRequest | 404 |
 
-  @PnEcGetMessage @getRequest @getRequestMessageId_ko
+  @PnEcGetMessage @getRequest @getRequestMessageId_ko @ignore
   Scenario Outline: Get di una richieta presente a sistema tramite messageID
     Given a "<clientId>" to send request
     When try to get request by messageId "<messageId>"

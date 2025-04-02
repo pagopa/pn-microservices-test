@@ -3,15 +3,15 @@ Feature: Send Paper Message Ec
   @PnEcSendMessage @PAPER @invioCartaceo @testOk
   Scenario Outline: Invio di un messaggio cartaceo, verifica della pubblicazione del messaggio nella coda di debug e verifica dello stato di avanzamento
     Given a "<clientId>" and "<channel>" to send on
-    When "<clientId>" authenticated by "<apiKey>" uploads the following attachments:
+    When "@clientId-delivery-push" authenticated by "@apiKey-delivery-push" uploads the following attachments:
       | documentType  | fileName                    | mimeType        |
       | @doc_type_aar | src/test/resources/test.pdf | application/pdf |
     When try to send a paper message to "<receiver>"
     * waiting for scheduling
     Then check if the message has been sent
     Examples:
-      | clientId                | apiKey                | channel        | receiver                        |
-      | @clientId-delivery-push | @apiKey-delivery-push | @channel_paper | @paper.receiver.digital.address |
+      | clientId       | channel        | receiver                        |
+      | @clientId-cons | @channel_paper | @paper.receiver.digital.address |
 
   @PnEcSendMessage @PAPER @invioCartaceo @raster @testOk
   Scenario Outline: Invio di un messaggio cartaceo con allegati da rasterizzare, verifica della pubblicazione del messaggio nella coda di debug e verifica dello stato di avanzamento
@@ -32,7 +32,7 @@ Feature: Send Paper Message Ec
   @PnEcSendMessage @PAPER @invioCartaceo @raster @testFlagRasterization
   Scenario Outline: Invio di un messaggio cartaceo con allegati da rasterizzare, verifica della pubblicazione del messaggio nella coda di debug e verifica dello stato di avanzamento per soli flag attivi
     Given a "<clientId>" and "<channel>" to send on
-    When "<clientId>" authenticated by "<apiKey>" uploads the following attachments:
+    When "@clientId-delivery" authenticated by "@delivery_api_key" uploads the following attachments:
       | documentType        | fileName                           | mimeType        |
       | @doc_type_to_raster | src/test/resources/test-raster.pdf | application/pdf |
     When try to send a paper message to "<receiver>" with "<requestPaId>" and "<applyRasterization>"
@@ -49,13 +49,13 @@ Feature: Send Paper Message Ec
     # quinto caso in cui esiste la paId ed il flag è impostato a false (conversione);
     # quinto caso in cui esiste la paId ed il flag non è impostato (conversione);
     Examples:
-      | clientId           | apiKey            | channel        | receiver                        | requestPaId     | applyRasterization |
-      | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | 19289210        |       false        |
-      | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | requestPaId2    |       true         |
-      | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | requestPaId2    |                    |
-      | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | 15376371009     |       true         |
-      | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | 15376371009     |       false        |
-      | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | 15376371009     |                    |
+      | clientId       | channel        | receiver                        | requestPaId  | applyRasterization |
+      | @clientId-cons | @channel_paper | @paper.receiver.digital.address | 19289210     | false              |
+      | @clientId-cons | @channel_paper | @paper.receiver.digital.address | requestPaId2 | true               |
+      | @clientId-cons | @channel_paper | @paper.receiver.digital.address | requestPaId2 |                    |
+      | @clientId-cons | @channel_paper | @paper.receiver.digital.address | 15376371009  | true               |
+      | @clientId-cons | @channel_paper | @paper.receiver.digital.address | 15376371009  | false              |
+      | @clientId-cons | @channel_paper | @paper.receiver.digital.address | 15376371009  |                    |
 
   @PnEcSendMessage @PAPER @invioCartaceo @testKo
   Scenario Outline: Invio di un messaggio cartaceo con clientId non valido e verifica dello statusCode
