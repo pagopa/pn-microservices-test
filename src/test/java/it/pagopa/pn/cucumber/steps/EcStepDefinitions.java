@@ -404,8 +404,8 @@ public class EcStepDefinitions {
                 event.setStatusCode(statusCode);
                 statusesToCheck.add(statusCode);
 
-                String iun = map.get("iun");
-                event.setIun(iun.equals("@requestId") ? this.requestId : iun);
+                String iun = getValueOrDefault(map, "iun", null);
+                event.setIun(iun != null && iun.equals("@requestId") ? this.requestId : iun);
 
                 event.setStatusDescription("Test description");
                 event.setProductType("AR");
