@@ -104,7 +104,7 @@ Feature: Get Digital Message Ec
       | clientId  | rc  |
       | abc102827 | 404 |
 
-  @PnEcGetMessage @getRequest @getRequest_ko @ignore
+  @PnEcGetMessage @getRequest @getRequest_ko
   Scenario Outline: Get di una richieta presente a sistema
     Given a "<clientId>" to send request
     When try to get request by "<requestId>"
@@ -113,7 +113,7 @@ Feature: Get Digital Message Ec
       | clientId           | requestId        | rc  |
       | @clientId-delivery |  notFoundRequest | 404 |
 
-  @PnEcGetMessage @getRequest @getRequestMessageId_ko @ignore
+  @PnEcGetMessage @getRequest @getRequestMessageId_ko
   Scenario Outline: Get di una richieta presente a sistema tramite messageID
     Given a "<clientId>" to send request
     When try to get request by messageId "<messageId>"
