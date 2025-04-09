@@ -16,6 +16,8 @@ import it.pagopa.pn.cucumber.utils.S3Utils;
 import it.pagopa.pn.cucumber.utils.SafeStorageUtils;
 import it.pagopa.pn.cucumber.poller.PnSsQueuePoller;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.*;
+import it.pagopa.pn.service.S3Service;
+import it.pagopa.pn.service.impl.S3ServiceImpl;
 import it.pagopa.pn.service.impl.SqsServiceImpl;
 import jakarta.jms.JMSException;
 import lombok.extern.slf4j.Slf4j;
@@ -63,6 +65,7 @@ public class SsStepDefinitions {
     private static String nomeCoda;
     private static PnSsQueuePoller queuePoller;
     private final SqsServiceImpl sqsService = new SqsServiceImpl();
+    private final S3Service s3Service = new S3ServiceImpl();
     UpdateFileMetadataRequest requestBody = new UpdateFileMetadataRequest();
     private boolean metadataOnly;
     private FileDownloadResponse fileDownloadResponse;
@@ -355,7 +358,11 @@ public class SsStepDefinitions {
     @When("I send restore event to main bucket events queue")
     public void sendRestoreEventToAvailabilityEventsQueue() {
         String bucketEventsQueue = System.getProperty("pn.ss.main.bucket.events.queue.name");
-        S3EventNotification eventNotification = S3Utils.createS3EventNotification(sKey, OBJECT_RESTORE_COMPLETED);
+        String bucketName = System.getProperty("pn.ss.availability.bucket.name");
+        if (bucketName == null || bucketName.isEmpty()) {
+            bucketName = s3Service.getBucketName(System.getProperty("pn.ss.availability.bucket.prefix"));
+        }
+        S3EventNotification eventNotification = S3Utils.createS3EventNotification(sKey, OBJECT_RESTORE_COMPLETED, bucketName);
         sqsService.send(bucketEventsQueue, eventNotification.toJson());
     }
 
