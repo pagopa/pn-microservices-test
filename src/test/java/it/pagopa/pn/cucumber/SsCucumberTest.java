@@ -8,8 +8,7 @@ import static io.cucumber.junit.platform.engine.Constants.*;
 @IncludeEngines("cucumber")
 @SelectClasspathResource("tests/ss")
 @ConfigurationParameter(key = PLUGIN_PROPERTY_NAME, value = "pretty")
-@ConfigurationParameter(key = PLUGIN_PROPERTY_NAME, value="html:target/cucumber-reports/cucumber.html" )
+@ConfigurationParameter(key = PLUGIN_PROPERTY_NAME, value="html:target/cucumber-reports/pn-ss-cucumber-report.html" )
 @ExcludeTags({"ignore"})
-@IncludeTags({"PnSsUpload", "PnSsUpdateMetadata", "GetConfigurations"})
 public class SsCucumberTest {
 }
