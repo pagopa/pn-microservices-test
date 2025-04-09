@@ -226,7 +226,7 @@ public class SsStepDefinitions {
         Response oResp;
         iRC = 0;
         //Set a time limit for the availability check.
-        Instant timeLimit = Instant.now().plusSeconds(Long.parseLong(System.getProperty("pn.ss.document.availability.timeout.millis")));
+        Instant timeLimit = Instant.now().plusMillis(Long.parseLong(System.getProperty("pn.ss.document.availability.timeout.millis")));
         boolean hasBeenFound = false;
         //Check if the document is available every x seconds.
         //Time limit represent a timeout for the check.
