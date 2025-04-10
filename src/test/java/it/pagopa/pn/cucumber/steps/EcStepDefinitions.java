@@ -16,6 +16,7 @@ import it.pagopa.pn.cucumber.poller.PnEcQueuePoller;
 import it.pagopa.pn.cucumber.utils.*;
 import it.pagopa.pn.ec.rest.v1.api.*;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileCreationRequest;
+import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileCreationResponse;
 import jakarta.jms.JMSException;
 import lombok.CustomLog;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -280,9 +281,10 @@ public class EcStepDefinitions {
             FileCreationRequest fileCreationRequest = new FileCreationRequest().status("SAVED").contentType(mimeType).documentType(documentType);
             Response getPresignedUrlResp = SafeStorageUtils.getPresignedURLUpload(ssClientId, ssApiKey, fileCreationRequest, getSHA256(file), getMD5(file), true, Checksum.SHA256, true);
             assertEquals(200, getPresignedUrlResp.getStatusCode());
-            String sURL = getPresignedUrlResp.then().extract().path("uploadUrl");
-            String sKey = getPresignedUrlResp.then().extract().path("key");
-            String sSecret = getPresignedUrlResp.then().extract().path("secret");
+            FileCreationResponse fileCreationResponse = getPresignedUrlResp.as(FileCreationResponse.class);
+            String sURL = fileCreationResponse.getUploadUrl();
+            String sKey = fileCreationResponse.getKey();
+            String sSecret = fileCreationResponse.getSecret();
             PnAttachment pnAttachment = new PnAttachment();
             pnAttachment.setUri("safestorage://" + sKey);
             pnAttachment.setDate(OffsetDateTime.now());
@@ -312,9 +314,10 @@ public class EcStepDefinitions {
             FileCreationRequest fileCreationRequest = new FileCreationRequest().status("SAVED").contentType(mimeType).documentType(documentType);
             Response getPresignedUrlResp = SafeStorageUtils.getPresignedURLUpload(ssClientId, ssApiKey, fileCreationRequest, getSHA256(file), getMD5(file), true, Checksum.SHA256, true);
             assertEquals(200, getPresignedUrlResp.getStatusCode());
-            String sURL = getPresignedUrlResp.then().extract().path("uploadUrl");
-            String sKey = getPresignedUrlResp.then().extract().path("key");
-            String sSecret = getPresignedUrlResp.then().extract().path("secret");
+            FileCreationResponse fileCreationResponse = getPresignedUrlResp.as(FileCreationResponse.class);
+            String sURL = fileCreationResponse.getUploadUrl();
+            String sKey = fileCreationResponse.getKey();
+            String sSecret = fileCreationResponse.getSecret();
             Response uploadResp = CommonUtils.uploadFile(sURL, file, sha256, md5, mimeType, sSecret, Checksum.SHA256);
             assertEquals(200, uploadResp.getStatusCode());
 
