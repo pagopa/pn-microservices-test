@@ -8,7 +8,7 @@ import static io.cucumber.junit.platform.engine.Constants.*;
 @IncludeEngines("cucumber")
 @SelectClasspathResource("tests/ec")
 @ConfigurationParameter(key = PLUGIN_PROPERTY_NAME, value = "pretty")
+@ConfigurationParameter(key = PLUGIN_PROPERTY_NAME, value="html:target/cucumber-reports/pn-ec-cucumber-report.html" )
 @ExcludeTags({"ignore"})
-@IncludeTags({"PnEcSendMessage", "PnEcGetMessage"})
 public class EcCucumberTest {
 }

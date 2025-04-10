@@ -282,12 +282,10 @@ public class EcStepDefinitions {
             FileCreationRequest fileCreationRequest = new FileCreationRequest().status("SAVED").contentType(mimeType).documentType(documentType);
             Response getPresignedUrlResp = SafeStorageUtils.getPresignedURLUpload(ssClientId, ssApiKey, fileCreationRequest, getSHA256(file), getMD5(file), true, Checksum.SHA256, true);
             assertEquals(200, getPresignedUrlResp.getStatusCode());
-
             FileCreationResponse fileCreationResponse = getPresignedUrlResp.as(FileCreationResponse.class);
             String sURL = fileCreationResponse.getUploadUrl();
             String sKey = fileCreationResponse.getKey();
             String sSecret = fileCreationResponse.getSecret();
-
             PnAttachment pnAttachment = new PnAttachment();
             pnAttachment.setUri("safestorage://" + sKey);
             pnAttachment.setDate(OffsetDateTime.now());
@@ -317,9 +315,10 @@ public class EcStepDefinitions {
             FileCreationRequest fileCreationRequest = new FileCreationRequest().status("SAVED").contentType(mimeType).documentType(documentType);
             Response getPresignedUrlResp = SafeStorageUtils.getPresignedURLUpload(ssClientId, ssApiKey, fileCreationRequest, getSHA256(file), getMD5(file), true, Checksum.SHA256, true);
             assertEquals(200, getPresignedUrlResp.getStatusCode());
-            String sURL = getPresignedUrlResp.then().extract().path("uploadUrl");
-            String sKey = getPresignedUrlResp.then().extract().path("key");
-            String sSecret = getPresignedUrlResp.then().extract().path("secret");
+            FileCreationResponse fileCreationResponse = getPresignedUrlResp.as(FileCreationResponse.class);
+            String sURL = fileCreationResponse.getUploadUrl();
+            String sKey = fileCreationResponse.getKey();
+            String sSecret = fileCreationResponse.getSecret();
             Response uploadResp = CommonUtils.uploadFile(sURL, file, sha256, md5, mimeType, sSecret, Checksum.SHA256);
             assertEquals(200, uploadResp.getStatusCode());
 
@@ -361,17 +360,18 @@ public class EcStepDefinitions {
         }
     }
 
-    @And("try to send a paper message to {string} with {string} and {string}")
+    @When("try to send a paper message to {string} with {string} and {string}")
     public void tryToSendAPaperMessageToWithAnd(String receiver, String requestPaId, String applyRasterization) {
-
-
         this.requestId = ExternalChannelUtils.generateRandomRequestId();
         MDC.put(MDC_CORR_ID_KEY, requestId);
         this.receiver = getValueIfTagged(receiver);
-        Response response = ExternalChannelUtils.sendPaperMessageRasterFlag(clientId, requestId, requestPaId, Boolean.parseBoolean(applyRasterization), attachmentsList);
-        this.sendPaperMessageStatusCode = response.getStatusCode();
 
+            response = ExternalChannelUtils.sendPaperMessageRasterFlag(clientId, requestId, requestPaId, applyRasterization, attachmentsList);
+
+
+        this.sendPaperMessageStatusCode = response.getStatusCode();
     }
+
 
     @Then("check if the request is in {string} state")
     public void checkRequestStatus(String statusToCheck) throws InterruptedException {
@@ -441,8 +441,8 @@ public class EcStepDefinitions {
                 event.setStatusCode(statusCode);
                 statusesToCheck.add(statusCode);
 
-                String iun = map.get("iun");
-                event.setIun(iun.equals("@requestId") ? this.requestId : iun);
+                String iun = getValueOrDefault(map, "iun", null);
+                event.setIun(iun != null && iun.equals("@requestId") ? this.requestId : iun);
 
                 event.setStatusDescription("Test description");
                 event.setProductType("AR");

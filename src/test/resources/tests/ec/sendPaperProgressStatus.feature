@@ -12,7 +12,7 @@ Feature: Send Paper Progress Status
   @PnEcSendMessage @PAPER @complete
   Scenario Outline: Invio di un messaggio cartaceo, verifica della pubblicazione del messaggio nella coda di debug e verifica dello stato di avanzamento
     Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
-    And "<clientId>" authenticated by "<apiKey>" uploads the following attachments:
+    And "@clientId-delivery-push" authenticated by "@apiKey-delivery-push" uploads the following attachments:
       | documentType  | fileName                    | mimeType        | attachmentDocumentType |
       | @doc_type_aar | src/test/resources/test.pdf | application/pdf | AR                     |
     When I send the following paper progress status requests:
@@ -21,10 +21,10 @@ Feature: Send Paper Progress Status
       | RECAG004   |                      | @requestId | @now           |
     Then check if paper progress status requests have been accepted
     Examples:
-      | clientId                | apiKey                |
-      | @clientId-delivery-push | @apiKey-delivery-push |
+      | clientId       | apiKey       |
+      | @clientId-cons | @apiKey-cons |
 
-  @PnEcSendMessage @PAPER @verificaErroriSemantici
+  @PnEcSendMessage @PAPER @verificaErroriSemantici @verificaErrori
   Scenario Outline: Verifica semantica nell'avanzamento dei progressi di postalizzazione
     Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
     When I send the following paper progress status requests:
@@ -34,6 +34,7 @@ Feature: Send Paper Progress Status
     Examples:
       | clientId       | apiKey       | statusCode | deliveryFailureCause | iun        | statusDateTime           | clientRequestTimestamp   | rc     |
       # Verifica consistenza dati
+      | @clientId-cons | @apiKey-cons | CON080     |                      |            | @now                     | @now                     | 200.00 |
       | @clientId-cons | @apiKey-cons | CON080     |                      | FakeIun    | @now                     | @now                     | 400.02 |
       | @clientId-cons | @apiKey-cons | FakeStatus |                      | @requestId | @now                     | @now                     | 400.02 |
       | @clientId-cons | @apiKey-cons | CON080     | FakeDFC              | @requestId | @now                     | @now                     | 400.02 |
@@ -44,7 +45,7 @@ Feature: Send Paper Progress Status
       | @clientId-cons | @apiKey-cons | CON080     |                      | @requestId | 2100-07-11T13:02:25.206Z | @now                     | 400.02 |
       | @clientId-cons | @apiKey-cons | CON080     |                      | @requestId | @now                     | 2100-07-11T13:02:25.206Z | 400.02 |
 
-  @PnEcSendMessage @PAPER @verificaAttachments
+  @PnEcSendMessage @PAPER @verificaAttachments @verificaErrori
   Scenario Outline: Verifica degli allegati nell'avanzamento dei progressi di postalizzazione
     Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
     And I prepare the following paper progress status event attachments:
@@ -59,10 +60,10 @@ Feature: Send Paper Progress Status
       | @clientId-cons | @apiKey-cons | InvalidUri                       | AR                     | 400.02 |
       | @clientId-cons | @apiKey-cons | safestorage://NonExistentFileKey | AR                     | 400.02 |
 
-  @PnEcSendMessage @PAPER @verificaAttachmentsREC
+  @PnEcSendMessage @PAPER @verificaAttachmentsREC @verificaErrori
   Scenario Outline: Verifica dei documentType degli allegati nell'avanzamento degli stati di tipo REC
     Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
-    And "@clientId-delivery" authenticated by "@delivery_api_key" uploads the following paper progress status event attachments:
+    And "@clientId-delivery-push" authenticated by "@apiKey-delivery-push" uploads the following paper progress status event attachments:
       | documentType  | fileName                    | mimeType        | attachmentDocumentType |
       | @doc_type_aar | src/test/resources/test.pdf | application/pdf | NO                     |
     When I send the following paper progress status requests:

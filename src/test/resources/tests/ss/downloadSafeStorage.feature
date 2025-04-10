@@ -40,7 +40,7 @@ Feature: Download SafeStorage
       | @clientId-pn-cn | @apiKey-pn_cn | 403        |
 
 
-  ### Casi con fileKey già valorizzate in input. ###
+    # I test seguenti sono specifici su risorse già esistenti a sistema. Per questo sono esclusi dalla run di test globale.
 
   @PnSsDownload @getFile @ignore
   Scenario Outline: Richiesta di presignedUrl di download per una fileKey definita.

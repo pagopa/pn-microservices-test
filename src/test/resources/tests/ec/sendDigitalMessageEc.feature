@@ -1,7 +1,7 @@
 Feature: Send Digital Message Ec
 
 
-  @PnEcSendMessage @invioSMS
+  @PnEcSendMessage
   Scenario Outline: Invio sms e verifica della pubblicazione del messaggio nella coda di debug
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message to "<receiver>"
@@ -15,7 +15,9 @@ Feature: Send Digital Message Ec
   Scenario Outline: Invio pec e verifica della pubblicazione del messaggio nella coda di debug
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message to "<receiver>"
-    Then check if the message has been sent
+    * check if the message has been sent
+    * waiting for scheduling
+    Then check if the message has been accepted and has been delivered
     Examples:
       | clientId           | channel      | receiver                      |
       | @clientId-delivery | @channel_pec | @pec.receiver.digital.address |
@@ -36,8 +38,8 @@ Feature: Send Digital Message Ec
       | documentType                       | fileName                    | mimeType        |
       | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
     When try to send a digital message to "<receiver>"
-    And check if the message has been sent
-    And waiting for scheduling
+    * check if the message has been sent
+    * waiting for scheduling
     Then check if the message has been accepted and has been delivered
     Examples:
       | clientId           | apiKey            | channel      | receiver                      |
@@ -89,7 +91,7 @@ Feature: Send Digital Message Ec
 
 
   @PnEcSendMessage @invioPEC @complete_pec_ko @complete_pec_ko_client_not_authorized
-  Scenario Outline: Invio pec con allegati con una pec non valida e verifica della pubblicazione del messaggio di errore nella coda di debug
+  Scenario Outline: Invio pec con un clientId non autorizzato
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message to "<receiver>" with no authorization
     Then i get an error code "<rc>"
@@ -122,18 +124,23 @@ Feature: Send Digital Message Ec
       | @clientId-delivery | @channel_pec | @pec.receiver.digital.address |   123x       |400 |
 
   @PnEcSendMessage @invioPEC @complete_pec_ko
-  Scenario Outline: Invio pec con allegati con una pec non valida e verifica della pubblicazione del messaggio di errore nella coda di debug
+  Scenario Outline: Invio digitale ad un indirizzo PEC non valido
     Given a "<clientId>" and "<channel>" to send on
-    And "<clientId>" authenticated by "<apiKey>" uploads the following attachments:
-      | documentType                       | fileName                    | mimeType        |
-      | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
     When try to send a digital message to "<receiver>"
     Then check if the message has event code error "<rc>"
     Examples:
-      | clientId           | apiKey            | channel      | receiver         | rc   |
-     #TODO: Test non valido per mancata gestione della AddressException su develop. La modifica è ancora in hotfix/PN-11261
-     #| @clientId-delivery | @delivery_api_key | @channel_pec | .mario.rossi@arubapec.it | C011 |
-      | @clientId-delivery | @delivery_api_key | @channel_pec | test.xx@gmail.it | C009 |
+      | clientId           | channel      | receiver                 | rc   |
+      | @clientId-delivery | @channel_pec | .mario.rossi@arubapec.it | C011 |
+
+  @PnEcSendMessage @invioPEC @complete_pec_ko
+  Scenario Outline: Invio digitale ad un indirizzo non PEC
+    Given a "<clientId>" and "<channel>" to send on
+    When try to send a digital message to "<receiver>"
+    * waiting for scheduling
+    Then check if the message has event code error "<rc>"
+    Examples:
+      | clientId           | channel      | receiver      | rc   |
+      | @clientId-delivery | @channel_pec | test1@test.it | C009 |
 
   @PnEcSendMessage @invioEMAIL @invioEMAIL_ko @invioEmail_ko_client_not_authorized
   Scenario Outline: Invio email con un client non autorizzato
