@@ -1,53 +1,33 @@
 package it.pagopa.pn.cucumber;
 
-import it.pagopa.pn.cucumber.dto.ClientConfigurationInternalDto;
 import it.pagopa.pn.ec.rest.v1.api.*;
+import lombok.extern.slf4j.Slf4j;
 
-import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.*;
 
+@Slf4j
 public class RequestTemplate {
 
-    //SMS
-    public static DigitalCourtesySmsRequest createSmsRequest(String requestId, String receiver){
-        String defaultStringInit = "stringDefault";
-
-        DigitalCourtesySmsRequest digitalCourtesySmsRequestFactory= new DigitalCourtesySmsRequest();
+    protected static DigitalCourtesySmsRequest createSmsRequest(String requestId, String receiver, String messageText) {
+        DigitalCourtesySmsRequest digitalCourtesySmsRequestFactory = new DigitalCourtesySmsRequest();
         digitalCourtesySmsRequestFactory.setRequestId(requestId);
-        digitalCourtesySmsRequestFactory.eventType(defaultStringInit);
+        digitalCourtesySmsRequestFactory.eventType("eventType");
         digitalCourtesySmsRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now()));
         digitalCourtesySmsRequestFactory.setQos(DigitalCourtesySmsRequest.QosEnum.INTERACTIVE);
         digitalCourtesySmsRequestFactory.setReceiverDigitalAddress(receiver);
-        digitalCourtesySmsRequestFactory.setMessageText(defaultStringInit);
-        digitalCourtesySmsRequestFactory.channel(DigitalCourtesySmsRequest.ChannelEnum.SMS);
-        return digitalCourtesySmsRequestFactory;
-    }
-    public static DigitalCourtesySmsRequest createSmsRequestErr(String requestId, String receiver){
-        String defaultStringInit = "string";
-
-        DigitalCourtesySmsRequest digitalCourtesySmsRequestFactory= new DigitalCourtesySmsRequest();
-        digitalCourtesySmsRequestFactory.setRequestId(requestId);
-        digitalCourtesySmsRequestFactory.eventType(defaultStringInit);
-        digitalCourtesySmsRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now().plusSeconds(60)));
-        digitalCourtesySmsRequestFactory.setQos(DigitalCourtesySmsRequest.QosEnum.INTERACTIVE);
-        digitalCourtesySmsRequestFactory.setReceiverDigitalAddress(receiver);
-        digitalCourtesySmsRequestFactory.setMessageText(defaultStringInit);
+        digitalCourtesySmsRequestFactory.setMessageText(messageText);
         digitalCourtesySmsRequestFactory.channel(DigitalCourtesySmsRequest.ChannelEnum.SMS);
         return digitalCourtesySmsRequestFactory;
     }
 
-    //EMAIL
-    public static DigitalCourtesyMailRequest createMailRequest(String requestId, String receiver) {
+    protected static DigitalCourtesyMailRequest createMailRequest(String requestId, String receiver) {
         String defaultStringInit = "stringDefault";
-
-        DigitalCourtesyMailRequest digitalCourtesyMailRequestFactory= new DigitalCourtesyMailRequest();
+        DigitalCourtesyMailRequest digitalCourtesyMailRequestFactory = new DigitalCourtesyMailRequest();
         digitalCourtesyMailRequestFactory.setRequestId(requestId);
         digitalCourtesyMailRequestFactory.eventType(defaultStringInit);
         digitalCourtesyMailRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now()));
         digitalCourtesyMailRequestFactory.setQos(DigitalCourtesyMailRequest.QosEnum.INTERACTIVE);
-        //digitalCourtesyMailRequestFactory.setSenderDigitalAddress(System.getProperty("email.sender.digital.address"));
         digitalCourtesyMailRequestFactory.setReceiverDigitalAddress(receiver);
         digitalCourtesyMailRequestFactory.setMessageText(defaultStringInit);
         digitalCourtesyMailRequestFactory.channel(DigitalCourtesyMailRequest.ChannelEnum.EMAIL);
@@ -57,48 +37,23 @@ public class RequestTemplate {
         return digitalCourtesyMailRequestFactory;
     }
 
-//PEC
-    public static DigitalNotificationRequest createDigitalNotificationRequest(String requestId, String receiver){
-        String defaultStringInit = "stringDefault";
-
-
+    protected static DigitalNotificationRequest createDigitalNotificationRequest(String requestId, String receiver, String channel, String messageText) {
         DigitalNotificationRequest digitalNotificationRequestFactory = new DigitalNotificationRequest();
         digitalNotificationRequestFactory.setRequestId(requestId);
-        digitalNotificationRequestFactory.eventType(defaultStringInit);
+        digitalNotificationRequestFactory.eventType("eventType");
         digitalNotificationRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now()));
         digitalNotificationRequestFactory.setQos(DigitalNotificationRequest.QosEnum.INTERACTIVE);
         digitalNotificationRequestFactory.setSenderDigitalAddress("default");
         digitalNotificationRequestFactory.setReceiverDigitalAddress(receiver);
-        digitalNotificationRequestFactory.setMessageText(defaultStringInit);
-        digitalNotificationRequestFactory.channel(DigitalNotificationRequest.ChannelEnum.PEC);
+        digitalNotificationRequestFactory.setMessageText(messageText);
+        digitalNotificationRequestFactory.channel(DigitalNotificationRequest.ChannelEnum.fromValue(channel));
         digitalNotificationRequestFactory.setSubjectText("test");
         digitalNotificationRequestFactory.setTags(null);
         digitalNotificationRequestFactory.setMessageContentType(DigitalNotificationRequest.MessageContentTypeEnum.PLAIN);
         return digitalNotificationRequestFactory;
     }
 
-    public static DigitalNotificationRequest createDigitalNotificationRequestErr(String requestId, String receiver){
-        String defaultStringInit = "string";
-
-
-        DigitalNotificationRequest digitalNotificationRequestFactory = new DigitalNotificationRequest();
-        digitalNotificationRequestFactory.setRequestId(requestId);
-        digitalNotificationRequestFactory.eventType(defaultStringInit);
-        digitalNotificationRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now().plusSeconds(60)));
-        digitalNotificationRequestFactory.setQos(DigitalNotificationRequest.QosEnum.INTERACTIVE);
-        digitalNotificationRequestFactory.setSenderDigitalAddress("default");
-        digitalNotificationRequestFactory.setReceiverDigitalAddress(receiver);
-        digitalNotificationRequestFactory.setMessageText(defaultStringInit);
-        digitalNotificationRequestFactory.channel(DigitalNotificationRequest.ChannelEnum.PEC);
-        digitalNotificationRequestFactory.setSubjectText("test");
-        digitalNotificationRequestFactory.setTags(null);
-        digitalNotificationRequestFactory.setMessageContentType(DigitalNotificationRequest.MessageContentTypeEnum.PLAIN);
-        return digitalNotificationRequestFactory;
-    }
-
-    //CARTACEO
-
-    public static PaperEngageRequest createPaperEngageRequest(String requestId) {
+    protected static PaperEngageRequest createPaperEngageRequest(String requestId) {
         PaperEngageRequest paperEngageRequestFactory = new PaperEngageRequest();
 
         paperEngageRequestFactory.setReceiverName("Paolo Rossi");
@@ -130,11 +85,10 @@ public class RequestTemplate {
         paperEngageRequestFactory.setRequestId(requestId);
         paperEngageRequestFactory.setClientRequestTimeStamp(Date.from(Instant.now()));
         return paperEngageRequestFactory;
-
     }
 
-    public static ClientConfigurationDto createClientConfigurationRequest() {
-        ClientConfigurationDto clientConfigurationDto = new  ClientConfigurationDto();
+    protected static ClientConfigurationDto createClientConfigurationRequest() {
+        ClientConfigurationDto clientConfigurationDto = new ClientConfigurationDto();
         clientConfigurationDto.setSqsArn("");
         clientConfigurationDto.setSqsName("");
         clientConfigurationDto.setSenderPhysicalAddress(new SenderPhysicalAddressDto());
@@ -142,30 +96,5 @@ public class RequestTemplate {
         clientConfigurationDto.setPecReplyTo("");
         return clientConfigurationDto;
     }
-    public static ClientConfigurationInternalDto createClientConfigurationInternalRequest() {
-        ClientConfigurationInternalDto clientConfigurationDto = new  ClientConfigurationInternalDto();
-        clientConfigurationDto.setSqsArn("");
-        clientConfigurationDto.setSqsName("");
-        clientConfigurationDto.setSenderPhysicalAddress(new SenderPhysicalAddressDto());
-        clientConfigurationDto.setMailReplyTo("");
-        clientConfigurationDto.setPecReplyTo("");
-        return clientConfigurationDto;
-    }
-
-    private static List<PaperEngageRequestAttachments> getPaperEngageRequestAttachments() {
-        PaperEngageRequestAttachments paperEngageRequestAttachments = new PaperEngageRequestAttachments();
-        String defaultAttachmentUrl = "safestorage://test.pdf";
-        paperEngageRequestAttachments.setUri(defaultAttachmentUrl);
-        paperEngageRequestAttachments.setOrder(BigDecimal.valueOf(1));
-        paperEngageRequestAttachments.setDocumentType("ATTO");
-        paperEngageRequestAttachments.setSha256("stringstringstringstringstringstringstri");
-
-        List<PaperEngageRequestAttachments> paperEngageRequestAttachmentsList = new ArrayList<>();
-        paperEngageRequestAttachmentsList.add(paperEngageRequestAttachments);
-        return paperEngageRequestAttachmentsList;
-    }
-
-
-
 
 }

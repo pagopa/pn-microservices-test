@@ -44,6 +44,7 @@ public class EcStepDefinitions {
     private String requestId;
     private String channel;
     private String receiver;
+    private String messageText;
     private int sendPaperMessageStatusCode;
     private final List<PnAttachment> attachmentsList = new ArrayList<>();
     private final Set<String> statusesToCheck = new HashSet<>();
@@ -108,23 +109,6 @@ public class EcStepDefinitions {
         MDC.put(MDC_CORR_ID_KEY, requestId);
         Response response = ExternalChannelUtils.sendPaperMessage(clientId, requestId, attachmentsList);
         this.sendPaperMessageStatusCode = response.getStatusCode();
-    }
-
-    @When("try to send a digital message to {string}")
-    public void presaInCarico(String receiver) {
-        this.requestId = ExternalChannelUtils.generateRandomRequestId();
-        MDC.put(MDC_CORR_ID_KEY, requestId);
-        this.receiver = getValueIfTagged(receiver);
-        log.info("receiver address {}", this.receiver);
-        //switch sul canale
-        Response response = switch (channel.toUpperCase()) {
-            case "SMS" -> ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, this.receiver);
-            case "EMAIL" -> ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, this.receiver);
-            case "PEC" ->
-                    ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList, this.receiver);
-            default -> throw new IllegalArgumentException();
-        };
-        assertEquals(200, response.getStatusCode());
     }
 
     @When("try to send a paper message to {string}")
@@ -200,54 +184,38 @@ public class EcStepDefinitions {
         this.sRC = String.valueOf(response.getStatusCode());
     }
 
-    @When("try to send digital message to {string} with {string}")
-    public void tryToSendDigitalMessageTo(String receiver, String requestId) {
+    private void sendDigitalMessage(String receiver, String requestId, String messageText) {
         this.requestId = getValueIfTagged(requestId);
+        MDC.put(MDC_CORR_ID_KEY, this.requestId);
+        this.clientId = getValueIfTagged(clientId);
         this.receiver = getValueIfTagged(receiver);
+        this.messageText = messageText;
         log.info("receiver address {}", this.receiver);
         //switch sul canale
-        Response response = switch (channel.toUpperCase()) {
-            case "SMS" -> this.response = ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, this.receiver);
-            case "EMAIL" -> this.response = ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, this.receiver);
-            case "PEC" ->
-                    this.response = ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList, this.receiver);
+        this.response = switch (this.channel) {
+            case "SMS" -> ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, this.receiver, this.messageText);
+            case "EMAIL" -> ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, this.receiver);
+            case "PEC", "SERCQ" -> ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList, this.receiver, this.channel, this.messageText);
             default -> throw new IllegalArgumentException();
         };
-        this.sRC = String.valueOf(response.getStatusCode());
+        log.debug("RESPONSE : {}", response.getStatusCode());
+        this.sRC = String.valueOf(this.response.getStatusCode());
+    }
+
+    @When("try to send digital message to {string} with {string}")
+    public void tryToSendDigitalMessageTo(String receiver, String requestId) {
+        sendDigitalMessage(receiver, requestId, "Test message");
     }
 
     @When("try to send a digital message to {string} with same requestId")
     public void tryToSendADigitalMessageToWithSameRequestId(String receiver) {
-        this.receiver = getValueIfTagged(receiver);
-        Response response = switch (channel.toUpperCase()) {
-            case "SMS" -> this.response = ExternalChannelUtils.sendSmsCourtesySimpleMessageErr(clientId, requestId, this.receiver);
-            case "EMAIL" -> this.response = ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, this.receiver);
-            case "PEC" ->
-                    this.response = ExternalChannelUtils.sendDigitalNotificationErr(clientId, requestId, attachmentsList, this.receiver);
-            default -> throw new IllegalArgumentException();
-
-        };
-        this.sRC = String.valueOf(response.getStatusCode());
-        log.info("sRC {}", this.sRC);
-
+        sendDigitalMessage(receiver, this.requestId, "Message with same requestId");
     }
 
-    @When("try to send a digital message to {string} with no authorization")
-    public void tryToSendADigitalMessageToWithNoAuthorization(String receiver) {
-        this.receiver = getValueIfTagged(receiver);
-        this.requestId = ExternalChannelUtils.generateRandomRequestId();
-        MDC.put(MDC_CORR_ID_KEY, requestId);
-        Response response = switch (channel.toUpperCase()) {
-            case "SMS" -> this.response = ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, receiver);
-            case "EMAIL" -> this.response = ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, receiver);
-            case "PEC" ->
-                    this.response = ExternalChannelUtils.sendDigitalNotificationErr(clientId, requestId, attachmentsList, receiver);
-            default -> throw new IllegalArgumentException();
-
-        };
-        this.sRC = String.valueOf(response.getStatusCode());
+    @When("try to send a digital message to {string}")
+    public void presaInCarico(String receiver) {
+        sendDigitalMessage(receiver, ExternalChannelUtils.generateRandomRequestId(), "Test message");
     }
-
 
     //AND
     @And("I prepare the following paper progress status event attachments:")
@@ -382,6 +350,8 @@ public class EcStepDefinitions {
                     queuePoller.checkMessageAvailability(requestId, List.of(CourtesyMessageProgressEvent.EventCodeEnum.M003.getValue()));
             case "PEC" ->
                     queuePoller.checkMessageAvailability(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.C000.getValue()));
+            case "SERCQ" ->
+                    queuePoller.checkMessageAvailability(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.Q003.getValue()));
             case "PAPER" -> queuePoller.checkMessageAvailability(requestId, List.of("P000"));
             default ->
                     throw new IllegalArgumentException(String.format("The given channel '%s' is not valid.", this.channel));
@@ -471,6 +441,7 @@ public class EcStepDefinitions {
     @Then("i get an error code {string}")
     public void getError(String errorCode) {
         log.debug("Error code {}", errorCode);
+        log.debug("Response : {}", response.asString());
         Assertions.assertEquals(errorCode, String.valueOf(response.getStatusCode()));
     }
 
