@@ -3,8 +3,13 @@ package it.pagopa.pn.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.service.SqsService;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.SqsClientBuilder;
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
+
+import java.net.URI;
 
 public class SqsServiceImpl implements SqsService {
 
@@ -12,7 +17,12 @@ public class SqsServiceImpl implements SqsService {
     private final ObjectMapper objectMapper;
 
     public SqsServiceImpl() {
-        this.sqsClient = SqsClient.create();
+        SqsClientBuilder builder = SqsClient.builder().region(Region.EU_SOUTH_1).credentialsProvider(DefaultCredentialsProvider.create());
+        String testAwsSqsEndpoint = System.getProperty("test.aws.sqs.endpoint");
+        if (testAwsSqsEndpoint != null) {
+            builder.endpointOverride(URI.create(testAwsSqsEndpoint));
+        }
+        this.sqsClient = builder.build();
         this.objectMapper = new ObjectMapper();
     }
 

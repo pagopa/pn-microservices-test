@@ -1,5 +1,7 @@
 package it.pagopa.pn.cucumber.utils;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
@@ -132,7 +134,8 @@ public class ExternalChannelUtils extends RequestTemplate {
         return CommonUtils.myPut(oReq, RequestEndpoint.CARTACEO_ENDPOINT,CommonUtils.PN_EC);
     }
 
-    public static Response sendPaperMessageRasterFlag(String clientId, String requestId, String requestPaId, boolean applyRasterization, List<PnAttachment> attachments) {
+    public static Response sendPaperMessageRasterFlag(String clientId, String requestId, String requestPaId, String applyRasterization, List<PnAttachment> attachments){
+        log.info("sendPaperMessageRasterFlag {}", applyRasterization);
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
@@ -147,7 +150,13 @@ public class ExternalChannelUtils extends RequestTemplate {
         }).toList();
         paperEngageRequest.setAttachments(paperEngageRequestAttachmentsList);
         paperEngageRequest.setRequestPaId(requestPaId);
-        paperEngageRequest.setApplyRasterization(applyRasterization);
+        Boolean applyRasterizationFlag = null;
+        if (applyRasterization != null && !applyRasterization.isEmpty()) {
+            applyRasterizationFlag = Boolean.valueOf(applyRasterization);
+        }
+        paperEngageRequest.setApplyRasterization(applyRasterizationFlag);
+
+
         oReq.body(paperEngageRequest);
         return CommonUtils.myPut(oReq, RequestEndpoint.CARTACEO_ENDPOINT,CommonUtils.PN_EC);
     }
