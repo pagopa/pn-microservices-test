@@ -37,7 +37,7 @@ Feature: Send Paper Progress Status
       | @clientId-cons | @apiKey-cons | CON080     |                      |            | @now                     | @now                     | 200.00 |
       | @clientId-cons | @apiKey-cons | RECRS002A  | M02                  | @requestId | @now                     | @now                     | 200.00 |
 
-  @PnEcSendMessage @PAPER @verificaErroriSemantici @verificaErrori @dothis
+  @PnEcSendMessage @PAPER @verificaErroriSemantici @verificaErrori
   Scenario Outline: Verifica semantica nell'avanzamento dei progressi di postalizzazione
     Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
     When I send the following paper progress status requests:
@@ -57,7 +57,7 @@ Feature: Send Paper Progress Status
       | @clientId-cons | @apiKey-cons | CON080     |                      | @requestId | 2100-07-11T13:02:25.206Z | @now                     | 400.02 |
       | @clientId-cons | @apiKey-cons | CON080     |                      | @requestId | @now                     | 2100-07-11T13:02:25.206Z | 400.02 |
 
-  @PnEcSendMessage @PAPER @verificaAttachments @verificaErrori @dothis
+  @PnEcSendMessage @PAPER @verificaAttachments @verificaErrori
   Scenario Outline: Verifica degli allegati nell'avanzamento dei progressi di postalizzazione
     Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
     And I prepare the following paper progress status event attachments:
@@ -73,7 +73,7 @@ Feature: Send Paper Progress Status
       | @clientId-cons | @apiKey-cons | InvalidUri                       | AR                     | 400.02 |
       | @clientId-cons | @apiKey-cons | safestorage://NonExistentFileKey | AR                     | 400.02 |
 
-  @PnEcSendMessage @PAPER @verificaAttachmentsREC @verificaErrori @dothis
+  @PnEcSendMessage @PAPER @verificaAttachmentsREC @verificaErrori
   Scenario Outline: Verifica dei documentType degli allegati nell'avanzamento degli stati di tipo REC
     Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
     And "@clientId-delivery-push" authenticated by "@apiKey-delivery-push" uploads the following paper progress status event attachments:
