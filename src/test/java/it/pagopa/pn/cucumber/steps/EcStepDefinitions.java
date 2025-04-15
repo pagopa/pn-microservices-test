@@ -1,6 +1,5 @@
 package it.pagopa.pn.cucumber.steps;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.AfterAll;
 import io.cucumber.java.BeforeAll;
@@ -17,11 +16,15 @@ import it.pagopa.pn.cucumber.utils.*;
 import it.pagopa.pn.ec.rest.v1.api.*;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileCreationRequest;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileCreationResponse;
+import it.pagopa.pn.service.DynamoDbService;
+import it.pagopa.pn.service.impl.DynamoDbServiceImpl;
 import jakarta.jms.JMSException;
 import lombok.CustomLog;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.MDC;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 
 import java.io.File;
 import java.time.Duration;
@@ -57,7 +60,7 @@ public class EcStepDefinitions {
     private String sRC;
     private Response response;
     private OffsetDateTime testStartTime;
-
+    private DynamoDbService dynamoDbService = new DynamoDbServiceImpl();
     @BeforeAll
     public static void init() {
         try {
@@ -432,7 +435,6 @@ public class EcStepDefinitions {
         log.debug("Error list: " + sendPaperProgressStatusErrorList);
     }
 
-
     @Then("i get response {string}")
     public void iGetResponse(String sRC) {
         Assertions.assertEquals(sRC, this.sRC);
@@ -443,6 +445,18 @@ public class EcStepDefinitions {
         log.debug("Error code {}", errorCode);
         log.debug("Response : {}", response.asString());
         Assertions.assertEquals(errorCode, String.valueOf(response.getStatusCode()));
+    }
+
+    @Then("I verify the record in pn-EcScartiConsolidatore")
+    public void i_verify_the_record_in_pn_ecScartiConsolidatore(){
+        QueryResponse response = dynamoDbService.queryByRequestId(System.getProperty("pn.ec.scarti-consolidatore.table.name"),requestId);
+        Assertions.assertTrue(response.hasItems());
+
+        Optional<Map<String, AttributeValue>> matchingItem = response.items().stream()
+                .filter(item -> item.get("requestId").s().equals(requestId))
+                .findFirst();
+
+        Assertions.assertTrue(matchingItem.isPresent());
     }
 
 
