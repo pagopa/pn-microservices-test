@@ -35,17 +35,29 @@ Feature: Send Paper Progress Status
       | clientId       | apiKey       | statusCode | deliveryFailureCause | iun        | statusDateTime           | clientRequestTimestamp   | rc     |
       # Verifica consistenza dati
       | @clientId-cons | @apiKey-cons | CON080     |                      |            | @now                     | @now                     | 200.00 |
+      | @clientId-cons | @apiKey-cons | RECRS002A  | M02                  | @requestId | @now                     | @now                     | 200.00 |
+
+  @PnEcSendMessage @PAPER @verificaErroriSemantici @verificaErrori @dothis
+  Scenario Outline: Verifica semantica nell'avanzamento dei progressi di postalizzazione
+    Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
+    When I send the following paper progress status requests:
+    | statusCode   | deliveryFailureCause   | iun   | statusDateTime   | clientRequestTimestamp   |
+    | <statusCode> | <deliveryFailureCause> | <iun> | <statusDateTime> | <clientRequestTimestamp> |
+    And I get "<rc>" result code
+    Then I verify the record in pn-EcScartiConsolidatore
+    Examples:
+      | clientId       | apiKey       | statusCode | deliveryFailureCause | iun        | statusDateTime           | clientRequestTimestamp   | rc     |
+      # Verifica consistenza dati
       | @clientId-cons | @apiKey-cons | CON080     |                      | FakeIun    | @now                     | @now                     | 400.02 |
       | @clientId-cons | @apiKey-cons | FakeStatus |                      | @requestId | @now                     | @now                     | 400.02 |
       | @clientId-cons | @apiKey-cons | CON080     | FakeDFC              | @requestId | @now                     | @now                     | 400.02 |
       | @clientId-cons | @apiKey-cons | RECRS002A  | M01                  | @requestId | @now                     | @now                     | 400.02 |
-      | @clientId-cons | @apiKey-cons | RECRS002A  | M02                  | @requestId | @now                     | @now                     | 200.00 |
       # Verifiche temporali
       | @clientId-cons | @apiKey-cons | CON080     |                      | @requestId | 2022-07-11T13:02:25.206Z | @now                     | 400.02 |
       | @clientId-cons | @apiKey-cons | CON080     |                      | @requestId | 2100-07-11T13:02:25.206Z | @now                     | 400.02 |
       | @clientId-cons | @apiKey-cons | CON080     |                      | @requestId | @now                     | 2100-07-11T13:02:25.206Z | 400.02 |
 
-  @PnEcSendMessage @PAPER @verificaAttachments @verificaErrori
+  @PnEcSendMessage @PAPER @verificaAttachments @verificaErrori @dothis
   Scenario Outline: Verifica degli allegati nell'avanzamento dei progressi di postalizzazione
     Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
     And I prepare the following paper progress status event attachments:
@@ -54,13 +66,14 @@ Feature: Send Paper Progress Status
     When I send the following paper progress status requests:
       | statusCode | deliveryFailureCause | iun        | statusDateTime |
       | CON080     |                      | @requestId | @now           |
-    Then I get "<rc>" result code
+    And I get "<rc>" result code
+    Then I verify the record in pn-EcScartiConsolidatore
     Examples:
       | clientId       | apiKey       | attachmentUri                    | attachmentDocumentType | rc     |
       | @clientId-cons | @apiKey-cons | InvalidUri                       | AR                     | 400.02 |
       | @clientId-cons | @apiKey-cons | safestorage://NonExistentFileKey | AR                     | 400.02 |
 
-  @PnEcSendMessage @PAPER @verificaAttachmentsREC @verificaErrori
+  @PnEcSendMessage @PAPER @verificaAttachmentsREC @verificaErrori @dothis
   Scenario Outline: Verifica dei documentType degli allegati nell'avanzamento degli stati di tipo REC
     Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
     And "@clientId-delivery-push" authenticated by "@apiKey-delivery-push" uploads the following paper progress status event attachments:
@@ -69,7 +82,8 @@ Feature: Send Paper Progress Status
     When I send the following paper progress status requests:
       | statusCode | deliveryFailureCause | iun        | statusDateTime |
       | RECAG010   |                      | @requestId | @now           |
-    Then I get "<rc>" result code
+    And I get "<rc>" result code
+    Then I verify the record in pn-EcScartiConsolidatore
     Examples:
       | clientId       | apiKey       | rc     |
       | @clientId-cons | @apiKey-cons | 400.02 |
