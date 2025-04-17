@@ -52,10 +52,10 @@ public class SmStepDefinitions {
     }
 
 
-    @Then("i get response validate {string}")
-    public void iGetResponseValidate(String sRc) {
+    @Then("i get response if nextStatus is {string}")
+    public void iGetResponseValidate(String isAllowedExpected) {
 
-        Assertions.assertEquals(Boolean.parseBoolean(sRc), isAllowed);
+        Assertions.assertEquals(Boolean.parseBoolean(isAllowedExpected), isAllowed);
 
     }
 
@@ -65,7 +65,7 @@ public class SmStepDefinitions {
 
         Assertions.assertEquals(exR, externalStatus);
 
-        //può Tornare un alore a null in logicStatus
+        //può Tornare un valore a null in logicStatus
         if (null == lR || lR.equals( "null")) Assertions.assertNull(logicStatus);
         else Assertions.assertEquals(lR, logicStatus);
     }
