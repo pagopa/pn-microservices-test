@@ -1,7 +1,7 @@
 Feature: Validate Status stateMachine Manager
 
   @PnStateMachineValidateStatus @getClient @getProcess @getStatus @getNextStatus
-  Scenario Outline: Valida Stato tramite chiamata GET all'endpoint
+  Scenario Outline: Valida Cambio Stato tramite chiamata GET all'endpoint
     Given a "<clientId>"
     When try to validate "<status>" of a "<process>" with "<nextStatus>"
     Then i get response if nextStatus is "<allowed>"
@@ -47,7 +47,7 @@ Feature: Validate Status stateMachine Manager
       | @clientId-delivery | PAPER   | retry        | error              | true  |
     #TEST ERROR CARTACEO
       | @clientId-delivery | PAPER   | _start_      | sent               | false |
-    #TEST _ANY_TO_ANY CARTACE DA RIVEDERE????
+    #TEST _ANY_TO_ANY CARTACEO DA RIVEDERE????
       | @clientId-delivery | PAPER   | sent         | booked             | true  |
       | @clientId-delivery | PAPER   | sent         | _start_            | true  |
 
@@ -61,7 +61,6 @@ Feature: Validate Status stateMachine Manager
     #SMS
       | @clientId-delivery | SMS      | _start_     | booked             | true  |
       | @clientId-delivery | SMS      | booked      | retry              | true  |
-    # NON PRESENTE SU DYNAMO MA PRESENTE SUL DOCUMENTO SUPPONGO PERCHE' C'E' IL RETRY | @clientId-delivery | SMS      | booked      | error              | true  |
       | @clientId-delivery | SMS      | booked      | sent               | true  |
       | @clientId-delivery | SMS      | retry       | sent               | true  |
     #ERROR SMS
@@ -73,9 +72,54 @@ Feature: Validate Status stateMachine Manager
   @PnStateMachineValidateStatus @getClient @getProcess @getStatus @getNextStatus
   Scenario Outline: Valida external-status tramite chiamata GET all'endpoint
     Given a "<clientId>"
-    When try to validate a "<status>" of a "<process>"
+    When submit a "<status>" of a "<process>"
     Then i get "<externalStatus>" and "<logicStatus>"
     Examples:
       | clientId           | process | status  | externalStatus| logicStatus |
-      | @clientId-delivery | EMAIL   | retry   | PROGRESS      | null        |
-      | @clientId-delivery | EMAIL   | booked  | PROGRESS      | null        |
+   #SMS
+      | @clientId-delivery | SMS      | booked 	       	 | PROGRESS      | null        |
+      | @clientId-delivery | SMS      | sent   	       	 | OK            | S003        |
+      | @clientId-delivery | SMS      | retry  	       	 | PROGRESS      | null        |
+      | @clientId-delivery | SMS      | error  	       	 | ERROR         | S008        |
+      | @clientId-delivery | SMS      | internalError  	 | ERROR      	 | S010        |
+    #EMAIL
+      | @clientId-delivery | EMAIL    | booked 		   	 | PROGRESS      | null        |
+      | @clientId-delivery | EMAIL    | sent   		   	 | OK            | M003        |
+      | @clientId-delivery | EMAIL    | retry  		   	 | PROGRESS      | null        |
+      | @clientId-delivery | EMAIL    | error  		   	 | ERROR         | M008        |
+      | @clientId-delivery | EMAIL    | internalError  	 | ERROR         | M010        |
+      | @clientId-delivery | EMAIL    | compError      	 | ERROR         | M011        |
+
+    #PEC
+      | @clientId-delivery | PEC      | booked   	   	 | PROGRESS      | null        |
+      | @clientId-delivery | PEC      | sent     	   	 | PROGRESS      | C000        |
+      | @clientId-delivery | PEC      | retry    	   	 | PROGRESS      | null        |
+      | @clientId-delivery | PEC      | error    	   	 | ERROR         | C008        |
+      | @clientId-delivery | PEC      | accepted 	   	 | PROGRESS      | C001        |
+      | @clientId-delivery | PEC      | delivered		 | OK  	         | C003        |
+      | @clientId-delivery | PEC      | addressError   	 | ERROR         | C011        |
+      | @clientId-delivery | PEC      | infected       	 | ERROR         | C006        |
+      | @clientId-delivery | PEC      | notAccepted    	 | ERROR         | C002        |
+      | @clientId-delivery | PEC      | notDelivered   	 | ERROR         | C004        |
+      | @clientId-delivery | PEC      | deliveryWarn   	 | PROGRESS      | C007        |
+      | @clientId-delivery | PEC      | nonPEC         	 | ERROR         | C009        |
+      | @clientId-delivery | PEC      | internalError  	 | ERROR         | C010        |
+    #CARTACEO - in cartaceo non abbiamo uno status a OK
+      | @clientId-delivery | PAPER    | booked         	 | PROGRESS      | null        |
+      | @clientId-delivery | PAPER    | sent           	 | PROGRESS      | P000        |
+      | @clientId-delivery | PAPER    | retry          	 | PROGRESS      | null        |
+      #ALCUNI ERRORI NON HANNO IL LOGICSTATUS COME DA DOCUMENTAZIONE
+      | @clientId-delivery | PAPER    | inprogress       | PROGRESS      | P001        |
+      | @clientId-delivery | PAPER    | syntaxError      | ERROR         | P011        |
+      | @clientId-delivery | PAPER    | semanticError    | ERROR         | P012        |
+      #errori senza LOGICSTATUS
+      | @clientId-delivery | PAPER    | error            | ERROR         | null        |
+      | @clientId-delivery | PAPER    | internalError    | ERROR         | null        |
+      | @clientId-delivery | PAPER    | duplicatedRequest| ERROR         | null        |
+      | @clientId-delivery | PAPER    | authenticationError| ERROR     | null        |
+    #SERCQ
+      | @clientId-delivery | SERCQ    | booked           | PROGRESS      | null        |
+      | @clientId-delivery | SERCQ    | sent             | OK            | Q003        |
+      | @clientId-delivery | SERCQ    | internalError    | ERROR         | Q010        |
+      | @clientId-delivery | SERCQ    | addressError     | ERROR         | Q011        |
+

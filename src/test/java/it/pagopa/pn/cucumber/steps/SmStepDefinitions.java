@@ -30,7 +30,7 @@ public class SmStepDefinitions {
     }
 
     @When("try to validate {string} of a {string} with {string}")
-    public void tryToGetValidateStatus(String status, String process, String nextStatus) {
+    public void tryToValidateStatus(String status, String process, String nextStatus) {
         this.status = getValueIfTagged(status);
         this.process = getValueIfTagged(process);
         this.nextStatus = getValueIfTagged(nextStatus);
@@ -51,30 +51,16 @@ public class SmStepDefinitions {
         }
     }
 
-
     @Then("i get response if nextStatus is {string}")
-    public void iGetResponseValidate(String isAllowedExpected) {
+    public void getResponseValidate(String isAllowedExpected) {
 
         Assertions.assertEquals(Boolean.parseBoolean(isAllowedExpected), isAllowed);
 
     }
 
 
-    @Then("i get {string} and {string}")
-    public void iGetResponseValidateExternalStatus(String exR, String lR) {
-
-        Assertions.assertEquals(exR, externalStatus);
-
-        //può Tornare un valore a null in logicStatus
-        if (null == lR || lR.equals( "null")) Assertions.assertNull(logicStatus);
-        else Assertions.assertEquals(lR, logicStatus);
-    }
-
-
-
-
-    @When("try to validate a {string} of a {string}")
-    public void tryToGetValidateExternalstatus(String status, String process) {
+    @When("submit a {string} of a {string}")
+    public void sendStatusProcess(String status, String process) {
 
         this.status = getValueIfTagged(status);
         this.process = getValueIfTagged(process);
@@ -95,5 +81,16 @@ public class SmStepDefinitions {
 
         }
         }
+
+
+    @Then("i get {string} and {string}")
+    public void getExternalStatus(String exR, String lR) {
+
+        Assertions.assertEquals(exR, externalStatus);
+
+        //può Tornare un valore a null in logicStatus
+        if (null == lR || lR.equals( "null")) Assertions.assertNull(logicStatus);
+        else Assertions.assertEquals(lR, logicStatus);
+    }
 
 }
