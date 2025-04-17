@@ -66,16 +66,13 @@ Feature: Validate Status stateMachine Manager
     #ERROR SMS
       | @clientId-delivery | SMS      | _start_     | sent               | false |
 
-
-
-
   @PnStateMachineValidateStatus @getClient @getProcess @getStatus @getNextStatus
-  Scenario Outline: Valida external-status tramite chiamata GET all'endpoint
+  Scenario Outline: Ottieni ExternalStatus e LogicStatus tramite chiamata GET all'endpoint
     Given a "<clientId>"
     When submit a "<status>" of a "<process>"
     Then i get "<externalStatus>" and "<logicStatus>"
     Examples:
-      | clientId           | process | status  | externalStatus| logicStatus |
+      | clientId           | process | status            | externalStatus| logicStatus |
    #SMS
       | @clientId-delivery | SMS      | booked 	       	 | PROGRESS      | null        |
       | @clientId-delivery | SMS      | sent   	       	 | OK            | S003        |
