@@ -135,4 +135,14 @@ public class CommonUtils {
 		}
 	}
 
+	public static Response sendMultipartRequest(String endpoint, File file, String partName, String contentType, String service) {
+		return RestAssured
+				.given()
+				.baseUri(getBaseURL(service))
+				.multiPart(partName, file, contentType)
+				.when()
+				.post(endpoint)
+				.then()
+				.extract().response();
+	}
 }
