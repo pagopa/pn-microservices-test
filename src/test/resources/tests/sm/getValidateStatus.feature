@@ -66,7 +66,7 @@ Feature: Validate Status stateMachine Manager
     #ERROR SMS
       | @clientId-delivery | SMS      | _start_     | sent               | false |
 
-  @PnStateMachineValidateStatus @getClient @getProcess @getStatus @getNextStatus
+  @PnStateMachineValidateExternalStatus @getClient @getProcess @getStatus @getExternalStatus @getLogicStatus
   Scenario Outline: Ottieni ExternalStatus e LogicStatus tramite chiamata GET all'endpoint
     Given a "<clientId>"
     When submit a "<status>" of a "<process>"
@@ -113,7 +113,7 @@ Feature: Validate Status stateMachine Manager
       | @clientId-delivery | PAPER    | error            | ERROR         | null        |
       | @clientId-delivery | PAPER    | internalError    | ERROR         | null        |
       | @clientId-delivery | PAPER    | duplicatedRequest| ERROR         | null        |
-      | @clientId-delivery | PAPER    | authenticationError| ERROR     | null        |
+      | @clientId-delivery | PAPER    | authenticationError| ERROR       | null        |
     #SERCQ
       | @clientId-delivery | SERCQ    | booked           | PROGRESS      | null        |
       | @clientId-delivery | SERCQ    | sent             | OK            | Q003        |
