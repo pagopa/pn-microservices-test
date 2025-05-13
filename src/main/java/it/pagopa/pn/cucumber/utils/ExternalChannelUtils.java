@@ -1,27 +1,18 @@
 package it.pagopa.pn.cucumber.utils;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import it.pagopa.pn.cucumber.RequestTemplate;
-import it.pagopa.pn.cucumber.dto.ClientConfigurationInternalDto;
 import it.pagopa.pn.cucumber.dto.pojo.PnAttachment;
 import it.pagopa.pn.ec.rest.v1.api.*;
 import it.pagopa.pn.exception.MessageIdException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.slf4j.MDC;
-import org.springframework.http.ResponseEntity;
 import org.springframework.util.Base64Utils;
 
 import java.math.BigDecimal;
 import java.util.List;
-
-import static it.pagopa.pn.cucumber.utils.LogUtils.MDC_CORR_ID_KEY;
 
 @Slf4j
 public class ExternalChannelUtils extends RequestTemplate {
@@ -43,34 +34,16 @@ public class ExternalChannelUtils extends RequestTemplate {
                 .header("x-amz-trace-id", java.util.UUID.randomUUID().toString());
     }
 
-    /*
-    un metodo che definisce una chiamata API per ogni channel
-     */
     //SMS
-    public static Response sendSmsCourtesySimpleMessage(String clientId, String requestId, String receiver) {
+    public static Response sendSmsCourtesySimpleMessage(String clientId, String requestId, String receiver, String messageText) {
         log.info("requestId {}", requestId);
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
-        DigitalCourtesySmsRequest digitalCourtesySmsRequest = createSmsRequest(requestId, receiver);
-    log.info(digitalCourtesySmsRequest.getRequestId());
+        DigitalCourtesySmsRequest digitalCourtesySmsRequest = createSmsRequest(requestId, receiver, messageText);
         oReq.body(digitalCourtesySmsRequest);
-         Response response = CommonUtils.myPut(oReq, RequestEndpoint.SMS_ENDPOINT,CommonUtils.PN_EC);
-         log.info(oReq.get().asString());
-
-        return response;
-    }
-    public static Response sendSmsCourtesySimpleMessageErr(String clientId, String requestId, String receiver) {
-        log.info("requestId {}", requestId);
-        RequestSpecification oReq = stdReq()
-                .header(X_PAGOPA_EXTCH_CX_ID, clientId)
-                .pathParam(REQUEST_IDX, requestId);
-        DigitalCourtesySmsRequest digitalCourtesySmsRequest = createSmsRequestErr(requestId, receiver);
-    log.info(digitalCourtesySmsRequest.getRequestId());
-        oReq.body(digitalCourtesySmsRequest);
-         Response response = CommonUtils.myPut(oReq, RequestEndpoint.SMS_ENDPOINT,CommonUtils.PN_EC);
-         log.info(oReq.get().asString());
-
+        Response response = CommonUtils.myPut(oReq, RequestEndpoint.SMS_ENDPOINT, CommonUtils.PN_EC);
+        log.info(oReq.get().asString());
         return response;
     }
 
@@ -82,33 +55,21 @@ public class ExternalChannelUtils extends RequestTemplate {
         DigitalCourtesyMailRequest digitalCourtesyMailRequest = createMailRequest(requestId, receiver);
         oReq.body(digitalCourtesyMailRequest);
 
-        return CommonUtils.myPut(oReq,RequestEndpoint.EMAIL_ENDPOINT,CommonUtils.PN_EC);
+        return CommonUtils.myPut(oReq, RequestEndpoint.EMAIL_ENDPOINT, CommonUtils.PN_EC);
     }
-
 
     //PEC
-    public static Response sendDigitalNotification(String clientId, String requestId, List<PnAttachment> attachments, String receiver) {
+    public static Response sendDigitalNotification(String clientId, String requestId, List<PnAttachment> attachments, String receiver, String channel, String messageText) {
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
-        DigitalNotificationRequest digitalNotificationRequest = createDigitalNotificationRequest(requestId, receiver);
+        DigitalNotificationRequest digitalNotificationRequest = createDigitalNotificationRequest(requestId, receiver, channel, messageText);
 
         List<String> attachmentsUri = attachments.stream().map(PnAttachment::getUri).toList();
         digitalNotificationRequest.setAttachmentUrls(attachmentsUri);
 
         oReq.body(digitalNotificationRequest);
-        return CommonUtils.myPut(oReq,RequestEndpoint.PEC_ENDPOINT,CommonUtils.PN_EC);
-    }
-    public static Response sendDigitalNotificationErr(String clientId, String requestId, List<PnAttachment> attachments, String receiver) {
-        RequestSpecification oReq = stdReq()
-                .header(X_PAGOPA_EXTCH_CX_ID, clientId)
-                .pathParam(REQUEST_IDX, requestId);
-        DigitalNotificationRequest digitalNotificationRequest = createDigitalNotificationRequestErr(requestId, receiver);
-        List<String> attachmentsUri = attachments.stream().map(PnAttachment::getUri).toList();
-        digitalNotificationRequest.setAttachmentUrls(attachmentsUri);
-
-        oReq.body(digitalNotificationRequest);
-        return CommonUtils.myPut(oReq,RequestEndpoint.PEC_ENDPOINT,CommonUtils.PN_EC);
+        return CommonUtils.myPut(oReq, RequestEndpoint.PEC_ENDPOINT, CommonUtils.PN_EC);
     }
 
     //CARTACEO
@@ -127,10 +88,10 @@ public class ExternalChannelUtils extends RequestTemplate {
         }).toList();
         paperEngageRequest.setAttachments(paperEngageRequestAttachmentsList);
         oReq.body(paperEngageRequest);
-        return CommonUtils.myPut(oReq, RequestEndpoint.CARTACEO_ENDPOINT,CommonUtils.PN_EC);
+        return CommonUtils.myPut(oReq, RequestEndpoint.CARTACEO_ENDPOINT, CommonUtils.PN_EC);
     }
 
-    public static Response sendPaperMessageRasterFlag(String clientId, String requestId, String requestPaId, String applyRasterization, List<PnAttachment> attachments){
+    public static Response sendPaperMessageRasterFlag(String clientId, String requestId, String requestPaId, String applyRasterization, List<PnAttachment> attachments) {
         log.info("sendPaperMessageRasterFlag {}", applyRasterization);
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
@@ -152,9 +113,8 @@ public class ExternalChannelUtils extends RequestTemplate {
         }
         paperEngageRequest.setApplyRasterization(applyRasterizationFlag);
 
-
         oReq.body(paperEngageRequest);
-        return CommonUtils.myPut(oReq, RequestEndpoint.CARTACEO_ENDPOINT,CommonUtils.PN_EC);
+        return CommonUtils.myPut(oReq, RequestEndpoint.CARTACEO_ENDPOINT, CommonUtils.PN_EC);
     }
 
     //API Consolidatore
@@ -163,7 +123,7 @@ public class ExternalChannelUtils extends RequestTemplate {
                 .header(X_PAGOPA_EXTCH_SERVICE_ID, clientId)
                 .header(X_API_KEY, apiKey);
         oReq.body(events);
-        return CommonUtils.myPut(oReq, RequestEndpoint.CONSOLIDATORE_ENDPOINT,CommonUtils.PN_EC);
+        return CommonUtils.myPut(oReq, RequestEndpoint.CONSOLIDATORE_ENDPOINT, CommonUtils.PN_EC);
     }
 
     //CLIENT
@@ -172,13 +132,13 @@ public class ExternalChannelUtils extends RequestTemplate {
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId);
         ClientConfigurationDto clientConfigurationDto = createClientConfigurationRequest();
         oReq.body(clientConfigurationDto);
-        return CommonUtils.myGet(oReq, RequestEndpoint.GET_CONFIGURATIONS_ENDPOINT,CommonUtils.PN_EC);
+        return CommonUtils.myGet(oReq, RequestEndpoint.GET_CONFIGURATIONS_ENDPOINT, CommonUtils.PN_EC);
     }
 
-    public static Response getClient(String clientId){
+    public static Response getClient(String clientId) {
         RequestSpecification oReq = stdReq()
                 .pathParam(X_PAGOPA_EXTCH_CX_ID, clientId);
-        return CommonUtils.myGet(oReq, RequestEndpoint.GET_CLIENT_ENDPOINT,CommonUtils.PN_EC);
+        return CommonUtils.myGet(oReq, RequestEndpoint.GET_CLIENT_ENDPOINT, CommonUtils.PN_EC);
     }
 
     //GET REQUEST
@@ -186,56 +146,56 @@ public class ExternalChannelUtils extends RequestTemplate {
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
-        return CommonUtils.myGet(oReq, RequestEndpoint.GET_REQUEST_ENDPOINT,CommonUtils.PN_EC);
+        return CommonUtils.myGet(oReq, RequestEndpoint.GET_REQUEST_ENDPOINT, CommonUtils.PN_EC);
     }
 
     public static Response getRequestByMessageId(String messageId) {
         RequestSpecification oReq = stdReq()
                 .pathParam("messageId", messageId);
-        return CommonUtils.myGet(oReq, RequestEndpoint.GET_REQUEST_MESSAGE_ID_ENDPOINT,CommonUtils.PN_EC);
+        return CommonUtils.myGet(oReq, RequestEndpoint.GET_REQUEST_MESSAGE_ID_ENDPOINT, CommonUtils.PN_EC);
     }
 
 
     //GET PEC
-    public static Response getPecByRequestId(String clientId, String requestId){
+    public static Response getPecByRequestId(String clientId, String requestId) {
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
-        return CommonUtils.myGet(oReq, RequestEndpoint.PEC_ENDPOINT,CommonUtils.PN_EC);
+        return CommonUtils.myGet(oReq, RequestEndpoint.PEC_ENDPOINT, CommonUtils.PN_EC);
     }
 
     //GET EMAIL
-    public static Response getEmailByRequestId(String clientId, String requestId){
+    public static Response getEmailByRequestId(String clientId, String requestId) {
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
-        return CommonUtils.myGet(oReq, RequestEndpoint.EMAIL_ENDPOINT,CommonUtils.PN_EC);
+        return CommonUtils.myGet(oReq, RequestEndpoint.EMAIL_ENDPOINT, CommonUtils.PN_EC);
     }
 
     //GET SMS
-    public static Response getSmsByRequestId(String clientId, String requestId){
+    public static Response getSmsByRequestId(String clientId, String requestId) {
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
-        return CommonUtils.myGet(oReq, RequestEndpoint.SMS_ENDPOINT,CommonUtils.PN_EC);
+        return CommonUtils.myGet(oReq, RequestEndpoint.SMS_ENDPOINT, CommonUtils.PN_EC);
     }
 
     //GET PAPER
-    public static Response getPaperByRequestId(String clientId, String requestId){
+    public static Response getPaperByRequestId(String clientId, String requestId) {
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
-        return CommonUtils.myGet(oReq, RequestEndpoint.CARTACEO_ENDPOINT,CommonUtils.PN_EC);
+        return CommonUtils.myGet(oReq, RequestEndpoint.CARTACEO_ENDPOINT, CommonUtils.PN_EC);
     }
 
     //GET ATTACHMENTS
-    public static Response getAttachmentsByFileKey( String fileKey, String clientId, String apiKey){
+    public static Response getAttachmentsByFileKey(String fileKey, String clientId, String apiKey) {
 
         RequestSpecification oReq = stdReq()
                 .pathParam(FILE_KEY, fileKey)
                 .header(X_PAGOPA_EXTCH_SERVICE_ID, clientId)
                 .header(X_API_KEY, apiKey);
-        return CommonUtils.myGet(oReq, RequestEndpoint.GET_ATTACHMENT,CommonUtils.PN_EC);
+        return CommonUtils.myGet(oReq, RequestEndpoint.GET_ATTACHMENT, CommonUtils.PN_EC);
     }
 
     public static String generateRandomRequestId() {

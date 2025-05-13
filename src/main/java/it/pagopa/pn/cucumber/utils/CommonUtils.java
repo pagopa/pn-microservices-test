@@ -2,21 +2,18 @@ package it.pagopa.pn.cucumber.utils;
 
 import io.restassured.RestAssured;
 import io.restassured.config.EncoderConfig;
+import io.restassured.config.RestAssuredConfig;
 import io.restassured.response.Response;
 import io.restassured.specification.QueryableRequestSpecification;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.SpecificationQuerier;
-import it.pagopa.pn.configuration.TestVariablesConfiguration;
 import it.pagopa.pn.cucumber.dto.pojo.Checksum;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.validation.constraints.Null;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -31,63 +28,47 @@ public class CommonUtils {
 		throw new IllegalStateException("CommonUtils is a utility class");
 	}
 
-	private static String baseURL = null;
-	private static String pnEcPort = System.getProperty("pn.ec.port") == null ? "" : System.getProperty("pn.ec.port");
-	private static String pnSsPort = System.getProperty("pn.ss.port") == null ? "" : System.getProperty("pn.ss.port");
+	private static final RestAssuredConfig REST_ASSURED_CONFIG = RestAssured.config().encoderConfig(new EncoderConfig().appendDefaultContentCharsetToContentTypeIfUndefined(false));
+	public static final String BASE_URL_PROPERTY = "baseURL";
+	private static final String BASE_URL = System.getProperty(BASE_URL_PROPERTY) == null ? "http://localhost" : System.getProperty(BASE_URL_PROPERTY);
+	private static final String PN_EC_PORT = System.getProperty("pn.ec.port") == null ? "" : System.getProperty("pn.ec.port");
+	private static final String PN_SS_PORT = System.getProperty("pn.ss.port") == null ? "" : System.getProperty("pn.ss.port");
+	private static final String PN_SM_PORT = System.getProperty("pn.sm.port") == null ? "" : System.getProperty("pn.sm.port");
 	public static final String PN_EC = "pnEc";
 	public static final String PN_SS = "pnSs";
+	public static final String PN_SM = "pnSm";
 
 	protected static String getPort(String service) {
-		if( service.equals(PN_EC) ) {
-			return pnEcPort;
-		} else if( service.equals(PN_SS) ) {
-			return pnSsPort;
+		if (service.equals(PN_EC)) {
+			return PN_EC_PORT;
+		} else if (service.equals(PN_SS)) {
+			return PN_SS_PORT;
+		} else if (service.equals(PN_SM)) {
+			return PN_SM_PORT;
 		} else {
 			return "";
 		}
 	}
 
-	protected static String getBaseURL(String service, String path) {
-		String url = baseURL;
-		if (url == null) {
-			url = System.getProperty("baseURL");
-			if (url == null) {
-				url = "http://localhost";
-			}
-		}
-
+	protected static String getBaseURL(String service) {
+		String url = BASE_URL;
 		String port = getPort(service);
 		if (port != null && !port.isEmpty()) {
 			url += ":" + port;
 		}
-
-		if (path != null && !path.isEmpty()) {
-			if (!path.startsWith("/")) {
-				url += "/";
-			}
-			url += path;
-		}
-
 		return url;
 	}
 
 	public static Response uploadFile(String sURL, File oFile, String sSHA256, String sMD5, String sContentType, String sSecret, Checksum eCS) {
 
 		log.trace("uploadFile('{}', '{}', '{}', '{}', '{}')", sURL, sSHA256, sMD5, sContentType, sSecret);
-		EncoderConfig encoderConfig = new EncoderConfig();
 		RequestSpecification oReq = RestAssured.given()
-				.config(RestAssured.config().encoderConfig(encoderConfig.appendDefaultContentCharsetToContentTypeIfUndefined(false)))
+				.config(REST_ASSURED_CONFIG)
 				.header("content-type", sContentType);
-		switch (eCS) {
-			case MD5:
-				oReq.header("Content-MD5", sMD5);
-				break;
-			case SHA256:
-				oReq.header("x-amz-checksum-sha256", sSHA256);
-				break;
-			default:
-				break;
-		}
+
+		if (eCS.equals(Checksum.SHA256)) oReq.header("x-amz-checksum-sha256", sSHA256);
+		else if (eCS.equals(Checksum.MD5)) oReq.header("Content-MD5", sMD5);
+
 		if (sSecret != null) {
 			oReq.header("x-amz-meta-secret", sSecret);
 		}
@@ -97,28 +78,28 @@ public class CommonUtils {
 	}
 
 	protected static Response myGet(RequestSpecification oReqSpec, String sURI, String service) {
-		oReqSpec.given().baseUri(getBaseURL(service, baseURL)).basePath(sURI);
+		oReqSpec.given().baseUri(getBaseURL(service)).basePath(sURI);
 		QueryableRequestSpecification queryRequest = SpecificationQuerier.query(oReqSpec);
 		log.debug("GET {}", queryRequest.getURI());
 		return oReqSpec.get();
 	}
 
 	protected static Response myPost(RequestSpecification oReqSpec, String sURI, String service) {
-		oReqSpec.given().baseUri(getBaseURL(service, baseURL)).basePath(sURI);
+		oReqSpec.given().baseUri(getBaseURL(service)).basePath(sURI);
 		QueryableRequestSpecification queryRequest = SpecificationQuerier.query(oReqSpec);
 		log.debug("POST {}. Request body -> {}", queryRequest.getURI(), queryRequest.getBody().toString());
 		return oReqSpec.post();
 	}
 
 	protected static Response myPut(RequestSpecification oReqSpec, String sURI, String service) {
-		oReqSpec.given().baseUri(getBaseURL(service, baseURL)).basePath(sURI);
+		oReqSpec.given().baseUri(getBaseURL(service)).basePath(sURI);
 		QueryableRequestSpecification queryRequest = SpecificationQuerier.query(oReqSpec);
 		log.debug("PUT {}. Request body -> {}", queryRequest.getURI(), queryRequest.getBody().toString());
 		return oReqSpec.put();
 	}
 
 	protected static Response myPatch(RequestSpecification oReqSpec, String sURI, String service) {
-		oReqSpec.given().baseUri(getBaseURL(service, baseURL)).basePath(sURI);
+		oReqSpec.given().baseUri(getBaseURL(service)).basePath(sURI);
 		QueryableRequestSpecification queryRequest = SpecificationQuerier.query(oReqSpec);
 		log.debug("PATCH {}. Request body -> {}", queryRequest.getURI(), queryRequest.getBody().toString());
 		return oReqSpec.patch();
@@ -158,4 +139,14 @@ public class CommonUtils {
 		}
 	}
 
+	public static Response sendMultipartRequest(String endpoint, File file, String partName, String contentType, String service) {
+		return RestAssured
+				.given()
+				.baseUri(getBaseURL(service))
+				.multiPart(partName, file, contentType)
+				.when()
+				.post(endpoint)
+				.then()
+				.extract().response();
+	}
 }

@@ -17,24 +17,6 @@ Feature: Get Digital Message Ec
     Examples:
       | clientId           | rc  |
       | @clientId-delivery | 200 |
-    
- @PnEcGetMessage @getRequest @getRequestId
-   Scenario Outline: Get di una richieta presente a sistema
-      Given a "<clientId>" to send request
-      When try to get request by "<requestId>"
-      Then i get response "<rc>"
-      Examples:
-        | clientId           | requestId  | rc |
-        | @clientId-delivery | @requestId |200 |
-
-  @PnEcGetMessage @getRequest @getRequestMessageId
-  Scenario Outline: Get di una richieta presente a sistema tramite messageID
-    Given a "<clientId>" to send request
-    When try to get request by messageId "<messageId>"
-    Then i get response "<rc>"
-    Examples:
-      | clientId           | messageId  | rc |
-      | @clientId-delivery | @messageId | 200 |
 
     @PnEcGetMessage @getPec @getPec_ok
   Scenario Outline: Get di una PEC tramite requestId
@@ -83,15 +65,6 @@ Feature: Get Digital Message Ec
     Examples:
       | ecClientId     | ssClientId              | ssApiKey              | channel        | receiver                        | rc  |
       | @clientId-cons | @clientId-delivery-push | @apiKey-delivery-push | @channel_paper | @paper.receiver.digital.address | 200 |
-
-  @PnEcGetMessage @getAttachments @getAttachment_ok
-  Scenario Outline: Get di un allegato tramite fileKey
-    Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
-    When try to get attachment with a "<fileKey>"
-    Then i get response "<rc>"
-    Examples:
-      | clientId       | apiKey       | fileKey  | rc  |
-      | @clientId-cons | @apiKey-cons | @fileKey | 200 |
     
     # --- TEST KO --- #
 
@@ -167,3 +140,32 @@ Feature: Get Digital Message Ec
     Examples:
       | clientId           | apiKey       | fileKey  | rc  |
       | @clientId-cons     | @apiKey-cons | aaa.pdf  | 404 |
+
+  # I test seguenti sono specifici su risorse già esistenti a sistema. Per questo sono esclusi dalla run di test globale.
+
+  @PnEcGetMessage @getRequest @getRequestId @ignore
+  Scenario Outline: Get di una richiesta presente a sistema
+    Given a "<clientId>" to send request
+    When try to get request by "<requestId>"
+    Then i get response "<rc>"
+    Examples:
+      | clientId           | requestId          | rc  |
+      | @clientId-delivery | <insert requestId> | 200 |
+
+  @PnEcGetMessage @getRequest @getRequestMessageId @ignore
+  Scenario Outline: Get di una richieta presente a sistema tramite messageID
+    Given a "<clientId>" to send request
+    When try to get request by messageId "<messageId>"
+    Then i get response "<rc>"
+    Examples:
+      | clientId           | messageId          | rc  |
+      | @clientId-delivery | <insert messageId> | 200 |
+
+  @PnEcGetMessage @getAttachments @getAttachment_ok @ignore
+  Scenario Outline: Get di un allegato tramite fileKey
+    Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
+    When try to get attachment with a "<fileKey>"
+    Then i get response "<rc>"
+    Examples:
+      | clientId       | apiKey       | fileKey          | rc  |
+      | @clientId-cons | @apiKey-cons | <insert fileKey> | 200 |
