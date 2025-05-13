@@ -1,6 +1,5 @@
 package it.pagopa.pn.cucumber.steps;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.AfterAll;
 import io.cucumber.java.BeforeAll;
@@ -16,11 +15,16 @@ import it.pagopa.pn.cucumber.poller.PnEcQueuePoller;
 import it.pagopa.pn.cucumber.utils.*;
 import it.pagopa.pn.ec.rest.v1.api.*;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileCreationRequest;
+import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileCreationResponse;
+import it.pagopa.pn.service.DynamoDbService;
+import it.pagopa.pn.service.impl.DynamoDbServiceImpl;
 import jakarta.jms.JMSException;
 import lombok.CustomLog;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.MDC;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 
 import java.io.File;
 import java.time.Duration;
@@ -43,6 +47,7 @@ public class EcStepDefinitions {
     private String requestId;
     private String channel;
     private String receiver;
+    private String messageText;
     private int sendPaperMessageStatusCode;
     private final List<PnAttachment> attachmentsList = new ArrayList<>();
     private final Set<String> statusesToCheck = new HashSet<>();
@@ -55,7 +60,7 @@ public class EcStepDefinitions {
     private String sRC;
     private Response response;
     private OffsetDateTime testStartTime;
-
+    private DynamoDbService dynamoDbService = new DynamoDbServiceImpl();
     @BeforeAll
     public static void init() {
         try {
@@ -107,23 +112,6 @@ public class EcStepDefinitions {
         MDC.put(MDC_CORR_ID_KEY, requestId);
         Response response = ExternalChannelUtils.sendPaperMessage(clientId, requestId, attachmentsList);
         this.sendPaperMessageStatusCode = response.getStatusCode();
-    }
-
-    @When("try to send a digital message to {string}")
-    public void presaInCarico(String receiver) {
-        this.requestId = ExternalChannelUtils.generateRandomRequestId();
-        MDC.put(MDC_CORR_ID_KEY, requestId);
-        this.receiver = getValueIfTagged(receiver);
-        log.info("receiver address {}", this.receiver);
-        //switch sul canale
-        Response response = switch (channel.toUpperCase()) {
-            case "SMS" -> ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, this.receiver);
-            case "EMAIL" -> ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, this.receiver);
-            case "PEC" ->
-                    ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList, this.receiver);
-            default -> throw new IllegalArgumentException();
-        };
-        assertEquals(200, response.getStatusCode());
     }
 
     @When("try to send a paper message to {string}")
@@ -199,54 +187,38 @@ public class EcStepDefinitions {
         this.sRC = String.valueOf(response.getStatusCode());
     }
 
-    @When("try to send digital message to {string} with {string}")
-    public void tryToSendDigitalMessageTo(String receiver, String requestId) {
+    private void sendDigitalMessage(String receiver, String requestId, String messageText) {
         this.requestId = getValueIfTagged(requestId);
+        MDC.put(MDC_CORR_ID_KEY, this.requestId);
+        this.clientId = getValueIfTagged(clientId);
         this.receiver = getValueIfTagged(receiver);
+        this.messageText = messageText;
         log.info("receiver address {}", this.receiver);
         //switch sul canale
-        Response response = switch (channel.toUpperCase()) {
-            case "SMS" -> this.response = ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, this.receiver);
-            case "EMAIL" -> this.response = ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, this.receiver);
-            case "PEC" ->
-                    this.response = ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList, this.receiver);
+        this.response = switch (this.channel) {
+            case "SMS" -> ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, this.receiver, this.messageText);
+            case "EMAIL" -> ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, this.receiver);
+            case "PEC", "SERCQ" -> ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList, this.receiver, this.channel, this.messageText);
             default -> throw new IllegalArgumentException();
         };
-        this.sRC = String.valueOf(response.getStatusCode());
+        log.debug("RESPONSE : {}", response.getStatusCode());
+        this.sRC = String.valueOf(this.response.getStatusCode());
+    }
+
+    @When("try to send digital message to {string} with {string}")
+    public void tryToSendDigitalMessageTo(String receiver, String requestId) {
+        sendDigitalMessage(receiver, requestId, "Test message");
     }
 
     @When("try to send a digital message to {string} with same requestId")
     public void tryToSendADigitalMessageToWithSameRequestId(String receiver) {
-        this.receiver = getValueIfTagged(receiver);
-        Response response = switch (channel.toUpperCase()) {
-            case "SMS" -> this.response = ExternalChannelUtils.sendSmsCourtesySimpleMessageErr(clientId, requestId, this.receiver);
-            case "EMAIL" -> this.response = ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, this.receiver);
-            case "PEC" ->
-                    this.response = ExternalChannelUtils.sendDigitalNotificationErr(clientId, requestId, attachmentsList, this.receiver);
-            default -> throw new IllegalArgumentException();
-
-        };
-        this.sRC = String.valueOf(response.getStatusCode());
-        log.info("sRC {}", this.sRC);
-
+        sendDigitalMessage(receiver, this.requestId, "Message with same requestId");
     }
 
-    @When("try to send a digital message to {string} with no authorization")
-    public void tryToSendADigitalMessageToWithNoAuthorization(String receiver) {
-        this.receiver = getValueIfTagged(receiver);
-        this.requestId = ExternalChannelUtils.generateRandomRequestId();
-        MDC.put(MDC_CORR_ID_KEY, requestId);
-        Response response = switch (channel.toUpperCase()) {
-            case "SMS" -> this.response = ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, receiver);
-            case "EMAIL" -> this.response = ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, receiver);
-            case "PEC" ->
-                    this.response = ExternalChannelUtils.sendDigitalNotificationErr(clientId, requestId, attachmentsList, receiver);
-            default -> throw new IllegalArgumentException();
-
-        };
-        this.sRC = String.valueOf(response.getStatusCode());
+    @When("try to send a digital message to {string}")
+    public void presaInCarico(String receiver) {
+        sendDigitalMessage(receiver, ExternalChannelUtils.generateRandomRequestId(), "Test message");
     }
-
 
     //AND
     @And("I prepare the following paper progress status event attachments:")
@@ -280,9 +252,10 @@ public class EcStepDefinitions {
             FileCreationRequest fileCreationRequest = new FileCreationRequest().status("SAVED").contentType(mimeType).documentType(documentType);
             Response getPresignedUrlResp = SafeStorageUtils.getPresignedURLUpload(ssClientId, ssApiKey, fileCreationRequest, getSHA256(file), getMD5(file), true, Checksum.SHA256, true);
             assertEquals(200, getPresignedUrlResp.getStatusCode());
-            String sURL = getPresignedUrlResp.then().extract().path("uploadUrl");
-            String sKey = getPresignedUrlResp.then().extract().path("key");
-            String sSecret = getPresignedUrlResp.then().extract().path("secret");
+            FileCreationResponse fileCreationResponse = getPresignedUrlResp.as(FileCreationResponse.class);
+            String sURL = fileCreationResponse.getUploadUrl();
+            String sKey = fileCreationResponse.getKey();
+            String sSecret = fileCreationResponse.getSecret();
             PnAttachment pnAttachment = new PnAttachment();
             pnAttachment.setUri("safestorage://" + sKey);
             pnAttachment.setDate(OffsetDateTime.now());
@@ -312,9 +285,10 @@ public class EcStepDefinitions {
             FileCreationRequest fileCreationRequest = new FileCreationRequest().status("SAVED").contentType(mimeType).documentType(documentType);
             Response getPresignedUrlResp = SafeStorageUtils.getPresignedURLUpload(ssClientId, ssApiKey, fileCreationRequest, getSHA256(file), getMD5(file), true, Checksum.SHA256, true);
             assertEquals(200, getPresignedUrlResp.getStatusCode());
-            String sURL = getPresignedUrlResp.then().extract().path("uploadUrl");
-            String sKey = getPresignedUrlResp.then().extract().path("key");
-            String sSecret = getPresignedUrlResp.then().extract().path("secret");
+            FileCreationResponse fileCreationResponse = getPresignedUrlResp.as(FileCreationResponse.class);
+            String sURL = fileCreationResponse.getUploadUrl();
+            String sKey = fileCreationResponse.getKey();
+            String sSecret = fileCreationResponse.getSecret();
             Response uploadResp = CommonUtils.uploadFile(sURL, file, sha256, md5, mimeType, sSecret, Checksum.SHA256);
             assertEquals(200, uploadResp.getStatusCode());
 
@@ -379,6 +353,8 @@ public class EcStepDefinitions {
                     queuePoller.checkMessageAvailability(requestId, List.of(CourtesyMessageProgressEvent.EventCodeEnum.M003.getValue()));
             case "PEC" ->
                     queuePoller.checkMessageAvailability(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.C000.getValue()));
+            case "SERCQ" ->
+                    queuePoller.checkMessageAvailability(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.Q003.getValue()));
             case "PAPER" -> queuePoller.checkMessageAvailability(requestId, List.of("P000"));
             default ->
                     throw new IllegalArgumentException(String.format("The given channel '%s' is not valid.", this.channel));
@@ -404,8 +380,8 @@ public class EcStepDefinitions {
                 event.setStatusCode(statusCode);
                 statusesToCheck.add(statusCode);
 
-                String iun = map.get("iun");
-                event.setIun(iun.equals("@requestId") ? this.requestId : iun);
+                String iun = getValueOrDefault(map, "iun", null);
+                event.setIun(iun != null && iun.equals("@requestId") ? this.requestId : iun);
 
                 event.setStatusDescription("Test description");
                 event.setProductType("AR");
@@ -459,7 +435,6 @@ public class EcStepDefinitions {
         log.debug("Error list: " + sendPaperProgressStatusErrorList);
     }
 
-
     @Then("i get response {string}")
     public void iGetResponse(String sRC) {
         Assertions.assertEquals(sRC, this.sRC);
@@ -468,7 +443,20 @@ public class EcStepDefinitions {
     @Then("i get an error code {string}")
     public void getError(String errorCode) {
         log.debug("Error code {}", errorCode);
+        log.debug("Response : {}", response.asString());
         Assertions.assertEquals(errorCode, String.valueOf(response.getStatusCode()));
+    }
+
+    @Then("I verify the record in pn-EcScartiConsolidatore")
+    public void i_verify_the_record_in_pn_ecScartiConsolidatore(){
+        QueryResponse response = dynamoDbService.queryByRequestId(System.getProperty("pn.ec.scarti-consolidatore.table.name"),requestId);
+        Assertions.assertTrue(response.hasItems());
+
+        Optional<Map<String, AttributeValue>> matchingItem = response.items().stream()
+                .filter(item -> item.get("requestId").s().equals(requestId))
+                .findFirst();
+
+        Assertions.assertTrue(matchingItem.isPresent());
     }
 
 

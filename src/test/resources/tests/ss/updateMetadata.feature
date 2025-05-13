@@ -52,7 +52,7 @@ Feature: Update metadata
       | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-pn-cn | @apiKey-pn_cn | ATTACHED | 2025-07-11T13:02:25.206Z | 403 |
 
 
-  ### Casi con fileKey già valorizzate in input. ###
+  # I test seguenti sono specifici su risorse già esistenti a sistema. Per questo sono esclusi dalla run di test globale.
 
   @PnSsUpdateMetadata @updateFile @ignore
   Scenario Outline: update di un file con una fileKey definita e uno stato oppure una retentionUntil
@@ -60,5 +60,5 @@ Feature: Update metadata
     When "<clientId>" authenticated by "<APIKey>" try to update the document using "<status>" and "<retentionUntil>"
     Then i check that the document got updated
     Examples:
-      | clientId       | APIKey       | fileKey                                                          | status   | retentionUntil           |
-      | @clientId-test | @apiKey_test | PN_NOTIFICATION_ATTACHMENTS-5d2ac4eff32b4ffa8a875305ff24a528.pdf | ATTACHED | 2025-07-11T13:02:25.206Z |
+      | clientId       | APIKey       | fileKey          | status   | retentionUntil           |
+      | @clientId-test | @apiKey_test | <insert fileKey> | ATTACHED | 2025-07-11T13:02:25.206Z |
