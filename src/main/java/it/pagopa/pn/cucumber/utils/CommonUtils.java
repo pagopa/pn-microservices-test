@@ -33,14 +33,18 @@ public class CommonUtils {
 	private static final String BASE_URL = System.getProperty(BASE_URL_PROPERTY) == null ? "http://localhost" : System.getProperty(BASE_URL_PROPERTY);
 	private static final String PN_EC_PORT = System.getProperty("pn.ec.port") == null ? "" : System.getProperty("pn.ec.port");
 	private static final String PN_SS_PORT = System.getProperty("pn.ss.port") == null ? "" : System.getProperty("pn.ss.port");
+	private static final String PN_SM_PORT = System.getProperty("pn.sm.port") == null ? "" : System.getProperty("pn.sm.port");
 	public static final String PN_EC = "pnEc";
 	public static final String PN_SS = "pnSs";
+	public static final String PN_SM = "pnSm";
 
 	protected static String getPort(String service) {
 		if (service.equals(PN_EC)) {
 			return PN_EC_PORT;
 		} else if (service.equals(PN_SS)) {
 			return PN_SS_PORT;
+		} else if (service.equals(PN_SM)) {
+			return PN_SM_PORT;
 		} else {
 			return "";
 		}
