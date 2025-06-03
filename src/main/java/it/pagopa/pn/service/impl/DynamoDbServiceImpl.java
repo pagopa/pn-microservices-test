@@ -19,7 +19,8 @@ public class DynamoDbServiceImpl implements DynamoDbService {
     private final DynamoDbClient dynamoDbClient;
 
     public DynamoDbServiceImpl() {
-        DynamoDbClientBuilder builder = DynamoDbClient.builder().region(Region.EU_SOUTH_1).credentialsProvider(DefaultCredentialsProvider.create());
+        Region region = Region.of(System.getProperty("aws.region"));
+        DynamoDbClientBuilder builder = DynamoDbClient.builder().region(region).credentialsProvider(DefaultCredentialsProvider.create());
         String testAwsEndpoint = System.getProperty("test.aws.s3.endpoint");
         if (testAwsEndpoint != null) {
             builder.endpointOverride(URI.create(testAwsEndpoint));
