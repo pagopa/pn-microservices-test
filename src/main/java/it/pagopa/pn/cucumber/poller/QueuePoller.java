@@ -32,7 +32,8 @@ public abstract class QueuePoller implements MessageListener {
 
     public void startPolling() throws JMSException {
         // Create a new connection factory with all defaults (credentials and region) set automatically
-        SqsClientBuilder builder = SqsClient.builder().region(Region.EU_SOUTH_1).credentialsProvider(DefaultCredentialsProvider.create());
+        Region region = Region.of(System.getProperty("aws.region"));
+        SqsClientBuilder builder = SqsClient.builder().region(region).credentialsProvider(DefaultCredentialsProvider.create());
         String testAwsSqsEndpoint = System.getProperty("test.aws.sqs.endpoint");
         if (testAwsSqsEndpoint != null) {
             builder.endpointOverride(URI.create(testAwsSqsEndpoint));
