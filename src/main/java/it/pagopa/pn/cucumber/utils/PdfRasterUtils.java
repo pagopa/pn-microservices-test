@@ -2,6 +2,8 @@ package it.pagopa.pn.cucumber.utils;
 
 import io.restassured.response.Response;
 import lombok.extern.slf4j.Slf4j;
+import static it.pagopa.pn.cucumber.utils.CommonUtils.PN_PDFRASTER;
+
 
 import java.io.File;
 
@@ -15,6 +17,6 @@ public class PdfRasterUtils {
 	}
 
     public static Response getCurrentClientConfig(String endpoint, File file, String partName, String contentType) {
-		return CommonUtils.sendMultipartRequest(endpoint, file, partName, contentType, PDF_RASTER_CONVERT_ENDPOINT);
+		return CommonUtils.sendMultipartRequest(endpoint, file, partName, contentType, PN_PDFRASTER);
     }
 }
