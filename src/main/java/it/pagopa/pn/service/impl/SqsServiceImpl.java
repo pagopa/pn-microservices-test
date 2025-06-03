@@ -17,7 +17,8 @@ public class SqsServiceImpl implements SqsService {
     private final ObjectMapper objectMapper;
 
     public SqsServiceImpl() {
-        SqsClientBuilder builder = SqsClient.builder().region(Region.EU_SOUTH_1).credentialsProvider(DefaultCredentialsProvider.create());
+        Region region = Region.of(System.getProperty("aws.region"));
+        SqsClientBuilder builder = SqsClient.builder().region(region).credentialsProvider(DefaultCredentialsProvider.create());
         String testAwsSqsEndpoint = System.getProperty("test.aws.sqs.endpoint");
         if (testAwsSqsEndpoint != null) {
             builder.endpointOverride(URI.create(testAwsSqsEndpoint));

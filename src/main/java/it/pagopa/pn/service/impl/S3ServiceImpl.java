@@ -12,7 +12,8 @@ public class S3ServiceImpl implements S3Service {
     private final S3Client s3Client;
 
     public S3ServiceImpl() {
-        S3ClientBuilder builder = S3Client.builder().region(Region.EU_SOUTH_1).credentialsProvider(DefaultCredentialsProvider.create());
+        Region region = Region.of(System.getProperty("aws.region"));
+        S3ClientBuilder builder = S3Client.builder().region(region).credentialsProvider(DefaultCredentialsProvider.create());
         String testAwsS3Endpoint = System.getProperty("test.aws.s3.endpoint");
         if (testAwsS3Endpoint != null) {
             builder.endpointOverride(URI.create(testAwsS3Endpoint));
