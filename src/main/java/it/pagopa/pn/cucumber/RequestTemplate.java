@@ -55,7 +55,6 @@ public class RequestTemplate {
 
     protected static PaperEngageRequest createPaperEngageRequest(String requestId) {
         PaperEngageRequest paperEngageRequestFactory = new PaperEngageRequest();
-
         paperEngageRequestFactory.setReceiverName("Paolo Rossi");
         paperEngageRequestFactory.setReceiverNameRow2("c/o famiglia Bianchi");
         paperEngageRequestFactory.setReceiverAddress(System.getProperty("paper.receiver.digital.address"));

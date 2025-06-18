@@ -384,7 +384,7 @@ public class EcStepDefinitions {
                 event.setIun(iun != null && iun.equals("@requestId") ? this.requestId : iun);
 
                 event.setStatusDescription("Test description");
-                event.setProductType("AR");
+                event.setProductType(getValueOrDefault(map, "productType", "AR"));
                 event.setDeliveryFailureCause(getValueOrDefault(map, "deliveryFailureCause", null));
 
                 OffsetDateTime now = OffsetDateTime.now();
