@@ -21,6 +21,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.Map;
 
+import static it.pagopa.pn.configuration.TestVariablesConfiguration.getValueIfTagged;
+
 @Slf4j
 public class CommonUtils {
 
@@ -137,7 +139,7 @@ public class CommonUtils {
 			if (value == null) {
 				return defaultValue;
 			}
-			return value;
+			return getValueIfTagged(value);
 		} catch (NullPointerException e) {
 			return defaultValue;
 		}
