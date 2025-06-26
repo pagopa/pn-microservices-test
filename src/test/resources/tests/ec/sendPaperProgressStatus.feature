@@ -88,17 +88,44 @@ Feature: Send Paper Progress Status
       | clientId       | apiKey       | rc     |
       | @clientId-cons | @apiKey-cons | 400.02 |
 
-#TODO: Test non valido per mancata gestione degli eventi duplicati cartacei su develop. La modifica è ancora in feature/PN-11182
-#  @PnEcSendMessage @PAPER @verificaDuplicati
-#  Scenario Outline: Controllo su eventi duplicati nell'avanzamento dei progressi di postalizzazione
-#    Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
-#    When I send the following paper progress status requests:
-#      | statusCode | deliveryFailureCause | iun        | statusDateTime |
-#      | RECAG010   |                      | @requestId | @testStartTime |
-#    And I send the following paper progress status requests:
-#      | statusCode | deliveryFailureCause | iun        | statusDateTime |
-#      | RECAG010   |                      | @requestId | @testStartTime |
-#    Then I get "<rc>" result code
-#    Examples:
-#      | clientId                | apiKey                | rc     |
-#      | @clientId-delivery-push | @apiKey-delivery-push | 400.02 |
+  @PnEcSendMessage @PAPER @verificaDuplicati
+  Scenario Outline: Controllo su eventi duplicati nell'avanzamento dei progressi di postalizzazione
+    Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
+    And "@clientId-delivery-push" authenticated by "@apiKey-delivery-push" uploads the following paper progress status event attachments:
+      | documentType  | fileName                    | mimeType        | attachmentDocumentType |
+      | @doc_type_aar | src/test/resources/test.pdf | application/pdf | AR                     |
+    When I send the following paper progress status requests:
+      | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   |
+      | RECAG010   |                      | @requestId | @testStartTime | <productType> |
+    And I send the following paper progress status requests:
+      | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   |
+      | RECAG010   |                      | @requestId | @testStartTime | <productType> |
+    Then I get "<rc>" result code
+    Examples:
+      | clientId       | apiKey       | productType                           | rc     |
+      # Il productType è presente nella configurazione di ExternalChannel PnEcDuplicatesCheck
+      | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check     | 400.02 |
+      # Il productType non è presente in PnEcDuplicatesCheck
+      | @clientId-cons | @apiKey-cons | @productType_not_for_duplicates_check | 200.00 |
+
+    #per gli allegati multipli è stato fatto un test puntuale con una chiamata postman
+  @PnEcSendMessage @PAPER @verificaDuplicati @MultipleAttachments
+  Scenario Outline: Controllo su eventi duplicati nell'avanzamento dei progressi di postalizzazione
+    Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
+    And "@clientId-delivery-push" authenticated by "@apiKey-delivery-push" uploads the following paper progress status event attachments:
+      | documentType  | fileName                    | mimeType        | attachmentDocumentType |
+      | @doc_type_aar | src/test/resources/test.pdf | application/pdf | AR                     |
+      | @doc_type_aar | src/test/resources/test-pdf.pdf | application/pdf | AR                     |
+    When I send the following paper progress status requests:
+      | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   |
+      | RECAG010   |                      | @requestId | @testStartTime | <productType> |
+    And I send the following paper progress status requests:
+      | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   |
+      | RECAG010   |                      | @requestId | @testStartTime | <productType> |
+    Then I get "<rc>" result code
+    Examples:
+      | clientId       | apiKey       | productType                           | rc     |
+      # Il productType è presente nella configurazione di ExternalChannel PnEcDuplicatesCheck
+       | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check     | 400.02 |
+      # Il productType non è presente in PnEcDuplicatesCheck
+      | @clientId-cons | @apiKey-cons | @productType_not_for_duplicates_check | 200.00 |
