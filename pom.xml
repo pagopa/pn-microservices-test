@@ -385,7 +385,7 @@
 						<phase>process-sources</phase>
 						<configuration>
 
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/02af5853dce567f0fecd6fcef04f6578c86bedbe/docs/openapi/external/api-internal-v1.yaml</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/1db3e537a2633c9ce2ea672f9ef51efb71a86b38/docs/openapi/external/api-internal-v1.yaml</inputSpec>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
 							<generateApiTests>false</generateApiTests>
