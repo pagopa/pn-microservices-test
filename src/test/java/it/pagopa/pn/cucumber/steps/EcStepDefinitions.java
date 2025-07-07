@@ -363,6 +363,12 @@ public class EcStepDefinitions {
         Assertions.assertTrue(checked);
     }
 
+    @Then("check if the message has status {string}")
+    public void checkStatusMessage(String status) {
+        boolean checked = queuePoller.checkMessageAvailability(requestId,List.of(status));
+        Assertions.assertTrue(checked);
+    }
+
 
     @Then("I send the following paper progress status requests:")
     public void sendPaperProgressStatusRequests(DataTable dataTable) {
