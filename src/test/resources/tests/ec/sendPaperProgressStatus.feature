@@ -115,7 +115,7 @@ Feature: Send Paper Progress Status
     And "@clientId-delivery-push" authenticated by "@apiKey-delivery-push" uploads the following paper progress status event attachments:
       | documentType  | fileName                    | mimeType        | attachmentDocumentType |
       | @doc_type_aar | src/test/resources/test.pdf | application/pdf | AR                     |
-      | @doc_type_aar | src/test/resources/test-pdf.pdf | application/pdf | AR                     |
+      | @doc_type_aar | src/test/resources/test_pdf.pdf | application/pdf | AR                     |
     When I send the following paper progress status requests:
       | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   |
       | RECAG010   |                      | @requestId | @testStartTime | <productType> |
