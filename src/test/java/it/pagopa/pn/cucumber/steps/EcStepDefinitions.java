@@ -48,6 +48,7 @@ public class EcStepDefinitions {
     private String channel;
     private String receiver;
     private String transformationDocumentType;
+    private String paId;
     private String messageText;
     private int sendPaperMessageStatusCode;
     private final List<PnAttachment> attachmentsList = new ArrayList<>();
@@ -474,15 +475,15 @@ public class EcStepDefinitions {
     }
 
 
-    @And("try to send a paper message to {string} with {string} as documentType")
-    public void tryToSendAPaperMessageToWithAAsDocumentType(String receiver, String transformationDocumentTypeX) {
-       log.info("nel  send: {} ",transformationDocumentTypeX);
+    @And("try to send a paper message to {string} with {string} as documentType and {string} as PaId")
+    public void tryToSendAPaperMessageToWithAAsDocumentType(String receiver, String transformationDocumentType, String paId) {
+       log.info("nel  send -  receiver: {}, transformationDocumentType: {}, paId: {} ",receiver,transformationDocumentType,paId);
         this.requestId = ExternalChannelUtils.generateRandomRequestId();
         MDC.put(MDC_CORR_ID_KEY, requestId);
         this.receiver = getValueIfTagged(receiver);
-        this.transformationDocumentType = getValueIfTagged(transformationDocumentTypeX);
-        System.out.println("nel  send: "+transformationDocumentType);
-        Response response = ExternalChannelUtils.sendPaperMessageWithDocumentTransformationType(clientId, requestId, attachmentsList, transformationDocumentType);
+        this.transformationDocumentType = getValueIfTagged(transformationDocumentType);
+        this.paId=getValueIfTagged(paId);
+        Response response = ExternalChannelUtils.sendPaperMessageWithDocumentTransformationType(clientId, requestId, attachmentsList, this.transformationDocumentType, this.paId);
         this.sendPaperMessageStatusCode = response.getStatusCode();
     }
 }
