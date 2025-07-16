@@ -111,13 +111,16 @@ public class ExternalChannelUtils extends RequestTemplate {
         return CommonUtils.myPut(oReq, RequestEndpoint.CARTACEO_ENDPOINT, CommonUtils.PN_EC);
     }
 
-    public static Response sendPaperMessageWithDocumentTransformationType(String clientId, String requestId, List<PnAttachment> attachments, String transformationDocumentType) {
+    public static Response sendPaperMessageWithDocumentTransformationType(String clientId, String requestId, List<PnAttachment> attachments, String transformationDocumentType, String paId) {
         log.info("transformationDocumentType: {} ", transformationDocumentType);
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
         PaperEngageRequest paperEngageRequest = createPaperEngageRequest(requestId);
-        paperEngageRequest.setTransformationDocumentType(transformationDocumentType);
+        paperEngageRequest.setRequestPaId(paId);
+        if (!transformationDocumentType.isBlank()){
+            paperEngageRequest.setTransformationDocumentType(transformationDocumentType);
+        }
         List<PaperEngageRequestAttachments> paperEngageRequestAttachmentsList = attachments.stream().map(attachment -> {
             PaperEngageRequestAttachments paperEngageRequestAttachments = new PaperEngageRequestAttachments();
             paperEngageRequestAttachments.setDocumentType(attachment.getDocumentType());
