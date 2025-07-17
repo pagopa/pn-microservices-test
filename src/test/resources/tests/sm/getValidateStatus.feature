@@ -44,6 +44,11 @@ Feature: Validate Status stateMachine Manager
       | @clientId-delivery | PAPER   | booked       | retry              | true  |
       | @clientId-delivery | PAPER   | booked       | sent               | true  |
       | @clientId-delivery | PAPER   | sent         | _any_              | true  |
+      | @clientId-delivery | PAPER   | retry        | syntaxError        | true  |
+      | @clientId-delivery | PAPER   | retry        | semanticError      | true  |
+      | @clientId-delivery | PAPER   | retry        | authenticationError| true  |
+      | @clientId-delivery | PAPER   | retry        | duplicatedRequest  | true  |
+      | @clientId-delivery | PAPER   | retry        | internalError      | true  |
       | @clientId-delivery | PAPER   | retry        | error              | true  |
     #TEST ERROR CARTACEO
       | @clientId-delivery | PAPER   | _start_      | sent               | false |
