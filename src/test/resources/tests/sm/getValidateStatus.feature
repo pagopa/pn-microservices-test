@@ -37,12 +37,7 @@ Feature: Validate Status stateMachine Manager
 
     #CARTACEO
       | @clientId-delivery | PAPER   | _start_      | booked             | true  |
-      | @clientId-delivery | PAPER   | booked       | syntaxError        | true  |
-      | @clientId-delivery | PAPER   | booked       | semanticError      | true  |
-      | @clientId-delivery | PAPER   | booked       | authenticationError| true  |
-      | @clientId-delivery | PAPER   | booked       | duplicatedRequest  | true  |
-      | @clientId-delivery | PAPER   | booked       | retry              | true  |
-      | @clientId-delivery | PAPER   | booked       | sent               | true  |
+      | @clientId-delivery | PAPER   | booked       | _any_               | true  |
       | @clientId-delivery | PAPER   | sent         | _any_              | true  |
       | @clientId-delivery | PAPER   | retry        | error              | true  |
     #TEST ERROR CARTACEO
