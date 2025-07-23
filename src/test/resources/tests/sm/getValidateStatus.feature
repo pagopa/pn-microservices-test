@@ -112,7 +112,7 @@ Feature: Validate Status stateMachine Manager
       #errori senza LOGICSTATUS
       | @clientId-delivery | PAPER    | error            | ERROR         | null        |
       | @clientId-delivery | PAPER    | internalError    | ERROR         | null        |
-      | @clientId-delivery | PAPER    | duplicatedRequest| ERROR         | null        |
+      | @clientId-delivery | PAPER    | duplicatedRequest| PROGRESS         | null        |
       | @clientId-delivery | PAPER    | authenticationError| ERROR       | null        |
     #SERCQ
       | @clientId-delivery | SERCQ    | booked           | PROGRESS      | null        |
