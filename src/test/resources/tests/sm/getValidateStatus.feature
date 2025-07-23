@@ -45,6 +45,7 @@ Feature: Validate Status stateMachine Manager
       | @clientId-delivery | PAPER   | booked       | sent               | true  |
       | @clientId-delivery | PAPER   | sent         | _any_              | true  |
       | @clientId-delivery | PAPER   | retry        | error              | true  |
+      | @clientId-delivery | PAPER   | duplicatedRequest | _any_         | true  |
     #TEST ERROR CARTACEO
       | @clientId-delivery | PAPER   | _start_      | sent               | false |
     #TEST _ANY_TO_ANY CARTACEO DA RIVEDERE????
