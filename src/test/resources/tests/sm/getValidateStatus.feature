@@ -36,6 +36,7 @@ Feature: Validate Status stateMachine Manager
       | @clientId-delivery | PAPER   | booked       | anyStatus          | true  |
       | @clientId-delivery | PAPER   | sent         | anyStatus          | true  |
       | @clientId-delivery | PAPER   | retry        | error              | true  |
+      | @clientId-delivery | PAPER   | duplicatedRequest | anyStatus     | true  |
     #TEST ERROR CARTACEO
       | @clientId-delivery | PAPER   | _start_      | sent               | false |
     #TEST _ANY_TO_ANY CARTACEO DA RIVEDERE????
@@ -103,7 +104,7 @@ Feature: Validate Status stateMachine Manager
       #errori senza LOGICSTATUS
       | @clientId-delivery | PAPER    | error            | ERROR         | null        |
       | @clientId-delivery | PAPER    | internalError    | ERROR         | null        |
-      | @clientId-delivery | PAPER    | duplicatedRequest| ERROR         | null        |
+      | @clientId-delivery | PAPER    | duplicatedRequest| PROGRESS      | null        |
       | @clientId-delivery | PAPER    | authenticationError| ERROR       | null        |
     #SERCQ
       | @clientId-delivery | SERCQ    | booked           | PROGRESS      | null        |
