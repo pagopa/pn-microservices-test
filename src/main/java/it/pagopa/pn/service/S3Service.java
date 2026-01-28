@@ -7,6 +7,7 @@ public interface S3Service {
 
     String getBucketName(String prefix);
     ListObjectVersionsResponse listObjectVersions(String key, String bucket);
+    GetObjectTaggingResponse getObjectTagging(String key, String bucket);
 
 
 

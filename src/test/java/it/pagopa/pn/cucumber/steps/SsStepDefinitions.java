@@ -494,4 +494,40 @@ public class SsStepDefinitions {
                 "Expected 0 versions in staging bucket for key " + sKey + ", but found " + versionCount);
 
     }
+
+    @And("the file has a tag ERROR in the S3 staging bucket and no version in final bucket")
+    public void theFileHasErrorTagInTheS3Bucket() {
+        Assertions.assertNotNull(sKey, "Document key must not be null");
+
+        String finalBucket = System.getProperty("pn.ss.availability.bucket.name");
+        if (finalBucket == null || finalBucket.isEmpty()) {
+            System.out.println("FinalBucket property is empty");
+            finalBucket = s3Service.getBucketName(
+                    System.getProperty("pn.ss.availability.bucket.prefix")
+            );
+            System.out.println("FinalBucket property: "+finalBucket);
+        }
+
+        String stagingBucket = System.getProperty("pn.ss.availability.bucket.staging.name");
+        if (stagingBucket == null || stagingBucket.isEmpty()) {
+            System.out.println("StagingBucket property is empty");
+            stagingBucket = s3Service.getBucketName(
+                    System.getProperty("pn.ss.availability.staging.bucket.prefix")
+            );
+            System.out.println("stagingBucket property: "+stagingBucket);
+        }
+
+        GetObjectTaggingResponse taggingResponse = s3Service.getObjectTagging(sKey, stagingBucket);
+        ListObjectVersionsResponse response = s3Service.listObjectVersions(sKey, finalBucket);
+
+        long versionCount = response.versions().stream().filter(v -> v.key().equals(sKey)).count();
+
+        System.out.println("Final bucket version count for key " + sKey + ": " + versionCount);
+
+        Assertions.assertEquals(0, versionCount, "Expected 0 versions in final bucket for key " + sKey + ", but found " + versionCount);
+        boolean hasErrorTag = taggingResponse.tagSet().stream().anyMatch(tag -> tag.value().equals("ERROR"));
+        System.out.println("Object " + sKey + " has ERROR tag: " + hasErrorTag);
+        Assertions.assertTrue(hasErrorTag, "Expected object " + sKey + " to have a tag with value ERROR, but it does not.");
+    }
+
 }

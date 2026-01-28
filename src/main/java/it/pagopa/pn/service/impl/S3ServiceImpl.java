@@ -48,4 +48,16 @@ public class S3ServiceImpl implements S3Service {
         return s3Client.listObjectVersions(request);
     }
 
+    @Override
+    public GetObjectTaggingResponse getObjectTagging(String key, String bucketName) {
+
+        GetObjectTaggingRequest request = GetObjectTaggingRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .build();
+
+        return s3Client.getObjectTagging(request);
+    }
+
+
 }
