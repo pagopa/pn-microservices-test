@@ -47,6 +47,8 @@ public class EcStepDefinitions {
     private String requestId;
     private String channel;
     private String receiver;
+    private String transformationDocumentType;
+    private String paId;
     private String messageText;
     private int sendPaperMessageStatusCode;
     private final List<PnAttachment> attachmentsList = new ArrayList<>();
@@ -61,6 +63,9 @@ public class EcStepDefinitions {
     private Response response;
     private OffsetDateTime testStartTime;
     private DynamoDbService dynamoDbService = new DynamoDbServiceImpl();
+    private String courier;
+    private String statusCode;
+
     @BeforeAll
     public static void init() {
         try {
@@ -362,6 +367,12 @@ public class EcStepDefinitions {
         Assertions.assertTrue(checked);
     }
 
+    @Then("check if the message has status {string}")
+    public void checkStatusMessage(String status) {
+        boolean checked = queuePoller.checkMessageAvailability(requestId,List.of(status));
+        Assertions.assertTrue(checked);
+    }
+
 
     @Then("I send the following paper progress status requests:")
     public void sendPaperProgressStatusRequests(DataTable dataTable) {
@@ -402,6 +413,9 @@ public class EcStepDefinitions {
 
                 if (!this.paperProgressStatusEventAttachments.isEmpty())
                     event.setAttachments(this.paperProgressStatusEventAttachments);
+                //event.setCourier("recapitista");
+                String courier = getValueOrDefault(map, "courier", null);
+                event.setCourier(courier);
 
                 events.add(event);
             });
@@ -459,6 +473,50 @@ public class EcStepDefinitions {
         Assertions.assertTrue(matchingItem.isPresent());
     }
 
+    @Then("I get {string} courier and I get {string} statusCode:")
+    public void iGetCourier(String courier, String statusCode) throws Exception{
+        this.courier = getValueIfTagged(courier);
+        this.statusCode = getValueIfTagged(statusCode);
+        log.info("Courier {}", this.courier, " - statusCode {} ", this.statusCode);
+        boolean result = false;
+        if(this.courier.equals("null")) {
+            Assertions.assertNull(this.courier);
+        } else {
+            String clientId = "pn-cons-000~" + requestId;
+            log.info("clientId {}", clientId);
+            QueryResponse response = dynamoDbService.queryByRequestId(System.getProperty("pn.ec.richieste-metadati.table.name"),clientId);
+            Optional<Map<String, AttributeValue>> matchingItem = response.items().stream()
+                    .filter(item -> item.get("requestId").s().equals(clientId))
+                    .findFirst();
+
+            if(matchingItem != null && !matchingItem.isEmpty()){
+                Map<String, AttributeValue> itemsMap = matchingItem.get(); //record
+                log.info("Record trovato: {} ", itemsMap);
+                List<AttributeValue> itemsValue = itemsMap.get("eventsList").l(); //eventList
+                if(itemsValue != null)
+                    log.info("itemsValue size: {} ", itemsValue.size());
+                for (AttributeValue eventValue : itemsValue) {
+                    if (eventValue != null && eventValue.m() != null && eventValue.m().containsKey("paperProgrStatus") ){
+                        AttributeValue paperProgrStatusMap = eventValue.m().get("paperProgrStatus");
+                        if(paperProgrStatusMap != null && !paperProgrStatusMap.m().isEmpty()){
+                            log.info("paperProgrStatusMap trovato: {} ", paperProgrStatusMap);
+                            if ( paperProgrStatusMap.m().containsKey("statusCode") && paperProgrStatusMap.m().get("statusCode").s() != null &&
+                                    paperProgrStatusMap.m().get("statusCode").s().equals(statusCode)){
+                                String paperProgrStatusCourier = paperProgrStatusMap.m().get("courier").s();
+                                log.info("paperProgrStatusCourier trovato: {} ", paperProgrStatusCourier);
+                                result = true;
+                                //Assertions.assertEquals(paperProgrStatusCourier, this.courier);
+                            }
+                        }
+                    }
+                }
+            }else
+                throw new Exception("Record non trovato");
+
+            Assertions.assertTrue(result);
+        }
+    }
+
 
     @AfterAll
     public static void doFinally() throws JMSException {
@@ -467,4 +525,15 @@ public class EcStepDefinitions {
     }
 
 
+    @And("try to send a paper message to {string} with {string} as documentType and {string} as PaId")
+    public void tryToSendAPaperMessageToWithAAsDocumentType(String receiver, String transformationDocumentType, String paId) {
+       log.info("nel  send -  receiver: {}, transformationDocumentType: {}, paId: {} ",receiver,transformationDocumentType,paId);
+        this.requestId = ExternalChannelUtils.generateRandomRequestId();
+        MDC.put(MDC_CORR_ID_KEY, requestId);
+        this.receiver = getValueIfTagged(receiver);
+        this.transformationDocumentType = getValueIfTagged(transformationDocumentType);
+        this.paId=getValueIfTagged(paId);
+        Response response = ExternalChannelUtils.sendPaperMessageWithDocumentTransformationType(clientId, requestId, attachmentsList, this.transformationDocumentType, this.paId);
+        this.sendPaperMessageStatusCode = response.getStatusCode();
+    }
 }

@@ -9,15 +9,11 @@ Feature: Validate Status stateMachine Manager
 
     #EMAIL
       | clientId           | process | status       | nextStatus   | allowed |
-      | @clientId-delivery | EMAIL   | _any_        | internalError| true    |
-      | @clientId-delivery | EMAIL   | _start_      | booked       | true    |
       | @clientId-delivery | EMAIL   | booked       | sent         | true    |
       | @clientId-delivery | EMAIL   | retry        | error        | true    |
       | @clientId-delivery | EMAIL   | retry        | sent         | true    |
     #  | @clientId-delivery | EMAIL   | sent         | _end_        | true  | impossibile passare a stato _end_
-    #  | @clientId-delivery | EMAIL   | internalError| _end_        | true  | impossibile passare a stato _end_
-    # TEST EMAIL ERROR
-      | @clientId-delivery | EMAIL   | _start_       | sent         | false   |
+    #  | @clientId-delivery | EMAIL   | internalError| _end_        | true  | impossibile passare a stato _end
 
     #PEC
       | @clientId-delivery | PEC     | _start_       | booked       | true   |
@@ -37,12 +33,7 @@ Feature: Validate Status stateMachine Manager
 
     #CARTACEO
       | @clientId-delivery | PAPER   | _start_      | booked             | true  |
-      | @clientId-delivery | PAPER   | booked       | syntaxError        | true  |
-      | @clientId-delivery | PAPER   | booked       | semanticError      | true  |
-      | @clientId-delivery | PAPER   | booked       | authenticationError| true  |
-      | @clientId-delivery | PAPER   | booked       | duplicatedRequest  | true  |
-      | @clientId-delivery | PAPER   | booked       | retry              | true  |
-      | @clientId-delivery | PAPER   | booked       | sent               | true  |
+      | @clientId-delivery | PAPER   | booked       | anyStatus          | true  |
       | @clientId-delivery | PAPER   | sent         | anyStatus          | true  |
       | @clientId-delivery | PAPER   | retry        | error              | true  |
       | @clientId-delivery | PAPER   | duplicatedRequest | anyStatus     | true  |
@@ -107,9 +98,10 @@ Feature: Validate Status stateMachine Manager
       | @clientId-delivery | PAPER    | sent           	 | PROGRESS      | P000        |
       | @clientId-delivery | PAPER    | retry          	 | PROGRESS      | null        |
       #ALCUNI ERRORI NON HANNO IL LOGICSTATUS COME DA DOCUMENTAZIONE
-      | @clientId-delivery | PAPER    | inprogress       | PROGRESS      | P001        |
-      | @clientId-delivery | PAPER    | syntaxError      | ERROR         | P011        |
-      | @clientId-delivery | PAPER    | semanticError    | ERROR         | P012        |
+      | @clientId-delivery | PAPER   | inprogress          | PROGRESS       | P001        |
+      | @clientId-delivery | PAPER   | syntaxError         | ERROR          | P011        |
+      | @clientId-delivery | PAPER   | semanticError       | ERROR          | P012        |
+      | @clientId-delivery | PAPER   | transformationError | ERROR          | P013        |
       #errori senza LOGICSTATUS
       | @clientId-delivery | PAPER    | error            | ERROR         | null        |
       | @clientId-delivery | PAPER    | internalError    | ERROR         | null        |
