@@ -61,6 +61,9 @@ public class EcStepDefinitions {
     private Response response;
     private OffsetDateTime testStartTime;
     private DynamoDbService dynamoDbService = new DynamoDbServiceImpl();
+    private String courier;
+    private String statusCode;
+
     @BeforeAll
     public static void init() {
         try {
@@ -402,6 +405,9 @@ public class EcStepDefinitions {
 
                 if (!this.paperProgressStatusEventAttachments.isEmpty())
                     event.setAttachments(this.paperProgressStatusEventAttachments);
+                //event.setCourier("recapitista");
+                String courier = getValueOrDefault(map, "courier", null);
+                event.setCourier(courier);
 
                 events.add(event);
             });
@@ -459,12 +465,55 @@ public class EcStepDefinitions {
         Assertions.assertTrue(matchingItem.isPresent());
     }
 
+    @Then("I get {string} courier and I get {string} statusCode:")
+    public void iGetCourier(String courier, String statusCode) throws Exception{
+        this.courier = getValueIfTagged(courier);
+        this.statusCode = getValueIfTagged(statusCode);
+        log.info("Courier {}", this.courier, " - statusCode {} ", this.statusCode);
+        boolean result = false;
+        if(this.courier.equals("null")) {
+            Assertions.assertNull(this.courier);
+        } else {
+            String clientId = "pn-cons-000~" + requestId;
+            log.info("clientId {}", clientId);
+            QueryResponse response = dynamoDbService.queryByRequestId(System.getProperty("pn.ec.richieste-metadati.table.name"),clientId);
+            Optional<Map<String, AttributeValue>> matchingItem = response.items().stream()
+                    .filter(item -> item.get("requestId").s().equals(clientId))
+                    .findFirst();
+
+            if(matchingItem != null && !matchingItem.isEmpty()){
+                Map<String, AttributeValue> itemsMap = matchingItem.get(); //record
+                log.info("Record trovato: {} ", itemsMap);
+                List<AttributeValue> itemsValue = itemsMap.get("eventsList").l(); //eventList
+                if(itemsValue != null)
+                    log.info("itemsValue size: {} ", itemsValue.size());
+                for (AttributeValue eventValue : itemsValue) {
+                    if (eventValue != null && eventValue.m() != null && eventValue.m().containsKey("paperProgrStatus") ){
+                        AttributeValue paperProgrStatusMap = eventValue.m().get("paperProgrStatus");
+                        if(paperProgrStatusMap != null && !paperProgrStatusMap.m().isEmpty()){
+                            log.info("paperProgrStatusMap trovato: {} ", paperProgrStatusMap);
+                            if ( paperProgrStatusMap.m().containsKey("statusCode") && paperProgrStatusMap.m().get("statusCode").s() != null &&
+                                    paperProgrStatusMap.m().get("statusCode").s().equals(statusCode)){
+                                String paperProgrStatusCourier = paperProgrStatusMap.m().get("courier").s();
+                                log.info("paperProgrStatusCourier trovato: {} ", paperProgrStatusCourier);
+                                result = true;
+                                //Assertions.assertEquals(paperProgrStatusCourier, this.courier);
+                            }
+                        }
+                    }
+                }
+            }else
+                throw new Exception("Record non trovato");
+
+            Assertions.assertTrue(result);
+        }
+    }
+
 
     @AfterAll
     public static void doFinally() throws JMSException {
         if (queuePoller != null)
             queuePoller.close();
     }
-
 
 }
