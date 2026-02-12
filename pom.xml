@@ -228,7 +228,7 @@
 						<phase>process-sources</phase>
 						<configuration>
 
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ss/8899d098ae61a632295a169c6a42231fc2c0a3b1/docs/openapi/pn-safestorage-internal-v1-api.yaml</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ss/75c7642f987037457bb8d2d55ad87e6fecff89f5/docs/openapi/pn-safestorage-internal-v1-api.yaml</inputSpec>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
 							<generateApiTests>false</generateApiTests>
@@ -289,7 +289,7 @@
 						</goals>
 						<phase>generate-sources</phase>
 						<configuration>
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ss/8899d098ae61a632295a169c6a42231fc2c0a3b1/docs/openapi/pn-safestorage-v1.1-api.yaml</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ss/75c7642f987037457bb8d2d55ad87e6fecff89f5/docs/openapi/pn-safestorage-v1.1-api.yaml</inputSpec>
 							<generatorName>spring</generatorName>
 							<library>spring-boot</library>
 							<generateApiDocumentation>false</generateApiDocumentation>

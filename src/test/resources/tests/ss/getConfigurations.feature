@@ -9,7 +9,7 @@ Feature: Get configurations
       | clientId            | APIKey            | statusCode |
       | @clientId-delivery  | @delivery_api_key | 200        |
       | @clientId-delivery  | INVALID_API_KEY   | 403        |
-      | NON_EXISTENT_CLIENT | @delivery_api_key | 403        |
+      | @clientId-unknown | @delivery_api_key | 403        |
 
   @GetConfigurations @getCurrentClientConfig
   Scenario Outline: Reperimento dei dettagli di configurazione di un client.
@@ -19,4 +19,4 @@ Feature: Get configurations
     Examples:
       | clientId            | APIKey            | statusCode |
       | @clientId-delivery  | @delivery_api_key | 200        |
-      | NON_EXISTENT_CLIENT | @delivery_api_key | 403        |
+      | @clientId-unknown | @delivery_api_key | 403        |
