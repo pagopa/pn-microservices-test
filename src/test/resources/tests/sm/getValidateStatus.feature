@@ -98,9 +98,10 @@ Feature: Validate Status stateMachine Manager
       | @clientId-delivery | PAPER    | sent           	 | PROGRESS      | P000        |
       | @clientId-delivery | PAPER    | retry          	 | PROGRESS      | null        |
       #ALCUNI ERRORI NON HANNO IL LOGICSTATUS COME DA DOCUMENTAZIONE
-      | @clientId-delivery | PAPER    | inprogress       | PROGRESS      | P001        |
-      | @clientId-delivery | PAPER    | syntaxError      | ERROR         | P011        |
-      | @clientId-delivery | PAPER    | semanticError    | ERROR         | P012        |
+      | @clientId-delivery | PAPER   | inprogress          | PROGRESS       | P001        |
+      | @clientId-delivery | PAPER   | syntaxError         | ERROR          | P011        |
+      | @clientId-delivery | PAPER   | semanticError       | ERROR          | P012        |
+      | @clientId-delivery | PAPER   | transformationError | ERROR          | P013        |
       #errori senza LOGICSTATUS
       | @clientId-delivery | PAPER    | error            | ERROR         | null        |
       | @clientId-delivery | PAPER    | internalError    | ERROR         | null        |
