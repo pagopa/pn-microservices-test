@@ -319,7 +319,7 @@
 						<phase>process-sources</phase>
 						<configuration>
 
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/186b6bdd6d8614d0d12fe0c570825246730199cd/docs/openapi/external/api-consolidatore-ingress-v1.yaml</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/develop/docs/openapi/external/api-consolidatore-ingress-v1.yaml</inputSpec>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
 							<generateApiTests>false</generateApiTests>
@@ -352,7 +352,7 @@
 						<phase>process-sources</phase>
 						<configuration>
 
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/37aacb5f794fb4423f02cd854d4658c4faf3b949/docs/openapi/internal/externalchannel/gestore-repository-v1.yaml</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/develop/docs/openapi/internal/externalchannel/gestore-repository-v1.yaml</inputSpec>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
 							<generateApiTests>false</generateApiTests>
@@ -384,7 +384,7 @@
 						</goals>
 						<phase>process-sources</phase>
 						<configuration>
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/3d6a736230ed4dc4d1c57153b356bb822b427a06/docs/openapi/external/api-internal-v1.yaml</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/develop/docs/openapi/external/api-internal-v1.yaml</inputSpec>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
 							<generateApiTests>false</generateApiTests>

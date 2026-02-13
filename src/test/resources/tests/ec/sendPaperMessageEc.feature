@@ -20,6 +20,7 @@ Feature: Send Paper Message Ec
       | documentType        | fileName                           | mimeType        |
       | @doc_type_to_raster | src/test/resources/test-raster.pdf | application/pdf |
     And try to send a paper message to "<receiver>"
+      When it's available
     # Bisogna aspettare 2 volte la schedulazione, la prima per lavorare la richiesta con gli allegati ancora da convertire,
     # la seconda per lavorare la richiesta con gli allegati ormai rasterizzati.
     * waiting for scheduling
