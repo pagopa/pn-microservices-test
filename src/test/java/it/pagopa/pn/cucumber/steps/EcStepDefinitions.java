@@ -1,5 +1,7 @@
 package it.pagopa.pn.cucumber.steps;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.AfterAll;
 import io.cucumber.java.BeforeAll;
@@ -14,6 +16,8 @@ import it.pagopa.pn.cucumber.dto.pojo.PnAttachment;
 import it.pagopa.pn.cucumber.poller.PnEcQueuePoller;
 import it.pagopa.pn.cucumber.utils.*;
 import it.pagopa.pn.ec.rest.v1.api.*;
+import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.Document;
+import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.DocumentResponse;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileCreationRequest;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileCreationResponse;
 import it.pagopa.pn.service.DynamoDbService;
@@ -28,6 +32,7 @@ import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 
 import java.io.File;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
@@ -65,6 +70,10 @@ public class EcStepDefinitions {
     private DynamoDbService dynamoDbService = new DynamoDbServiceImpl();
     private String courier;
     private String statusCode;
+    private int iRC = 0;
+    private String sKey = null;
+
+
 
     @BeforeAll
     public static void init() {
@@ -269,6 +278,7 @@ public class EcStepDefinitions {
             pnAttachment.setDocumentId(UUID.randomUUID().toString());
             pnAttachment.setId(RandomStringUtils.randomAlphanumeric(10));
             attachmentsList.add(pnAttachment);
+            this.sKey = "safestorage://" + sKey;
 
             Response uploadResp = CommonUtils.uploadFile(sURL, file, sha256, md5, mimeType, sSecret, Checksum.SHA256);
             assertEquals(200, uploadResp.getStatusCode());
@@ -347,6 +357,36 @@ public class EcStepDefinitions {
         this.sendPaperMessageStatusCode = response.getStatusCode();
     }
 
+    @When("it's available")
+    public void it_s_available() throws JsonProcessingException, InterruptedException {
+        Response oResp;
+        iRC = 0;
+        //Set a time limit for the availability check.
+        Instant timeLimit = Instant.now().plusMillis(Long.parseLong(System.getProperty("pn.ss.document.availability.timeout.millis")));
+        boolean hasBeenFound = false;
+        //Check if the document is available every x seconds.
+        //Time limit represent a timeout for the check.
+        while (Instant.now().isBefore(timeLimit)) {
+            oResp = SafeStorageUtils.getDocument(sKey);
+            iRC = oResp.getStatusCode();
+            if (iRC == 200) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                log.trace(oResp.getBody().asString());
+                DocumentResponse oFDR = objectMapper.readValue(oResp.getBody().asString(), DocumentResponse.class);
+                Document document = oFDR.getDocument();
+                assert document != null;
+                assert document.getDocumentState() != null;
+                //If the document is available, exit the loop.
+                if (document.getDocumentState().equalsIgnoreCase("available")) {
+                    hasBeenFound = true;
+                    break;
+                }
+            }
+            Thread.sleep(Long.parseLong(System.getProperty("pn.ss.document.availability.interval.millis")));
+        }
+        //If the document is not available after the timeout, the test will fail.
+        Assertions.assertTrue(hasBeenFound);
+    }
 
     //THEN
     @Then("check if the message has been sent")
