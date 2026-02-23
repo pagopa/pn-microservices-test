@@ -77,6 +77,8 @@ Feature: Upload SafeStorage
       | @clientId-test | @apiKey_test | @doc_type_legal_facts            | src/main/resources/wrong.pdf | application/pdf | 200 |
       | @clientId-test | @apiKey_test | @doc_type_only_sign              | src/main/resources/wrong.pdf | application/pdf | 200 |
       | @clientId-test | @apiKey_test | @doc_type_clean_paper_attachment | src/main/resources/wrong.pdf | application/pdf | 200 |
+      | @clientId-test | @apiKey_test | @doc_type_paper_attachment       | src/main/resources/wrong.pdf | application/pdf | 200 |
+
 
     # Forniamo un file corrotto per far lanciare un'eccezione
   @PnSsUpload @Transformation @MultipleChainTransformationError
