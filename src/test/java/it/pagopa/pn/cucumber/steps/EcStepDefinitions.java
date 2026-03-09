@@ -192,24 +192,6 @@ public class EcStepDefinitions {
         this.sRC = String.valueOf(response.getStatusCode());
     }
 
-    private void sendDigitalMessage(String receiver, String requestId, String messageText) {
-        this.requestId = getValueIfTagged(requestId);
-        MDC.put(MDC_CORR_ID_KEY, this.requestId);
-        this.clientId = getValueIfTagged(clientId);
-        this.receiver = getValueIfTagged(receiver);
-        this.messageText = messageText;
-        log.info("receiver address {}", this.receiver);
-        //switch sul canale
-        this.response = switch (this.channel) {
-            case "SMS" -> ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, this.receiver, this.messageText);
-            case "EMAIL" -> ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, this.receiver);
-            case "PEC", "SERCQ" -> ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList, this.receiver, this.channel, this.messageText);
-            default -> throw new IllegalArgumentException();
-        };
-        log.debug("RESPONSE : {}", response.getStatusCode());
-        this.sRC = String.valueOf(this.response.getStatusCode());
-    }
-
     @When("try to send digital message to {string} with {string}")
     public void tryToSendDigitalMessageTo(String receiver, String requestId) {
         sendDigitalMessage(receiver, requestId, "Test message");
@@ -224,6 +206,20 @@ public class EcStepDefinitions {
     public void presaInCarico(String receiver) {
         sendDigitalMessage(receiver, ExternalChannelUtils.generateRandomRequestId(), "Test message");
     }
+
+
+    @When("try to send a paper message to {string} with {string} and {string}")
+    public void tryToSendAPaperMessageToWithAnd(String receiver, String requestPaId, String applyRasterization) {
+        this.requestId = ExternalChannelUtils.generateRandomRequestId();
+        MDC.put(MDC_CORR_ID_KEY, requestId);
+        this.receiver = getValueIfTagged(receiver);
+
+        response = ExternalChannelUtils.sendPaperMessageRasterFlag(clientId, requestId, requestPaId, applyRasterization, attachmentsList);
+
+
+        this.sendPaperMessageStatusCode = response.getStatusCode();
+    }
+
 
     //AND
     @And("I prepare the following paper progress status event attachments:")
@@ -335,16 +331,21 @@ public class EcStepDefinitions {
         }
     }
 
-    @When("try to send a paper message to {string} with {string} and {string}")
-    public void tryToSendAPaperMessageToWithAnd(String receiver, String requestPaId, String applyRasterization) {
+    @And("try to send a paper message to {string} with {string} as documentType and {string} as PaId")
+    public void tryToSendAPaperMessageToWithDocumentType(String receiver, String transformationDocumentType, String paId) {
+        log.info("nel  send -  receiver: {}, transformationDocumentType: {}, paId: {} ",receiver,transformationDocumentType,paId);
         this.requestId = ExternalChannelUtils.generateRandomRequestId();
         MDC.put(MDC_CORR_ID_KEY, requestId);
         this.receiver = getValueIfTagged(receiver);
-
-            response = ExternalChannelUtils.sendPaperMessageRasterFlag(clientId, requestId, requestPaId, applyRasterization, attachmentsList);
-
-
+        this.transformationDocumentType = getValueIfTagged(transformationDocumentType);
+        this.paId=getValueIfTagged(paId);
+        Response response = ExternalChannelUtils.sendPaperMessageWithDocumentTransformationType(clientId, requestId, attachmentsList, this.transformationDocumentType, this.paId);
         this.sendPaperMessageStatusCode = response.getStatusCode();
+    }
+
+    @And("try to send a paper message to {string} with {string} as documentType")
+    public void tryToSendAPaperMessageToWithDocumentType(String receiver, String transformationDocumentType) {
+        tryToSendAPaperMessageToWithDocumentType(receiver, transformationDocumentType, null);
     }
 
 
@@ -517,23 +518,29 @@ public class EcStepDefinitions {
         }
     }
 
-
     @AfterAll
     public static void doFinally() throws JMSException {
         if (queuePoller != null)
             queuePoller.close();
     }
 
-
-    @And("try to send a paper message to {string} with {string} as documentType and {string} as PaId")
-    public void tryToSendAPaperMessageToWithAAsDocumentType(String receiver, String transformationDocumentType, String paId) {
-       log.info("nel  send -  receiver: {}, transformationDocumentType: {}, paId: {} ",receiver,transformationDocumentType,paId);
-        this.requestId = ExternalChannelUtils.generateRandomRequestId();
-        MDC.put(MDC_CORR_ID_KEY, requestId);
+    private void sendDigitalMessage(String receiver, String requestId, String messageText) {
+        this.requestId = getValueIfTagged(requestId);
+        MDC.put(MDC_CORR_ID_KEY, this.requestId);
+        this.clientId = getValueIfTagged(clientId);
         this.receiver = getValueIfTagged(receiver);
-        this.transformationDocumentType = getValueIfTagged(transformationDocumentType);
-        this.paId=getValueIfTagged(paId);
-        Response response = ExternalChannelUtils.sendPaperMessageWithDocumentTransformationType(clientId, requestId, attachmentsList, this.transformationDocumentType, this.paId);
-        this.sendPaperMessageStatusCode = response.getStatusCode();
+        this.messageText = messageText;
+        log.info("receiver address {}", this.receiver);
+        //switch sul canale
+        this.response = switch (this.channel) {
+            case "SMS" -> ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, this.receiver, this.messageText);
+            case "EMAIL" -> ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, this.receiver);
+            case "PEC", "SERCQ" -> ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList, this.receiver, this.channel, this.messageText);
+            default -> throw new IllegalArgumentException();
+        };
+        log.debug("RESPONSE : {}", response.getStatusCode());
+        this.sRC = String.valueOf(this.response.getStatusCode());
     }
+
+
 }
