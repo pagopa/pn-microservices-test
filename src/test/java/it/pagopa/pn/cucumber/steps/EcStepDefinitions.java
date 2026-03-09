@@ -345,7 +345,7 @@ public class EcStepDefinitions {
 
     @And("try to send a paper message to {string} with {string} as documentType")
     public void tryToSendAPaperMessageToWithDocumentType(String receiver, String transformationDocumentType) {
-        tryToSendAPaperMessageToWithDocumentType(receiver, transformationDocumentType, null);
+        tryToSendAPaperMessageToWithDocumentType(receiver, transformationDocumentType, "@null");
     }
 
 
