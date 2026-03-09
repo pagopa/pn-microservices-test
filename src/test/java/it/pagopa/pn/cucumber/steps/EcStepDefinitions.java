@@ -573,9 +573,11 @@ public class EcStepDefinitions {
         log.info("receiver address {}", this.receiver);
         //switch sul canale
         this.response = switch (this.channel) {
-            case "SMS" -> ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, this.receiver, this.messageText);
+            case "SMS" ->
+                    ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, this.receiver, this.messageText);
             case "EMAIL" -> ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, this.receiver);
-            case "PEC", "SERCQ" -> ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList, this.receiver, this.channel, this.messageText);
+            case "PEC", "SERCQ" ->
+                    ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList, this.receiver, this.channel, this.messageText);
             default -> throw new IllegalArgumentException();
         };
         log.debug("RESPONSE : {}", response.getStatusCode());

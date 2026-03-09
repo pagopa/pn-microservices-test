@@ -19,8 +19,8 @@ Feature: Send Paper Message Ec
     When "<clientId>" authenticated by "<apiKey>" uploads the following attachments:
       | documentType        | fileName                           | mimeType        |
       | @doc_type_to_raster | src/test/resources/test-raster.pdf | application/pdf |
-    And try to send a paper message to "<receiver>"
     When it's available
+    And try to send a paper message to "<receiver>"
     # Bisogna aspettare 2 volte la schedulazione, la prima per lavorare la richiesta con gli allegati ancora da convertire,
     # la seconda per lavorare la richiesta con gli allegati ormai rasterizzati.
     * waiting for scheduling
@@ -36,6 +36,7 @@ Feature: Send Paper Message Ec
     When "@clientId-delivery" authenticated by "@delivery_api_key" uploads the following attachments:
       | documentType        | fileName                           | mimeType        |
       | @doc_type_to_raster | src/test/resources/test-raster.pdf | application/pdf |
+    When it's available
     When try to send a paper message to "<receiver>" with "<requestPaId>" and "<applyRasterization>"
     # Bisogna aspettare 2 volte la schedulazione, la prima per lavorare la richiesta con gli allegati ancora da convertire,
     # la seconda per lavorare la richiesta con gli allegati ormai rasterizzati.
