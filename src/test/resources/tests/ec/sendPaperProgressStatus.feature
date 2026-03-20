@@ -141,3 +141,15 @@ Feature: Send Paper Progress Status
       | clientId       | apiKey       | statusCode | deliveryFailureCause | courier  | iun        | statusDateTime           | clientRequestTimestamp   | rc     |
       | @clientId-cons | @apiKey-cons | CON080     |                      | XXXXX    |            | @now                     | @now                     | 200.00 |
       | @clientId-cons | @apiKey-cons | RECRS002A  | M02                  |          | @requestId | @now                     | @now                     | 200.00 |
+
+  @PnEcSendMessage @PAPER @duplicates
+  Scenario Outline: Invio di un messaggio cartaceo duplicato con courier diverso, verifica del tracciamento del mismatch
+    Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
+    When I send the following paper progress status requests:
+      | statusCode | deliveryFailureCause | iun        | statusDateTime | courier  |
+      | CON080     |                      | @requestId | @now           | COURIER1 |
+      | CON080     |                      | @requestId | @now           | COURIER2 |
+    Then check if duplicate event with courier mismatch is tracked
+    Examples:
+      | clientId       | apiKey       |
+      | @clientId-cons | @apiKey-cons |
