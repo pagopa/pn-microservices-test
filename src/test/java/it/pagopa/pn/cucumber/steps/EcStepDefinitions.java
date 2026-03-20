@@ -304,7 +304,7 @@ public class EcStepDefinitions {
         });
     }
 
-    @And("check if paper progress status requests have been accepted")
+    @Then("check if paper progress status requests have been accepted")
     public void checkIfPaperProgressStatusRequestsHaveBeenAccepted() {
         Assertions.assertEquals(200, sendPaperProgressStatusRespCode);
         Assertions.assertEquals("200.00", sendPaperProgressStatusResultCode);
@@ -375,7 +375,7 @@ public class EcStepDefinitions {
     }
 
 
-    @Then("I send the following paper progress status requests:")
+    @When("I send the following paper progress status requests:")
     public void sendPaperProgressStatusRequests(DataTable dataTable) {
         {
             log.info("requestId {}", this.requestId);
@@ -540,6 +540,23 @@ public class EcStepDefinitions {
         };
         log.debug("RESPONSE : {}", response.getStatusCode());
         this.sRC = String.valueOf(this.response.getStatusCode());
+    }
+
+    @Then("check if duplicate event with courier mismatch is tracked")
+    public void checkDuplicateEventWithCourierMismatchIsTracked() {
+        log.info("Verifying courier mismatch tracking: code={}, resultCode={}",
+                sendPaperProgressStatusRespCode, sendPaperProgressStatusResultCode);
+
+        // il secondo evento è duplicato con curier diverso: deve essere rifiutato con codice errore 400.02
+        Assertions.assertEquals(400.02, sendPaperProgressStatusRespCode,
+                "Expected HTTP 400.02 for duplicate event but got: " + sendPaperProgressStatusRespCode);
+
+        // verifica che il resultCode indichi il duplicato
+        Assertions.assertNotNull(sendPaperProgressStatusErrorList, "Expected error list for duplicate event");
+
+        Assertions.assertTrue(sendPaperProgressStatusErrorList.stream()
+                        .anyMatch(error -> error.contains("DUPLICATED_EVENT")),
+                "Expected DUPLICATED_EVENT in error list but got: " + sendPaperProgressStatusErrorList);
     }
 
 
