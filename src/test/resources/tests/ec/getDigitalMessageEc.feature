@@ -65,7 +65,19 @@ Feature: Get Digital Message Ec
     Examples:
       | ecClientId     | ssClientId              | ssApiKey              | channel        | receiver                        | rc  |
       | @clientId-cons | @clientId-delivery-push | @apiKey-delivery-push | @channel_paper | @paper.receiver.digital.address | 200 |
-    
+
+
+  @PnEcPatchMessage @patchRequestByMessageId @PatchAndGetMessageId
+  Scenario Outline: Invio di un messaggio e patch tramite messageId
+    Given a "<clientId>" and "<channel>" to send on
+    When try to send digital message to "<receiver>" with "<requestId>"
+    When I try to PATCH request metadata with a messageId
+    When I try to GET request metadata by messageId
+    Then i get response "<rc>"
+    Examples:
+      | clientId           | channel        | receiver                        | requestId | rc  |
+      | @clientId-delivery | @channel_email | @email.receiver.digital.address |  PnEcMsCucumberTest-test  | 200 |
+
     # --- TEST KO --- #
 
   @PnEcGetMessage @getClient @getClientConfig_ko
