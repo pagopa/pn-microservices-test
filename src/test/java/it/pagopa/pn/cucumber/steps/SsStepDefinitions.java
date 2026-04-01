@@ -244,7 +244,7 @@ public class SsStepDefinitions {
                 ObjectMapper objectMapper = new ObjectMapper();
                 log.trace(oResp.getBody().asString());
                 DocumentResponse oFDR = objectMapper.readValue(oResp.getBody().asString(), DocumentResponse.class);
-                Document document = oFDR.getDocument();
+                DocumentResponseDocument document = oFDR.getDocument();
                 assert document != null;
                 assert document.getDocumentState() != null;
                 //If the document is available, exit the loop.

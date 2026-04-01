@@ -67,6 +67,39 @@ Feature: Send Digital Message Ec
       | clientId           | apiKey            | channel        | receiver                        |
       | @clientId-delivery | @delivery_api_key | @channel_email | @email.receiver.digital.address |
 
+  @PnEcSendMessage @invioEMAIL @complete_ses_events
+  Scenario Outline: invio email e verifica evento SES
+    Given a "<clientId>" and "<channel>" to send on
+    And "<clientId>" authenticated by "<apiKey>" uploads the following attachments:
+      | documentType                       | fileName                    | mimeType        |
+      | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
+    When try to send a digital message to "<receiver>"
+    Then check if the message has been sent
+    And check SES event "<expectedEvent>"
+    Examples:
+    #delivery M004
+    #bounce M005
+    #complaint M006
+      | clientId           | apiKey            | channel        | receiver                                  | expectedEvent |
+      | @clientId-delivery | @delivery_api_key | @channel_email | @email.receiver.digital.address           | M004          |
+      | @clientId-delivery | @delivery_api_key | @channel_email | @email.receiver.digital.address.bounce    | M005          |
+      | @clientId-delivery | @delivery_api_key | @channel_email | @email.receiver.digital.address.complaint | M006          |
+
+  @PnEcSendMessage @invioEMAIL @email_rejected_ses
+  Scenario Outline: invio email con allegato infetto e verifica reject SES
+    Given a "<clientId>" and "<channel>" to send on
+    And "<clientId>" authenticated by "<apiKey>" uploads the following attachments to reject:
+      | documentType                        | mimeType |
+      | @doc_type_notification_attachments  | text/plain |
+    When try to send a digital message to "<receiver>"
+    Then check if the message has been sent
+    And check SES event "<expectedEvent>"
+    Examples:
+    #reject M009
+      | clientId           | apiKey            | channel        | receiver                                 | expectedEvent |
+      | @clientId-delivery | @delivery_api_key | @channel_email | @email.receiver.digital.address          | M009          |
+
+
   @PnEcSendMessage @invioSERCQ @complete_sercq
   Scenario Outline: invio SERCQ con allegati e verifica della pubblicazione del messaggio nella coda di debug
     Given a "<clientId>" and "<channel>" to send on

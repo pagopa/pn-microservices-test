@@ -31,7 +31,7 @@ public class RequestTemplate {
         digitalCourtesyMailRequestFactory.setReceiverDigitalAddress(receiver);
         digitalCourtesyMailRequestFactory.setMessageText(defaultStringInit);
         digitalCourtesyMailRequestFactory.channel(DigitalCourtesyMailRequest.ChannelEnum.EMAIL);
-        digitalCourtesyMailRequestFactory.setMessageContentType(DigitalCourtesyMailRequest.MessageContentTypeEnum.PLAIN);
+        digitalCourtesyMailRequestFactory.setMessageContentType(DigitalCourtesyMailRequest.MessageContentTypeEnum.TEXT_PLAIN);
         digitalCourtesyMailRequestFactory.setAttachmentUrls(List.of());
         digitalCourtesyMailRequestFactory.setSubjectText("test");
         return digitalCourtesyMailRequestFactory;
@@ -49,7 +49,7 @@ public class RequestTemplate {
         digitalNotificationRequestFactory.channel(DigitalNotificationRequest.ChannelEnum.fromValue(channel));
         digitalNotificationRequestFactory.setSubjectText("test");
         digitalNotificationRequestFactory.setTags(null);
-        digitalNotificationRequestFactory.setMessageContentType(DigitalNotificationRequest.MessageContentTypeEnum.PLAIN);
+        digitalNotificationRequestFactory.setMessageContentType(DigitalNotificationRequest.MessageContentTypeEnum.TEXT_PLAIN);
         return digitalNotificationRequestFactory;
     }
 

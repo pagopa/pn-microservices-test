@@ -27,6 +27,10 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -57,7 +61,7 @@ public class EcStepDefinitions {
     private String sendPaperProgressStatusResultCode;
     private String sendPaperProgressStatusResultDescription;
     private List<String> sendPaperProgressStatusErrorList;
-    private final List<ConsolidatoreIngressPaperProgressStatusEventAttachments> paperProgressStatusEventAttachments = new ArrayList<>();
+    private final List<ConsolidatoreIngressPaperProgressStatusEventAttachmentsInner> paperProgressStatusEventAttachments = new ArrayList<>();
     private static PnEcQueuePoller queuePoller;
     private String sRC;
     private Response response;
@@ -65,6 +69,8 @@ public class EcStepDefinitions {
     private DynamoDbService dynamoDbService = new DynamoDbServiceImpl();
     private String courier;
     private String statusCode;
+    private String sentMessageId;
+
 
     @BeforeAll
     public static void init() {
@@ -208,25 +214,30 @@ public class EcStepDefinitions {
     }
 
 
-    @When("try to send a paper message to {string} with {string} and {string}")
-    public void tryToSendAPaperMessageToWithAnd(String receiver, String requestPaId, String applyRasterization) {
-        this.requestId = ExternalChannelUtils.generateRandomRequestId();
-        MDC.put(MDC_CORR_ID_KEY, requestId);
-        this.receiver = getValueIfTagged(receiver);
-
-        response = ExternalChannelUtils.sendPaperMessageRasterFlag(clientId, requestId, requestPaId, applyRasterization, attachmentsList);
-
-
-        this.sendPaperMessageStatusCode = response.getStatusCode();
+    @When("I try to PATCH request metadata with a messageId")
+    public void patchRequestMetadataByMessageId() {
+        MessageIdRequestMetadataDto body = new MessageIdRequestMetadataDto();
+        this.sentMessageId = ExternalChannelUtils.generateRandomMessageId();
+        //this.sentMessageId=getValueIfTagged(messageId);
+        System.out.println("MESSAGE ID PATCH: "+this.sentMessageId);
+        System.out.println("Request ID PATCH: "+ ExternalChannelUtils.concatRequestId(clientId,requestId));
+        body.setMessageId(sentMessageId);
+        requestId = ExternalChannelUtils.concatRequestId(clientId,this.requestId);
+        response = ExternalChannelUtils.setRequestMetadataMessageId(clientId, requestId, body);
     }
 
+    @When("I try to GET request metadata by messageId")
+    public void getRequestMetadataByMessageId() {
+        System.out.println("MESSAGE ID GET: "+this.sentMessageId);
+        response = ExternalChannelUtils.getRequestMetadataByMessageId(this.sentMessageId);
+    }
 
     //AND
     @And("I prepare the following paper progress status event attachments:")
     public void iPrepareTheFollowingPaperProgressStatusEventAttachments(DataTable dataTable) {
         List<Map<String, String>> attachmentsList = dataTable.asMaps();
         attachmentsList.forEach(map -> {
-            ConsolidatoreIngressPaperProgressStatusEventAttachments attachment = new ConsolidatoreIngressPaperProgressStatusEventAttachments()
+            ConsolidatoreIngressPaperProgressStatusEventAttachmentsInner attachment = new ConsolidatoreIngressPaperProgressStatusEventAttachmentsInner()
                     .uri(map.get("attachmentUri"))
                     .sha256(RandomStringUtils.randomAlphanumeric(45))
                     .documentType(map.get("attachmentDocumentType"))
@@ -293,7 +304,7 @@ public class EcStepDefinitions {
             Response uploadResp = CommonUtils.uploadFile(sURL, file, sha256, md5, mimeType, sSecret, Checksum.SHA256);
             assertEquals(200, uploadResp.getStatusCode());
 
-            ConsolidatoreIngressPaperProgressStatusEventAttachments attachment = new ConsolidatoreIngressPaperProgressStatusEventAttachments()
+            ConsolidatoreIngressPaperProgressStatusEventAttachmentsInner attachment = new ConsolidatoreIngressPaperProgressStatusEventAttachmentsInner()
                     .uri("safestorage://" + sKey)
                     .sha256(sha256)
                     .documentType(map.get("attachmentDocumentType"))
@@ -331,6 +342,11 @@ public class EcStepDefinitions {
         }
     }
 
+    @And("try to send a paper message to {string} with {string} as documentType")
+    public void tryToSendAPaperMessageToWithDocumentType(String receiver, String transformationDocumentType) {
+        tryToSendAPaperMessageToWithDocumentType(receiver, transformationDocumentType, "@null");
+    }
+
     @And("try to send a paper message to {string} with {string} as documentType and {string} as PaId")
     public void tryToSendAPaperMessageToWithDocumentType(String receiver, String transformationDocumentType, String paId) {
         log.info("nel  send -  receiver: {}, transformationDocumentType: {}, paId: {} ",receiver,transformationDocumentType,paId);
@@ -343,9 +359,12 @@ public class EcStepDefinitions {
         this.sendPaperMessageStatusCode = response.getStatusCode();
     }
 
-    @And("try to send a paper message to {string} with {string} as documentType")
-    public void tryToSendAPaperMessageToWithDocumentType(String receiver, String transformationDocumentType) {
-        tryToSendAPaperMessageToWithDocumentType(receiver, transformationDocumentType, "@null");
+    @When("try to send a paper message to {string} with {string} and {string}")
+    public void tryToSendAPaperMessageToWithAnd(String receiver, String requestPaId, String applyRasterization) {
+        this.requestId = ExternalChannelUtils.generateRandomRequestId();
+        this.receiver = getValueIfTagged(receiver);
+        response = ExternalChannelUtils.sendPaperMessageRasterFlag(clientId, requestId, requestPaId, applyRasterization, attachmentsList);
+        this.sendPaperMessageStatusCode = response.getStatusCode();
     }
 
 
@@ -365,6 +384,12 @@ public class EcStepDefinitions {
             default ->
                     throw new IllegalArgumentException(String.format("The given channel '%s' is not valid.", this.channel));
         };
+        Assertions.assertTrue(checked);
+    }
+
+    @Then("check SES event {string}")
+    public void checkSesEvent(String expectedEvent) {
+        boolean checked = queuePoller.checkMessageAvailability(requestId, List.of(expectedEvent));
         Assertions.assertTrue(checked);
     }
 
@@ -534,12 +559,72 @@ public class EcStepDefinitions {
         //switch sul canale
         this.response = switch (this.channel) {
             case "SMS" -> ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, this.receiver, this.messageText);
-            case "EMAIL" -> ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, this.receiver);
+            case "EMAIL" -> ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, attachmentsList, this.receiver);
             case "PEC", "SERCQ" -> ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList, this.receiver, this.channel, this.messageText);
             default -> throw new IllegalArgumentException();
         };
         log.debug("RESPONSE : {}", response.getStatusCode());
         this.sRC = String.valueOf(this.response.getStatusCode());
+    }
+
+    @And("{string} authenticated by {string} uploads the following attachments to reject:")
+    public void uploadAttachmentsToReject(String clientId, String apiKey, DataTable dataTable) throws IOException, NoSuchAlgorithmException {
+
+        String ssClientId = getValueIfTagged(clientId);
+        String ssApiKey = getValueIfTagged(apiKey);
+
+        List<List<String>> rows = dataTable.asLists(String.class);
+
+        for (List<String> row : rows.subList(1, rows.size())) {
+            String documentType = getValueIfTagged(row.get(0));
+            String mimeType = row.get(1);
+
+            String eicar = "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*";
+
+            byte[] fileBytes = eicar.getBytes(StandardCharsets.US_ASCII);
+
+            String sha256 = getSHA256Byte(fileBytes);
+            String md5 = getMD5Byte(fileBytes);
+
+            FileCreationRequest fileCreationRequest = new FileCreationRequest()
+                    .status("SAVED")
+                    .contentType(mimeType)
+                    .documentType(documentType);
+
+            Response presignedResp = SafeStorageUtils.getPresignedURLUpload(
+                    ssClientId, ssApiKey, fileCreationRequest,
+                    sha256, md5, true, Checksum.SHA256, true
+            );
+            assertEquals(200, presignedResp.getStatusCode());
+
+            FileCreationResponse fileCreationResponse = presignedResp.as(FileCreationResponse.class);
+            String uploadUrl = fileCreationResponse.getUploadUrl();
+            String sKey = fileCreationResponse.getKey();
+            String secret = fileCreationResponse.getSecret();
+
+            PnAttachment pnAttachment = new PnAttachment();
+            pnAttachment.setUri("safestorage://" + sKey);
+            pnAttachment.setDate(OffsetDateTime.now());
+            pnAttachment.setDocumentType(documentType);
+            pnAttachment.setSha256(sha256);
+            pnAttachment.setDocumentId(UUID.randomUUID().toString());
+            pnAttachment.setId(RandomStringUtils.randomAlphanumeric(10));
+            attachmentsList.add(pnAttachment);
+            Response uploadResp = CommonUtils.uploadFileByte(uploadUrl, fileBytes, sha256, md5, mimeType, secret, Checksum.SHA256);
+            assertEquals(200, uploadResp.getStatusCode());
+        }
+    }
+
+    public static String getSHA256Byte(byte[] bytes) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hash = digest.digest(bytes);
+        return Base64.getEncoder().encodeToString(hash);
+    }
+
+    public static String getMD5Byte(byte[] bytes) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance("MD5");
+        byte[] hash = digest.digest(bytes);
+        return Base64.getEncoder().encodeToString(hash);
     }
 
 
