@@ -39,6 +39,7 @@ import java.util.*;
 
 import static it.pagopa.pn.configuration.TestVariablesConfiguration.getValueIfTagged;
 import static it.pagopa.pn.cucumber.utils.CommonUtils.*;
+import static it.pagopa.pn.cucumber.utils.ExternalChannelUtils.generateRandomRequestId;
 import static it.pagopa.pn.cucumber.utils.LogUtils.MDC_CORR_ID_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -137,12 +138,14 @@ public class EcStepDefinitions {
     @When("try to get client configurations")
     public void tryToGetClientConfigurations() {
         this.response = ExternalChannelUtils.getClient(this.clientId);
+        System.out.println("Response: "+response.asString());
         this.sRC = String.valueOf(response.getStatusCode());
     }
 
     @When("try to get all client configurations")
     public void tryToGetAllClientConfigurations() {
         this.response = ExternalChannelUtils.getClientConfigurations(this.clientId);
+        System.out.println("Response: "+this.response.asString());
         this.sRC = String.valueOf(response.getStatusCode());
     }
 
@@ -201,6 +204,11 @@ public class EcStepDefinitions {
     @When("try to send digital message to {string} with {string}")
     public void tryToSendDigitalMessageTo(String receiver, String requestId) {
         sendDigitalMessage(receiver, requestId, "Test message");
+    }
+
+    @When("try to send digital message to {string} with a requestId")
+    public void tryToSendDigitalMessageToReceiverWithARequestId(String receiver) {
+        sendDigitalMessage(receiver, generateRandomRequestId(), "Test message");
     }
 
     @When("try to send a digital message to {string} with same requestId")

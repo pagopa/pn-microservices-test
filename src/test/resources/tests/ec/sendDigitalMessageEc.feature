@@ -80,10 +80,13 @@ Feature: Send Digital Message Ec
     #delivery M004
     #bounce M005
     #complaint M006
-      | clientId           | apiKey            | channel        | receiver                                  | expectedEvent |
-      | @clientId-delivery | @delivery_api_key | @channel_email | @email.receiver.digital.address           | M004          |
-      | @clientId-delivery | @delivery_api_key | @channel_email | @email.receiver.digital.address.bounce    | M005          |
-      | @clientId-delivery | @delivery_api_key | @channel_email | @email.receiver.digital.address.complaint | M006          |
+      | clientId           | apiKey            | channel        | receiver                                        | expectedEvent |
+      | @clientId-delivery | @delivery_api_key | @channel_email | @email.receiver.digital.address                 | M004          |
+      | @clientId-delivery | @delivery_api_key | @channel_email | @email.receiver.digital.address.bounce          | M005          |
+      | @clientId-delivery | @delivery_api_key | @channel_email | @email.receiver.digital.address.hard.bounce     | M005          |
+      | @clientId-delivery | @delivery_api_key | @channel_email | @email.receiver.digital.address.complaint       | M006          |
+      #configurazione di default
+      | @clientId-test     | @apiKey_test      | @channel_email | @email.receiver.digital.address                 | M004          |
 
   @PnEcSendMessage @invioEMAIL @email_rejected_ses
   Scenario Outline: invio email con allegato infetto e verifica reject SES
@@ -98,6 +101,20 @@ Feature: Send Digital Message Ec
     #reject M009
       | clientId           | apiKey            | channel        | receiver                                 | expectedEvent |
       | @clientId-delivery | @delivery_api_key | @channel_email | @email.receiver.digital.address          | M009          |
+
+
+  @PnEcPatchMessage @patchRequestByMessageId @PatchAndGetMessageId
+  Scenario Outline: Invio di un messaggio e patch tramite messageId
+    Given a "<clientId>" and "<channel>" to send on
+    When try to send digital message to "<receiver>" with a requestId
+    * waiting for scheduling
+    When I try to PATCH request metadata with a messageId
+    When I try to GET request metadata by messageId
+    Then i get response "<rc>"
+    Examples:
+      | clientId           | channel        | receiver                        | rc  |
+      | @clientId-delivery | @channel_email | @email.receiver.digital.address | 200 |
+
 
 
   @PnEcSendMessage @invioSERCQ @complete_sercq
