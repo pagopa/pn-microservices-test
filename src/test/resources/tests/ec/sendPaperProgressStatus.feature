@@ -107,8 +107,9 @@ Feature: Send Paper Progress Status
       | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check    | @paper.courier1 | @paper.courier2 | 400.02 |
       | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check    |                 | @paper.courier2 | 400.02 |
       | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check    | @paper.courier1 | @paper.courier1 | 400.02 |
+      | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check    |                 |                 | 400.02 |
       # Il productType non è presente in PnEcDuplicatesCheck
-      | @clientId-cons | @apiKey-cons | @productType_not_for_duplicates_check| @paper.courier1| @paper.courier2 | 200.00 |
+      | @clientId-cons | @apiKey-cons | @productType_not_for_duplicates_check| @paper.courier1 | @paper.courier2 | 200.00 |
 
     #per gli allegati multipli è stato fatto un test puntuale con una chiamata postman
   @PnEcSendMessage @PAPER @verificaDuplicati @MultipleAttachments
