@@ -75,18 +75,18 @@ Feature: Send Digital Message Ec
       | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
     When try to send a digital message to "<receiver>"
     Then check if the message has been sent
-    And check SES event "<expectedEvent>"
+    And check SES event "<expectedEvent>" is "<expectedResult>"
     Examples:
     #delivery M004
     #bounce M005
     #complaint M006
-      | clientId           | apiKey            | channel        | receiver                                        | expectedEvent |
-      | @clientId-delivery | @delivery_api_key | @channel_email | @email.receiver.digital.address                 | M004          |
-      | @clientId-delivery | @delivery_api_key | @channel_email | @email.receiver.digital.address.bounce          | M005          |
-      | @clientId-delivery | @delivery_api_key | @channel_email | @email.receiver.digital.address.hard.bounce     | M005          |
-      | @clientId-delivery | @delivery_api_key | @channel_email | @email.receiver.digital.address.complaint       | M006          |
-      #configurazione di default
-      | @clientId-test     | @apiKey_test      | @channel_email | @email.receiver.digital.address                 | M004          |
+      | clientId            | apiKey            | channel        | receiver                                        | expectedEvent |  expectedResult  |
+      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address                 | M004          |  true            |
+      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.bounce          | M005          |  true            |
+      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.hard.bounce     | M005          |  true            |
+      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.complaint       | M006          |  true            |
+      #configurazione di default (solo M003)
+      | @clientId-delivery  | @delivery_api_key | @channel_email | @email.receiver.digital.address                 | M005          | false            |
 
   @PnEcSendMessage @invioEMAIL @email_rejected_ses
   Scenario Outline: invio email con allegato infetto e verifica reject SES
@@ -96,11 +96,11 @@ Feature: Send Digital Message Ec
       | @doc_type_notification_attachments  | text/plain |
     When try to send a digital message to "<receiver>"
     Then check if the message has been sent
-    And check SES event "<expectedEvent>"
+    And check SES event "<expectedEvent>" is "<expectedResult>"
     Examples:
     #reject M009
-      | clientId           | apiKey            | channel        | receiver                                 | expectedEvent |
-      | @clientId-delivery | @delivery_api_key | @channel_email | @email.receiver.digital.address          | M009          |
+      | clientId       | apiKey       | channel        | receiver                                 | expectedEvent | expectedResult  |
+      | @clientId-test | @apiKey_test | @channel_email | @email.receiver.digital.address          | M009          | true            |
 
 
   @PnEcPatchMessage @patchRequestByMessageId @PatchAndGetMessageId

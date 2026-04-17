@@ -395,10 +395,11 @@ public class EcStepDefinitions {
         Assertions.assertTrue(checked);
     }
 
-    @Then("check SES event {string}")
-    public void checkSesEvent(String expectedEvent) {
+    @Then("check SES event {string} is {string}")
+    public void checkSesEvent(String expectedEvent, String expectedResult ) {
         boolean checked = queuePoller.checkMessageAvailability(requestId, List.of(expectedEvent));
-        Assertions.assertTrue(checked);
+        boolean expected = Boolean.parseBoolean(expectedResult);
+        Assertions.assertEquals(expected, checked);
     }
 
     @Then("check if the message has status {string}")
