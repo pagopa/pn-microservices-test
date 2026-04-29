@@ -24,16 +24,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.MDC;
 import software.amazon.awssdk.eventnotifications.s3.model.S3EventNotification;
+import software.amazon.awssdk.services.s3.model.GetObjectTaggingResponse;
+import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse;
 
 import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Base64;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static it.pagopa.pn.configuration.TestVariablesConfiguration.getValueIfTagged;
 import static it.pagopa.pn.cucumber.utils.LogUtils.MDC_CORR_ID_KEY;
@@ -69,6 +68,8 @@ public class SsStepDefinitions {
     UpdateFileMetadataRequest requestBody = new UpdateFileMetadataRequest();
     private boolean metadataOnly;
     private FileDownloadResponse fileDownloadResponse;
+    public static final String TRANSFORMATION_TAG_PREFIX = "Transformation-";
+
 
     @BeforeAll
     public static void init() {
@@ -97,6 +98,8 @@ public class SsStepDefinitions {
         sMimeType = getValueIfTagged(sMimeType);
         sFileName = getValueIfTagged(sFileName);
 
+        log.info("FILENAME:{} ", sFileName);
+        System.out.println("FILENAME: "+ sFileName);
         this.sPNClient = sPNClient;
         this.sPNClient_AK = sPNClient_AK;
         this.sDocumentType = sDocumentType;
@@ -186,6 +189,7 @@ public class SsStepDefinitions {
             MDC.put(MDC_CORR_ID_KEY, sKey);
             sSecret = oResp.then().extract().path("secret");
         }
+        System.out.println("KEY: "+ sKey);
     }
 
     @When("request a presigned url to upload the file with {string}")
@@ -240,7 +244,7 @@ public class SsStepDefinitions {
                 ObjectMapper objectMapper = new ObjectMapper();
                 log.trace(oResp.getBody().asString());
                 DocumentResponse oFDR = objectMapper.readValue(oResp.getBody().asString(), DocumentResponse.class);
-                Document document = oFDR.getDocument();
+                DocumentResponseDocument document = oFDR.getDocument();
                 assert document != null;
                 assert document.getDocumentState() != null;
                 //If the document is available, exit the loop.
@@ -258,6 +262,8 @@ public class SsStepDefinitions {
     @Then("i found in S3")
     public void i_found_in_s3() {
         Assertions.assertEquals(200, SafeStorageUtils.getPresignedURLDownload(sPNClient, sPNClient_AK, sKey, false).getStatusCode());// Ok
+
+        System.out.println("S3 KEY: "+sKey);
         statusCode = 200;
     }
 
@@ -280,6 +286,7 @@ public class SsStepDefinitions {
     private void checkAvailabilityMessage(String statusCode, String fileKey, String detailType) {
         int sCode;
         boolean check = queuePoller.checkMessageAvailability(fileKey, detailType);
+        System.out.println("CHECK: "+ check);
         if (!check) {
             sCode = 404;
             log.info("Message not found for key {}", sKey);
@@ -434,6 +441,93 @@ public class SsStepDefinitions {
     public static void doFinally() throws JMSException {
         if (queuePoller != null)
             queuePoller.close();
+    }
+
+    @Then("i found in S3 final bucket with a single version")
+    public void iFoundInTheFinalSBucketWithASingleVersion() {
+        Assertions.assertNotNull(sKey, "Document key must not be null");
+
+        String finalBucket = System.getProperty("pn.ss.availability.bucket.name");
+        if (finalBucket == null || finalBucket.isEmpty()) {
+            System.out.println("FinalBucket property is empty");
+            finalBucket = s3Service.getBucketName(
+                    System.getProperty("pn.ss.availability.bucket.prefix")
+            );
+            System.out.println("FinalBucket property: "+finalBucket);
+        }
+
+        ListObjectVersionsResponse response = s3Service.listObjectVersions(sKey, finalBucket);
+
+        long versionCount = response.versions().stream()
+                .filter(v -> v.key().equals(sKey))
+                .count();
+
+        System.out.println("Final bucket version count for key " + sKey + ": " + versionCount);
+
+        Assertions.assertEquals(1, versionCount,
+                "Expected exactly 1 version in final bucket for key " + sKey + ", but found " + versionCount);
+
+    }
+
+    @And("the file is no present in the staging S3 bucket")
+    public void theFileIsNoPresentInTheStagingSBucket() {
+        Assertions.assertNotNull(sKey, "Document key must not be null");
+
+        String stagingBucket = System.getProperty("pn.ss.availability.bucket.staging.name");
+        if (stagingBucket == null || stagingBucket.isEmpty()) {
+            System.out.println("StagingBucket property is empty");
+            stagingBucket = s3Service.getBucketName(
+                    System.getProperty("pn.ss.availability.staging.bucket.prefix")
+            );
+            System.out.println("stagingBucket property: "+stagingBucket);
+        }
+
+        ListObjectVersionsResponse response = s3Service.listObjectVersions(sKey, stagingBucket);
+
+        long versionCount = response.versions().stream()
+                .filter(v -> v.key().equals(sKey))
+                .count();
+
+        System.out.println("Staging bucket version count for key " + sKey + ": " + versionCount);
+
+        Assertions.assertEquals(0, versionCount,
+                "Expected 0 versions in staging bucket for key " + sKey + ", but found " + versionCount);
+
+    }
+
+    @And("the file has a tag ERROR in the S3 staging bucket and no version in final bucket")
+    public void theFileHasErrorTagInTheS3Bucket() {
+        Assertions.assertNotNull(sKey, "Document key must not be null");
+
+        String finalBucket = System.getProperty("pn.ss.availability.bucket.name");
+        if (finalBucket == null || finalBucket.isEmpty()) {
+            System.out.println("FinalBucket property is empty");
+            finalBucket = s3Service.getBucketName(
+                    System.getProperty("pn.ss.availability.bucket.prefix")
+            );
+            System.out.println("FinalBucket property: "+finalBucket);
+        }
+
+        String stagingBucket = System.getProperty("pn.ss.availability.bucket.staging.name");
+        if (stagingBucket == null || stagingBucket.isEmpty()) {
+            System.out.println("StagingBucket property is empty");
+            stagingBucket = s3Service.getBucketName(
+                    System.getProperty("pn.ss.availability.staging.bucket.prefix")
+            );
+            System.out.println("stagingBucket property: "+stagingBucket);
+        }
+
+        GetObjectTaggingResponse taggingResponse = s3Service.getObjectTagging(sKey, stagingBucket);
+        ListObjectVersionsResponse response = s3Service.listObjectVersions(sKey, finalBucket);
+
+        long versionCount = response.versions().stream().filter(v -> v.key().equals(sKey)).count();
+
+        System.out.println("Final bucket version count for key " + sKey + ": " + versionCount);
+
+        Assertions.assertEquals(0, versionCount, "Expected 0 versions in final bucket for key " + sKey + ", but found " + versionCount);
+        boolean hasErrorTag = taggingResponse.tagSet().stream().anyMatch(tag -> tag.value().equals("ERROR"));
+        System.out.println("Object " + sKey + " has ERROR tag: " + hasErrorTag);
+        Assertions.assertTrue(hasErrorTag, "Expected object " + sKey + " to have a tag with value ERROR, but it does not.");
     }
 
 }

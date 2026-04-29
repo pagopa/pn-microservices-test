@@ -27,6 +27,10 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -35,6 +39,7 @@ import java.util.*;
 
 import static it.pagopa.pn.configuration.TestVariablesConfiguration.getValueIfTagged;
 import static it.pagopa.pn.cucumber.utils.CommonUtils.*;
+import static it.pagopa.pn.cucumber.utils.ExternalChannelUtils.generateRandomRequestId;
 import static it.pagopa.pn.cucumber.utils.LogUtils.MDC_CORR_ID_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -47,6 +52,8 @@ public class EcStepDefinitions {
     private String requestId;
     private String channel;
     private String receiver;
+    private String transformationDocumentType;
+    private String paId;
     private String messageText;
     private int sendPaperMessageStatusCode;
     private final List<PnAttachment> attachmentsList = new ArrayList<>();
@@ -55,12 +62,17 @@ public class EcStepDefinitions {
     private String sendPaperProgressStatusResultCode;
     private String sendPaperProgressStatusResultDescription;
     private List<String> sendPaperProgressStatusErrorList;
-    private final List<ConsolidatoreIngressPaperProgressStatusEventAttachments> paperProgressStatusEventAttachments = new ArrayList<>();
+    private final List<ConsolidatoreIngressPaperProgressStatusEventAttachmentsInner> paperProgressStatusEventAttachments = new ArrayList<>();
     private static PnEcQueuePoller queuePoller;
     private String sRC;
     private Response response;
     private OffsetDateTime testStartTime;
     private DynamoDbService dynamoDbService = new DynamoDbServiceImpl();
+    private String courier;
+    private String statusCode;
+    private String sentMessageId;
+
+
     @BeforeAll
     public static void init() {
         try {
@@ -126,12 +138,14 @@ public class EcStepDefinitions {
     @When("try to get client configurations")
     public void tryToGetClientConfigurations() {
         this.response = ExternalChannelUtils.getClient(this.clientId);
+        System.out.println("Response: "+response.asString());
         this.sRC = String.valueOf(response.getStatusCode());
     }
 
     @When("try to get all client configurations")
     public void tryToGetAllClientConfigurations() {
         this.response = ExternalChannelUtils.getClientConfigurations(this.clientId);
+        System.out.println("Response: "+this.response.asString());
         this.sRC = String.valueOf(response.getStatusCode());
     }
 
@@ -187,27 +201,14 @@ public class EcStepDefinitions {
         this.sRC = String.valueOf(response.getStatusCode());
     }
 
-    private void sendDigitalMessage(String receiver, String requestId, String messageText) {
-        this.requestId = getValueIfTagged(requestId);
-        MDC.put(MDC_CORR_ID_KEY, this.requestId);
-        this.clientId = getValueIfTagged(clientId);
-        this.receiver = getValueIfTagged(receiver);
-        this.messageText = messageText;
-        log.info("receiver address {}", this.receiver);
-        //switch sul canale
-        this.response = switch (this.channel) {
-            case "SMS" -> ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, this.receiver, this.messageText);
-            case "EMAIL" -> ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, this.receiver);
-            case "PEC", "SERCQ" -> ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList, this.receiver, this.channel, this.messageText);
-            default -> throw new IllegalArgumentException();
-        };
-        log.debug("RESPONSE : {}", response.getStatusCode());
-        this.sRC = String.valueOf(this.response.getStatusCode());
-    }
-
     @When("try to send digital message to {string} with {string}")
     public void tryToSendDigitalMessageTo(String receiver, String requestId) {
         sendDigitalMessage(receiver, requestId, "Test message");
+    }
+
+    @When("try to send digital message to {string} with a requestId")
+    public void tryToSendDigitalMessageToReceiverWithARequestId(String receiver) {
+        sendDigitalMessage(receiver, generateRandomRequestId(), "Test message");
     }
 
     @When("try to send a digital message to {string} with same requestId")
@@ -220,12 +221,31 @@ public class EcStepDefinitions {
         sendDigitalMessage(receiver, ExternalChannelUtils.generateRandomRequestId(), "Test message");
     }
 
+
+    @When("I try to PATCH request metadata with a messageId")
+    public void patchRequestMetadataByMessageId() {
+        MessageIdRequestMetadataDto body = new MessageIdRequestMetadataDto();
+        this.sentMessageId = ExternalChannelUtils.generateRandomMessageId();
+        //this.sentMessageId=getValueIfTagged(messageId);
+        System.out.println("MESSAGE ID PATCH: "+this.sentMessageId);
+        System.out.println("Request ID PATCH: "+ ExternalChannelUtils.concatRequestId(clientId,requestId));
+        body.setMessageId(sentMessageId);
+        requestId = ExternalChannelUtils.concatRequestId(clientId,this.requestId);
+        response = ExternalChannelUtils.setRequestMetadataMessageId(clientId, requestId, body);
+    }
+
+    @When("I try to GET request metadata by messageId")
+    public void getRequestMetadataByMessageId() {
+        System.out.println("MESSAGE ID GET: "+this.sentMessageId);
+        response = ExternalChannelUtils.getRequestMetadataByMessageId(this.sentMessageId);
+    }
+
     //AND
     @And("I prepare the following paper progress status event attachments:")
     public void iPrepareTheFollowingPaperProgressStatusEventAttachments(DataTable dataTable) {
         List<Map<String, String>> attachmentsList = dataTable.asMaps();
         attachmentsList.forEach(map -> {
-            ConsolidatoreIngressPaperProgressStatusEventAttachments attachment = new ConsolidatoreIngressPaperProgressStatusEventAttachments()
+            ConsolidatoreIngressPaperProgressStatusEventAttachmentsInner attachment = new ConsolidatoreIngressPaperProgressStatusEventAttachmentsInner()
                     .uri(map.get("attachmentUri"))
                     .sha256(RandomStringUtils.randomAlphanumeric(45))
                     .documentType(map.get("attachmentDocumentType"))
@@ -292,7 +312,7 @@ public class EcStepDefinitions {
             Response uploadResp = CommonUtils.uploadFile(sURL, file, sha256, md5, mimeType, sSecret, Checksum.SHA256);
             assertEquals(200, uploadResp.getStatusCode());
 
-            ConsolidatoreIngressPaperProgressStatusEventAttachments attachment = new ConsolidatoreIngressPaperProgressStatusEventAttachments()
+            ConsolidatoreIngressPaperProgressStatusEventAttachmentsInner attachment = new ConsolidatoreIngressPaperProgressStatusEventAttachmentsInner()
                     .uri("safestorage://" + sKey)
                     .sha256(sha256)
                     .documentType(map.get("attachmentDocumentType"))
@@ -330,15 +350,28 @@ public class EcStepDefinitions {
         }
     }
 
-    @When("try to send a paper message to {string} with {string} and {string}")
-    public void tryToSendAPaperMessageToWithAnd(String receiver, String requestPaId, String applyRasterization) {
+    @And("try to send a paper message to {string} with {string} as documentType")
+    public void tryToSendAPaperMessageToWithDocumentType(String receiver, String transformationDocumentType) {
+        tryToSendAPaperMessageToWithDocumentType(receiver, transformationDocumentType, "@null");
+    }
+
+    @And("try to send a paper message to {string} with {string} as documentType and {string} as PaId")
+    public void tryToSendAPaperMessageToWithDocumentType(String receiver, String transformationDocumentType, String paId) {
+        log.info("nel  send -  receiver: {}, transformationDocumentType: {}, paId: {} ",receiver,transformationDocumentType,paId);
         this.requestId = ExternalChannelUtils.generateRandomRequestId();
         MDC.put(MDC_CORR_ID_KEY, requestId);
         this.receiver = getValueIfTagged(receiver);
+        this.transformationDocumentType = getValueIfTagged(transformationDocumentType);
+        this.paId=getValueIfTagged(paId);
+        Response response = ExternalChannelUtils.sendPaperMessageWithDocumentTransformationType(clientId, requestId, attachmentsList, this.transformationDocumentType, this.paId);
+        this.sendPaperMessageStatusCode = response.getStatusCode();
+    }
 
-            response = ExternalChannelUtils.sendPaperMessageRasterFlag(clientId, requestId, requestPaId, applyRasterization, attachmentsList);
-
-
+    @When("try to send a paper message to {string} with {string} and {string}")
+    public void tryToSendAPaperMessageToWithAnd(String receiver, String requestPaId, String applyRasterization) {
+        this.requestId = ExternalChannelUtils.generateRandomRequestId();
+        this.receiver = getValueIfTagged(receiver);
+        response = ExternalChannelUtils.sendPaperMessageRasterFlag(clientId, requestId, requestPaId, applyRasterization, attachmentsList);
         this.sendPaperMessageStatusCode = response.getStatusCode();
     }
 
@@ -359,6 +392,19 @@ public class EcStepDefinitions {
             default ->
                     throw new IllegalArgumentException(String.format("The given channel '%s' is not valid.", this.channel));
         };
+        Assertions.assertTrue(checked);
+    }
+
+    @Then("check SES event {string} is {string}")
+    public void checkSesEvent(String expectedEvent, String expectedResult ) {
+        boolean checked = queuePoller.checkMessageAvailability(requestId, List.of(expectedEvent));
+        boolean expected = Boolean.parseBoolean(expectedResult);
+        Assertions.assertEquals(expected, checked);
+    }
+
+    @Then("check if the message has status {string}")
+    public void checkStatusMessage(String status) {
+        boolean checked = queuePoller.checkMessageAvailability(requestId,List.of(status));
         Assertions.assertTrue(checked);
     }
 
@@ -402,6 +448,9 @@ public class EcStepDefinitions {
 
                 if (!this.paperProgressStatusEventAttachments.isEmpty())
                     event.setAttachments(this.paperProgressStatusEventAttachments);
+                //event.setCourier("recapitista");
+                String courier = getValueOrDefault(map, "courier", null);
+                event.setCourier(courier);
 
                 events.add(event);
             });
@@ -459,11 +508,132 @@ public class EcStepDefinitions {
         Assertions.assertTrue(matchingItem.isPresent());
     }
 
+    @Then("I get {string} courier and I get {string} statusCode:")
+    public void iGetCourier(String courier, String statusCode) throws Exception{
+        this.courier = getValueIfTagged(courier);
+        this.statusCode = getValueIfTagged(statusCode);
+        log.info("Courier {}", this.courier, " - statusCode {} ", this.statusCode);
+        boolean result = false;
+        if(this.courier.equals("null")) {
+            Assertions.assertNull(this.courier);
+        } else {
+            String clientId = "pn-cons-000~" + requestId;
+            log.info("clientId {}", clientId);
+            QueryResponse response = dynamoDbService.queryByRequestId(System.getProperty("pn.ec.richieste-metadati.table.name"),clientId);
+            Optional<Map<String, AttributeValue>> matchingItem = response.items().stream()
+                    .filter(item -> item.get("requestId").s().equals(clientId))
+                    .findFirst();
+
+            if(matchingItem != null && !matchingItem.isEmpty()){
+                Map<String, AttributeValue> itemsMap = matchingItem.get(); //record
+                log.info("Record trovato: {} ", itemsMap);
+                List<AttributeValue> itemsValue = itemsMap.get("eventsList").l(); //eventList
+                if(itemsValue != null)
+                    log.info("itemsValue size: {} ", itemsValue.size());
+                for (AttributeValue eventValue : itemsValue) {
+                    if (eventValue != null && eventValue.m() != null && eventValue.m().containsKey("paperProgrStatus") ){
+                        AttributeValue paperProgrStatusMap = eventValue.m().get("paperProgrStatus");
+                        if(paperProgrStatusMap != null && !paperProgrStatusMap.m().isEmpty()){
+                            log.info("paperProgrStatusMap trovato: {} ", paperProgrStatusMap);
+                            if ( paperProgrStatusMap.m().containsKey("statusCode") && paperProgrStatusMap.m().get("statusCode").s() != null &&
+                                    paperProgrStatusMap.m().get("statusCode").s().equals(statusCode)){
+                                String paperProgrStatusCourier = paperProgrStatusMap.m().get("courier").s();
+                                log.info("paperProgrStatusCourier trovato: {} ", paperProgrStatusCourier);
+                                result = true;
+                                //Assertions.assertEquals(paperProgrStatusCourier, this.courier);
+                            }
+                        }
+                    }
+                }
+            }else
+                throw new Exception("Record non trovato");
+
+            Assertions.assertTrue(result);
+        }
+    }
 
     @AfterAll
     public static void doFinally() throws JMSException {
         if (queuePoller != null)
             queuePoller.close();
+    }
+
+    private void sendDigitalMessage(String receiver, String requestId, String messageText) {
+        this.requestId = getValueIfTagged(requestId);
+        MDC.put(MDC_CORR_ID_KEY, this.requestId);
+        this.clientId = getValueIfTagged(clientId);
+        this.receiver = getValueIfTagged(receiver);
+        this.messageText = messageText;
+        log.info("receiver address {}", this.receiver);
+        //switch sul canale
+        this.response = switch (this.channel) {
+            case "SMS" -> ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, this.receiver, this.messageText);
+            case "EMAIL" -> ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, attachmentsList, this.receiver);
+            case "PEC", "SERCQ" -> ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList, this.receiver, this.channel, this.messageText);
+            default -> throw new IllegalArgumentException();
+        };
+        log.debug("RESPONSE : {}", response.getStatusCode());
+        this.sRC = String.valueOf(this.response.getStatusCode());
+    }
+
+    @And("{string} authenticated by {string} uploads the following attachments to reject:")
+    public void uploadAttachmentsToReject(String clientId, String apiKey, DataTable dataTable) throws IOException, NoSuchAlgorithmException {
+
+        String ssClientId = getValueIfTagged(clientId);
+        String ssApiKey = getValueIfTagged(apiKey);
+
+        List<List<String>> rows = dataTable.asLists(String.class);
+
+        for (List<String> row : rows.subList(1, rows.size())) {
+            String documentType = getValueIfTagged(row.get(0));
+            String mimeType = row.get(1);
+
+            String eicar = "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*";
+
+            byte[] fileBytes = eicar.getBytes(StandardCharsets.US_ASCII);
+
+            String sha256 = getSHA256Byte(fileBytes);
+            String md5 = getMD5Byte(fileBytes);
+
+            FileCreationRequest fileCreationRequest = new FileCreationRequest()
+                    .status("SAVED")
+                    .contentType(mimeType)
+                    .documentType(documentType);
+
+            Response presignedResp = SafeStorageUtils.getPresignedURLUpload(
+                    ssClientId, ssApiKey, fileCreationRequest,
+                    sha256, md5, true, Checksum.SHA256, true
+            );
+            assertEquals(200, presignedResp.getStatusCode());
+
+            FileCreationResponse fileCreationResponse = presignedResp.as(FileCreationResponse.class);
+            String uploadUrl = fileCreationResponse.getUploadUrl();
+            String sKey = fileCreationResponse.getKey();
+            String secret = fileCreationResponse.getSecret();
+
+            PnAttachment pnAttachment = new PnAttachment();
+            pnAttachment.setUri("safestorage://" + sKey);
+            pnAttachment.setDate(OffsetDateTime.now());
+            pnAttachment.setDocumentType(documentType);
+            pnAttachment.setSha256(sha256);
+            pnAttachment.setDocumentId(UUID.randomUUID().toString());
+            pnAttachment.setId(RandomStringUtils.randomAlphanumeric(10));
+            attachmentsList.add(pnAttachment);
+            Response uploadResp = CommonUtils.uploadFileByte(uploadUrl, fileBytes, sha256, md5, mimeType, secret, Checksum.SHA256);
+            assertEquals(200, uploadResp.getStatusCode());
+        }
+    }
+
+    public static String getSHA256Byte(byte[] bytes) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hash = digest.digest(bytes);
+        return Base64.getEncoder().encodeToString(hash);
+    }
+
+    public static String getMD5Byte(byte[] bytes) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance("MD5");
+        byte[] hash = digest.digest(bytes);
+        return Base64.getEncoder().encodeToString(hash);
     }
 
 

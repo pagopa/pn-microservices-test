@@ -16,16 +16,16 @@ Feature: Send Paper Progress Status
       | documentType  | fileName                    | mimeType        | attachmentDocumentType |
       | @doc_type_aar | src/test/resources/test.pdf | application/pdf | AR                     |
     When I send the following paper progress status requests:
-      | statusCode | deliveryFailureCause | iun        | statusDateTime |
-      | CON080     |                      | @requestId | @now           |
-      | RECAG004   |                      | @requestId | @now           |
+      | statusCode | deliveryFailureCause | iun        | statusDateTime | courier  |
+      | CON080     |                      | @requestId | @now           |          |
+      | RECAG004   |                      | @requestId | @now           | YXYXYXYX |
     Then check if paper progress status requests have been accepted
     Examples:
       | clientId       | apiKey       |
       | @clientId-cons | @apiKey-cons |
 
   @PnEcSendMessage @PAPER @verificaErroriSemantici @verificaErrori
-  Scenario Outline: Verifica semantica nell'avanzamento dei progressi di postalizzazione
+  Scenario Outline: V2-Verifica semantica nell'avanzamento dei progressi di postalizzazione
     Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
     When I send the following paper progress status requests:
       | statusCode   | deliveryFailureCause   | iun   | statusDateTime   | clientRequestTimestamp   |
@@ -115,7 +115,7 @@ Feature: Send Paper Progress Status
     And "@clientId-delivery-push" authenticated by "@apiKey-delivery-push" uploads the following paper progress status event attachments:
       | documentType  | fileName                    | mimeType        | attachmentDocumentType |
       | @doc_type_aar | src/test/resources/test.pdf | application/pdf | AR                     |
-      | @doc_type_aar | src/test/resources/test-pdf.pdf | application/pdf | AR                     |
+      | @doc_type_aar | src/test/resources/test_pdf.pdf | application/pdf | AR                     |
     When I send the following paper progress status requests:
       | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   |
       | RECAG010   |                      | @requestId | @testStartTime | <productType> |
@@ -129,3 +129,15 @@ Feature: Send Paper Progress Status
        | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check     | 400.02 |
       # Il productType non è presente in PnEcDuplicatesCheck
       | @clientId-cons | @apiKey-cons | @productType_not_for_duplicates_check | 200.00 |
+
+  @PnEcSendMessage @PAPER @validaCourier
+  Scenario Outline: Verifica la valorizzazione del courier:
+    Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
+    When I send the following paper progress status requests:
+      | statusCode   | deliveryFailureCause   | courier   | iun   | statusDateTime   | clientRequestTimestamp   |
+      | <statusCode> | <deliveryFailureCause> | <courier> | <iun> | <statusDateTime> | <clientRequestTimestamp> |
+    Then I get "<courier>" courier and I get "<statusCode>" statusCode:
+    Examples:
+      | clientId       | apiKey       | statusCode | deliveryFailureCause | courier  | iun        | statusDateTime           | clientRequestTimestamp   | rc     |
+      | @clientId-cons | @apiKey-cons | CON080     |                      | XXXXX    |            | @now                     | @now                     | 200.00 |
+      | @clientId-cons | @apiKey-cons | RECRS002A  | M02                  |          | @requestId | @now                     | @now                     | 200.00 |

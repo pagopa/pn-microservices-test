@@ -48,6 +48,23 @@ Feature: Upload SafeStorage
       | @clientId-test | @apiKey_test | @doc_type_dummy                  | src/main/resources/test.xml | application/xml | 200 |
       | @clientId-test | @apiKey_test | @doc_type_clean_paper_attachment | src/main/resources/test.pdf | application/pdf | 200 |
 
+  @PnSsUpload @Transformation @MultipleChainTransformation
+  Scenario Outline: Upload di un file da sottoporre a multipla trasformazione e verifica del messaggio di disponibilità del file
+    Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
+    When request a presigned url to upload the file
+    And upload that file
+    And it's available
+    And i check availability message "<rc>"
+    Then i found in S3 final bucket with a single version
+    And the file is no present in the staging S3 bucket
+    Examples:
+      | clientId       | APIKey       | documentType                   | fileName                    | MIMEType        | rc  |
+      | @clientId-test | @apiKey_test | @doc_type_only_sign              | src/main/resources/test.xml | application/xml | 200 |
+      | @clientId-test | @apiKey_test | @doc_type_clean_paper_attachment | src/test/resources/test.pdf | application/pdf | 200 |
+      | @clientId-test | @apiKey_test | @doc_type_chain_transformation | src/test/resources/test-raster.pdf | application/pdf | 200 |
+      | @clientId-test | @apiKey_test | @doc_type_chain_transformation_2 | src/test/resources/test-raster.pdf | application/pdf | 200 |
+      | @clientId-test | @apiKey_test | @doc_type_chain_transformation_3 | src/test/resources/test-raster.pdf | application/pdf | 200 |
+
   # Forniamo un file vuoto per far lanciare un'eccezione permanente alla libreria di firma e marca.
   @PnSsUpload @Transformation
   Scenario Outline: Upload di un file da sottoporre a trasformazione. La trasformazione fallisce permanentemente e viene verificato l'arrivo dell'evento di indisponibilità del file.
@@ -57,9 +74,25 @@ Feature: Upload SafeStorage
     Then i check unavailability message "<rc>"
     Examples:
       | clientId       | APIKey       | documentType                     | fileName                     | MIMEType        | rc  |
-      | @clientId-test | @apiKey_test | @doc_type_legal_facts            | src/main/resources/empty.pdf | application/pdf | 200 |
-      | @clientId-test | @apiKey_test | @doc_type_only_sign              | src/main/resources/empty.pdf | application/pdf | 200 |
-      | @clientId-test | @apiKey_test | @doc_type_clean_paper_attachment | src/main/resources/empty.pdf | application/pdf | 200 |
+      | @clientId-test | @apiKey_test | @doc_type_legal_facts            | src/main/resources/wrong.pdf | application/pdf | 200 |
+      | @clientId-test | @apiKey_test | @doc_type_only_sign              | src/main/resources/wrong.pdf | application/pdf | 200 |
+      | @clientId-test | @apiKey_test | @doc_type_clean_paper_attachment | src/main/resources/wrong.pdf | application/pdf | 200 |
+      | @clientId-test | @apiKey_test | @doc_type_paper_attachment       | src/main/resources/wrong.pdf | application/pdf | 200 |
+
+
+    # Forniamo un file corrotto per far lanciare un'eccezione
+  @PnSsUpload @Transformation @MultipleChainTransformationError
+  Scenario Outline: Upload di un file da sottoporre ad una catena di trasformazioni. La trasformazione fallisce permanentemente e viene verificato l'arrivo dell'evento di indisponibilità del file.
+    Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
+    When request a presigned url to upload the file
+    And upload that file
+    Then i check unavailability message "<rc>"
+    And the file has a tag ERROR in the S3 staging bucket and no version in final bucket
+    Examples:
+      | clientId       | APIKey       | documentType                     | fileName                     | MIMEType        | rc  |
+      | @clientId-test | @apiKey_test | @doc_type_chain_transformation   | src/test/resources/corrupted-document.pdf | application/pdf | 200 |
+      | @clientId-test | @apiKey_test | @doc_type_chain_transformation_2 | src/test/resources/corrupted-document.pdf | application/pdf | 200 |
+      | @clientId-test | @apiKey_test | @doc_type_chain_transformation_3 | src/test/resources/corrupted-document.pdf | application/pdf | 200 |
 
   @PnSsUpload @tag
   Scenario Outline: Upload di un file con tag non sottoposto a trasformazione e verifica del messaggio di disponibilità del file

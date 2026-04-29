@@ -7,9 +7,9 @@ Feature: Get configurations
     Then I get "<statusCode>" statusCode
     Examples:
       | clientId            | APIKey            | statusCode |
-      | @clientId-test      | @apiKey_test      | 200        |
-      | @clientId-test      | INVALID_API_KEY   | 403        |
-      | NON_EXISTENT_CLIENT | @apiKey_test      | 403        |
+      | @clientId-delivery  | @delivery_api_key | 200        |
+      | @clientId-delivery  | INVALID_API_KEY   | 403        |
+      | @clientId-unknown | @delivery_api_key | 403        |
 
   @GetConfigurations @getCurrentClientConfig
   Scenario Outline: Reperimento dei dettagli di configurazione di un client.
@@ -18,5 +18,5 @@ Feature: Get configurations
     Then I get "<statusCode>" statusCode
     Examples:
       | clientId            | APIKey            | statusCode |
-      | @clientId-test      | @apiKey_test      | 200        |
-      | NON_EXISTENT_CLIENT | @apiKey_test      | 403        |
+      | @clientId-delivery  | @delivery_api_key | 200        |
+      | @clientId-unknown | @delivery_api_key | 403        |

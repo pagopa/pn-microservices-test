@@ -5,6 +5,11 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
+import software.amazon.awssdk.services.s3.model.GetObjectTaggingRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectTaggingResponse;
+import software.amazon.awssdk.services.s3.model.ListObjectVersionsRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse;
+
 import java.net.URI;
 
 public class S3ServiceImpl implements S3Service {
@@ -31,4 +36,28 @@ public class S3ServiceImpl implements S3Service {
                 .orElseThrow()
                 .name();
     }
+
+    @Override
+    public ListObjectVersionsResponse listObjectVersions(String key, String bucketName) {
+
+        ListObjectVersionsRequest request = ListObjectVersionsRequest.builder()
+                .bucket(bucketName)
+                .prefix(key)
+                .build();
+
+        return s3Client.listObjectVersions(request);
+    }
+
+    @Override
+    public GetObjectTaggingResponse getObjectTagging(String key, String bucketName) {
+
+        GetObjectTaggingRequest request = GetObjectTaggingRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .build();
+
+        return s3Client.getObjectTagging(request);
+    }
+
+
 }
