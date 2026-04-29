@@ -16,8 +16,8 @@ import it.pagopa.pn.cucumber.dto.pojo.PnAttachment;
 import it.pagopa.pn.cucumber.poller.PnEcQueuePoller;
 import it.pagopa.pn.cucumber.utils.*;
 import it.pagopa.pn.ec.rest.v1.api.*;
-import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.Document;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.DocumentResponse;
+import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.DocumentResponseDocument;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileCreationRequest;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileCreationResponse;
 import it.pagopa.pn.service.DynamoDbService;
@@ -76,6 +76,8 @@ public class EcStepDefinitions {
     private String courier;
     private String statusCode;
     private String sentMessageId;
+    private int iRC = 0;
+    private String sKey = null;
 
 
     @BeforeAll
@@ -289,6 +291,7 @@ public class EcStepDefinitions {
             pnAttachment.setDocumentId(UUID.randomUUID().toString());
             pnAttachment.setId(RandomStringUtils.randomAlphanumeric(10));
             attachmentsList.add(pnAttachment);
+            this.sKey = "safestorage://" + sKey;
 
             Response uploadResp = CommonUtils.uploadFile(sURL, file, sha256, md5, mimeType, sSecret, Checksum.SHA256);
             assertEquals(200, uploadResp.getStatusCode());
@@ -372,11 +375,39 @@ public class EcStepDefinitions {
         this.sendPaperMessageStatusCode = response.getStatusCode();
     }
 
-    @And("try to send a paper message to {string} with {string} as documentType")
-    public void tryToSendAPaperMessageToWithDocumentType(String receiver, String transformationDocumentType) {
-        tryToSendAPaperMessageToWithDocumentType(receiver, transformationDocumentType, null);
+    @When("try to send a paper message to {string} with {string} and {string}")
+    public void tryToSendAPaperMessageToWithAnd(String receiver, String requestPaId, String applyRasterization) {
+        this.requestId = ExternalChannelUtils.generateRandomRequestId();
+        this.receiver = getValueIfTagged(receiver);
+        response = ExternalChannelUtils.sendPaperMessageRasterFlag(clientId, requestId, requestPaId, applyRasterization, attachmentsList);
+        this.sendPaperMessageStatusCode = response.getStatusCode();
     }
 
+    @When("it's available")
+    public void it_s_available() throws JsonProcessingException, InterruptedException {
+        Response oResp;
+        iRC = 0;
+        Instant timeLimit = Instant.now().plusMillis(Long.parseLong(System.getProperty("pn.ss.document.availability.timeout.millis")));
+        boolean hasBeenFound = false;
+        while (Instant.now().isBefore(timeLimit)) {
+            oResp = SafeStorageUtils.getDocument(sKey);
+            iRC = oResp.getStatusCode();
+            if (iRC == 200) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                log.trace(oResp.getBody().asString());
+                DocumentResponse oFDR = objectMapper.readValue(oResp.getBody().asString(), DocumentResponse.class);
+                DocumentResponseDocument document = oFDR.getDocument();
+                assert document != null;
+                assert document.getDocumentState() != null;
+                if (document.getDocumentState().equalsIgnoreCase("available")) {
+                    hasBeenFound = true;
+                    break;
+                }
+            }
+            Thread.sleep(Long.parseLong(System.getProperty("pn.ss.document.availability.interval.millis")));
+        }
+        Assertions.assertTrue(hasBeenFound);
+    }
 
     //THEN
     @Then("check if the message has been sent")
@@ -571,7 +602,7 @@ public class EcStepDefinitions {
         this.response = switch (this.channel) {
             case "SMS" ->
                     ExternalChannelUtils.sendSmsCourtesySimpleMessage(clientId, requestId, this.receiver, this.messageText);
-            case "EMAIL" -> ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, this.receiver);
+            case "EMAIL" -> ExternalChannelUtils.sendEmailCourtesySimpleMessage(clientId, requestId, attachmentsList, this.receiver);
             case "PEC", "SERCQ" ->
                     ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList, this.receiver, this.channel, this.messageText);
             default -> throw new IllegalArgumentException();
