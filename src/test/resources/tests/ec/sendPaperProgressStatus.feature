@@ -124,7 +124,7 @@ Feature: Send Paper Progress Status
       | RECAG010   |                      | @requestId | @testStartTime | <productType> |
     Then I get "<rc>" result code
     Examples:
-      | clientId       | apiKey       | productType                           | rc     |
+      | clientId       | apiKey       | productType                            | rc     |
       # Il productType è presente nella configurazione di ExternalChannel PnEcDuplicatesCheck
        | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check     | 400.02 |
       # Il productType non è presente in PnEcDuplicatesCheck
