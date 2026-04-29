@@ -70,10 +70,6 @@ public class EcStepDefinitions {
     private DynamoDbService dynamoDbService = new DynamoDbServiceImpl();
     private String courier;
     private String statusCode;
-    private int iRC = 0;
-    private String sKey = null;
-
-
 
     @BeforeAll
     public static void init() {
@@ -558,6 +554,7 @@ public class EcStepDefinitions {
         }
     }
 
+
     @AfterAll
     public static void doFinally() throws JMSException {
         if (queuePoller != null)
@@ -583,5 +580,4 @@ public class EcStepDefinitions {
         log.debug("RESPONSE : {}", response.getStatusCode());
         this.sRC = String.valueOf(this.response.getStatusCode());
     }
-
 }
