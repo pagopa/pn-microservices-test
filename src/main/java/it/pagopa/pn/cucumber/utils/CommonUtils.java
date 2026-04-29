@@ -83,6 +83,30 @@ public class CommonUtils {
 		return oReq.put(sMyURL);
 	}
 
+	public static Response uploadFileByte(String sURL, byte[] fileBytes, String sSHA256, String sMD5, String sContentType, String sSecret, Checksum eCS) {
+
+		log.trace("uploadFile(byte[])('{}', '{}', '{}', '{}', '{}')", sURL, sSHA256, sMD5, sContentType, sSecret);
+
+		RequestSpecification oReq = RestAssured.given()
+				.config(REST_ASSURED_CONFIG)
+				.header("content-type", sContentType);
+
+		if (eCS.equals(Checksum.SHA256)) {
+			oReq.header("x-amz-checksum-sha256", sSHA256);
+		} else if (eCS.equals(Checksum.MD5)) {
+			oReq.header("Content-MD5", sMD5);
+		}
+
+		if (sSecret != null) {
+			oReq.header("x-amz-meta-secret", sSecret);
+		}
+
+		oReq.body(fileBytes);
+
+		String sMyURL = URLDecoder.decode(sURL, StandardCharsets.UTF_8);
+		return oReq.put(sMyURL);
+	}
+
 	protected static Response myGet(RequestSpecification oReqSpec, String sURI, String service) {
 		oReqSpec.given().baseUri(getBaseURL(service)).basePath(sURI);
 		QueryableRequestSpecification queryRequest = SpecificationQuerier.query(oReqSpec);
