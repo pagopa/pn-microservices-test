@@ -13,6 +13,10 @@ import org.springframework.util.Base64Utils;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
+
+import static it.pagopa.pn.cucumber.utils.RequestEndpoint.GET_REQUEST_METADATA_BY_MESSAGEID_ENDPOINT;
+import static it.pagopa.pn.cucumber.utils.RequestEndpoint.SET_PATCH_REQUEST_METADATA_MESSAGEID_ENDPOINT;
 
 @Slf4j
 public class ExternalChannelUtils extends RequestTemplate {
@@ -48,11 +52,13 @@ public class ExternalChannelUtils extends RequestTemplate {
     }
 
     // EMAIL
-    public static Response sendEmailCourtesySimpleMessage(String clientId, String requestId, String receiver) {
+    public static Response sendEmailCourtesySimpleMessage(String clientId, String requestId, List<PnAttachment> attachmentList, String receiver) {
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
         DigitalCourtesyMailRequest digitalCourtesyMailRequest = createMailRequest(requestId, receiver);
+        List<String> attachmentsUri = attachmentList.stream().map(PnAttachment::getUri).toList();
+        digitalCourtesyMailRequest.setAttachmentUrls(attachmentsUri);
         oReq.body(digitalCourtesyMailRequest);
 
         return CommonUtils.myPut(oReq, RequestEndpoint.EMAIL_ENDPOINT, CommonUtils.PN_EC);
@@ -78,8 +84,8 @@ public class ExternalChannelUtils extends RequestTemplate {
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
         PaperEngageRequest paperEngageRequest = createPaperEngageRequest(requestId);
-        List<PaperEngageRequestAttachments> paperEngageRequestAttachmentsList = attachments.stream().map(attachment -> {
-            PaperEngageRequestAttachments paperEngageRequestAttachments = new PaperEngageRequestAttachments();
+        List<PaperEngageRequestAttachmentsInner> paperEngageRequestAttachmentsList = attachments.stream().map(attachment -> {
+            PaperEngageRequestAttachmentsInner paperEngageRequestAttachments = new PaperEngageRequestAttachmentsInner();
             paperEngageRequestAttachments.setDocumentType(attachment.getDocumentType());
             paperEngageRequestAttachments.setUri(attachment.getUri());
             paperEngageRequestAttachments.setSha256(attachment.getSha256());
@@ -98,8 +104,8 @@ public class ExternalChannelUtils extends RequestTemplate {
         PaperEngageRequest paperEngageRequest = createPaperEngageRequest(requestId);
         paperEngageRequest.setTransformationDocumentType(transformationDocumentType);
         paperEngageRequest.applyRasterization(applyRasterizationFlag);
-        List<PaperEngageRequestAttachments> paperEngageRequestAttachmentsList = attachments.stream().map(attachment -> {
-            PaperEngageRequestAttachments paperEngageRequestAttachments = new PaperEngageRequestAttachments();
+        List<PaperEngageRequestAttachmentsInner> paperEngageRequestAttachmentsList = attachments.stream().map(attachment -> {
+            PaperEngageRequestAttachmentsInner paperEngageRequestAttachments = new PaperEngageRequestAttachmentsInner();
             paperEngageRequestAttachments.setDocumentType(attachment.getDocumentType());
             paperEngageRequestAttachments.setUri(attachment.getUri());
             paperEngageRequestAttachments.setSha256(attachment.getSha256());
@@ -121,8 +127,8 @@ public class ExternalChannelUtils extends RequestTemplate {
         if (!transformationDocumentType.isBlank()){
             paperEngageRequest.setTransformationDocumentType(transformationDocumentType);
         }
-        List<PaperEngageRequestAttachments> paperEngageRequestAttachmentsList = attachments.stream().map(attachment -> {
-            PaperEngageRequestAttachments paperEngageRequestAttachments = new PaperEngageRequestAttachments();
+        List<PaperEngageRequestAttachmentsInner> paperEngageRequestAttachmentsList = attachments.stream().map(attachment -> {
+            PaperEngageRequestAttachmentsInner paperEngageRequestAttachments = new PaperEngageRequestAttachmentsInner();
             paperEngageRequestAttachments.setDocumentType(attachment.getDocumentType());
             paperEngageRequestAttachments.setUri(attachment.getUri());
             paperEngageRequestAttachments.setSha256(attachment.getSha256());
@@ -140,8 +146,8 @@ public class ExternalChannelUtils extends RequestTemplate {
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
         PaperEngageRequest paperEngageRequest = createPaperEngageRequest(requestId);
-        List<PaperEngageRequestAttachments> paperEngageRequestAttachmentsList = attachments.stream().map(attachment -> {
-            PaperEngageRequestAttachments paperEngageRequestAttachments = new PaperEngageRequestAttachments();
+        List<PaperEngageRequestAttachmentsInner> paperEngageRequestAttachmentsList = attachments.stream().map(attachment -> {
+            PaperEngageRequestAttachmentsInner paperEngageRequestAttachments = new PaperEngageRequestAttachmentsInner();
             paperEngageRequestAttachments.setDocumentType(attachment.getDocumentType());
             paperEngageRequestAttachments.setUri(attachment.getUri());
             paperEngageRequestAttachments.setSha256(attachment.getSha256());
@@ -198,6 +204,23 @@ public class ExternalChannelUtils extends RequestTemplate {
         return CommonUtils.myGet(oReq, RequestEndpoint.GET_REQUEST_MESSAGE_ID_ENDPOINT, CommonUtils.PN_EC);
     }
 
+    // GET request metadata by messageId
+    public static Response getRequestMetadataByMessageId(String messageId) {
+        RequestSpecification oReq = stdReq()
+                .pathParam("messageId", messageId);
+        return CommonUtils.myGet(oReq, GET_REQUEST_METADATA_BY_MESSAGEID_ENDPOINT, CommonUtils.PN_EC);
+    }
+
+    // PATCH set request metadata messageId
+    public static Response setRequestMetadataMessageId(String clientId, String requestIdx, MessageIdRequestMetadataDto messageIdRequestMetadataDto) {
+
+        RequestSpecification oReq = stdReq()
+                .header(X_PAGOPA_EXTCH_CX_ID, clientId)
+                .pathParam(REQUEST_IDX, requestIdx)
+                .body(messageIdRequestMetadataDto);
+
+        return CommonUtils.myPatch(oReq, SET_PATCH_REQUEST_METADATA_MESSAGEID_ENDPOINT, CommonUtils.PN_EC);
+    }
 
     //GET PEC
     public static Response getPecByRequestId(String clientId, String requestId) {
@@ -256,6 +279,14 @@ public class ExternalChannelUtils extends RequestTemplate {
         } catch (Exception e) {
             throw new MessageIdException.EncodeMessageIdException();
         }
+
+    }
+    public static String generateRandomMessageId() {
+        return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    public static String concatRequestId(String clientId, String requestId) {
+        return (String.format("%s%s%s", clientId, SEPARATORE, requestId));
     }
 
 }
