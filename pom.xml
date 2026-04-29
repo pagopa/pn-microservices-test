@@ -8,10 +8,10 @@
 	<name>pn-microservices-test</name>
 	<description>functional test for single microservice</description>
 	<properties>
-		<java.version>17</java.version>
+		<java.version>21</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	<logbackjackson.version>0.1.5</logbackjackson.version>
-		<spring.boot-version>2.7.7</spring.boot-version>
+		<spring.boot-version>3.2.0</spring.boot-version>
 
 		<open.api.version>develop</open.api.version>
 		<open.api>3.0.3</open.api>
@@ -218,7 +218,7 @@
 			<plugin>
 				<groupId>org.openapitools</groupId>
 				<artifactId>openapi-generator-maven-plugin</artifactId>
-				<version>5.4.0</version>
+				<version>7.12.0</version>
 				<executions>
 					<execution>
 						<id>generate-internal-client-ss</id>
@@ -228,7 +228,7 @@
 						<phase>process-sources</phase>
 						<configuration>
 
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ss/72cd32b52855e19d42f03712f882117193ff1036/docs/openapi/pn-safestorage-internal-v1-api.yaml</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ss/75c7642f987037457bb8d2d55ad87e6fecff89f5/docs/openapi/pn-safestorage-internal-v1-api.yaml</inputSpec>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
 							<generateApiTests>false</generateApiTests>
@@ -289,7 +289,7 @@
 						</goals>
 						<phase>generate-sources</phase>
 						<configuration>
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ss/72cd32b52855e19d42f03712f882117193ff1036/docs/openapi/pn-safestorage-v1.1-api.yaml</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ss/75c7642f987037457bb8d2d55ad87e6fecff89f5/docs/openapi/pn-safestorage-v1.1-api.yaml</inputSpec>
 							<generatorName>spring</generatorName>
 							<library>spring-boot</library>
 							<generateApiDocumentation>false</generateApiDocumentation>
@@ -319,7 +319,7 @@
 						<phase>process-sources</phase>
 						<configuration>
 
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/3e5d993b76bf8cf7816189337f5f9a7707436ea4/docs/openapi/external/api-consolidatore-ingress-v1.yaml</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/develop/docs/openapi/external/api-consolidatore-ingress-v1.yaml</inputSpec>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
 							<generateApiTests>false</generateApiTests>
@@ -352,7 +352,7 @@
 						<phase>process-sources</phase>
 						<configuration>
 
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/37aacb5f794fb4423f02cd854d4658c4faf3b949/docs/openapi/internal/externalchannel/gestore-repository-v1.yaml</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/40d8d241e8b3e13756eb1153fd354e2ce02ed102/docs/openapi/internal/externalchannel/gestore-repository-v1.yaml</inputSpec>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
 							<generateApiTests>false</generateApiTests>
@@ -370,9 +370,20 @@
 								<additionalModelTypeAnnotations>
 									@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
 								</additionalModelTypeAnnotations>
+								<useJakartaEe>true</useJakartaEe>
+								<useSpringBoot3>true</useSpringBoot3>
+								<delegatePattern>true</delegatePattern>
+								<interfaceOnly>true</interfaceOnly>
+								<annotationLibrary>none</annotationLibrary>
+								<documentationProvider>source</documentationProvider>
+								<openApiNullable>false</openApiNullable>
+								<reactive>true</reactive>
+								<skipDefaultInterface>false</skipDefaultInterface>
+								<useTags>true</useTags>
 							</configOptions>
 							<apiPackage>${project.groupId}.ec.rest.v1.dto</apiPackage>
 							<modelPackage>${project.groupId}.ec.rest.v1.api</modelPackage>
+							<skipValidateSpec>true</skipValidateSpec>
 
 						</configuration>
 					</execution>
@@ -384,8 +395,7 @@
 						</goals>
 						<phase>process-sources</phase>
 						<configuration>
-
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/02af5853dce567f0fecd6fcef04f6578c86bedbe/docs/openapi/external/api-internal-v1.yaml</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/7624031d6af9420f6e8b12aec5cf709dd9bdc04a/docs/openapi/external/api-internal-v1.yaml</inputSpec>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
 							<generateApiTests>false</generateApiTests>

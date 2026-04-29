@@ -67,6 +67,56 @@ Feature: Send Digital Message Ec
       | clientId           | apiKey            | channel        | receiver                        |
       | @clientId-delivery | @delivery_api_key | @channel_email | @email.receiver.digital.address |
 
+  @PnEcSendMessage @invioEMAIL @complete_ses_events
+  Scenario Outline: invio email e verifica evento SES
+    Given a "<clientId>" and "<channel>" to send on
+    And "<clientId>" authenticated by "<apiKey>" uploads the following attachments:
+      | documentType                       | fileName                    | mimeType        |
+      | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
+    When try to send a digital message to "<receiver>"
+    Then check if the message has been sent
+    And check SES event "<expectedEvent>" is "<expectedResult>"
+    Examples:
+    #delivery M004
+    #bounce M005
+    #complaint M006
+      | clientId            | apiKey            | channel        | receiver                                        | expectedEvent |  expectedResult  |
+      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address                 | M004          |  true            |
+      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.bounce          | M005          |  true            |
+      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.hard.bounce     | M005          |  true            |
+      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.complaint       | M006          |  true            |
+      #configurazione di default (solo M003)
+      | @clientId-delivery  | @delivery_api_key | @channel_email | @email.receiver.digital.address                 | M005          | false            |
+
+  @PnEcSendMessage @invioEMAIL @email_rejected_ses
+  Scenario Outline: invio email con allegato infetto e verifica reject SES
+    Given a "<clientId>" and "<channel>" to send on
+    And "<clientId>" authenticated by "<apiKey>" uploads the following attachments to reject:
+      | documentType                        | mimeType |
+      | @doc_type_notification_attachments  | text/plain |
+    When try to send a digital message to "<receiver>"
+    Then check if the message has been sent
+    And check SES event "<expectedEvent>" is "<expectedResult>"
+    Examples:
+    #reject M009
+      | clientId       | apiKey       | channel        | receiver                                 | expectedEvent | expectedResult  |
+      | @clientId-test | @apiKey_test | @channel_email | @email.receiver.digital.address          | M009          | true            |
+
+
+  @PnEcPatchMessage @patchRequestByMessageId @PatchAndGetMessageId
+  Scenario Outline: Invio di un messaggio e patch tramite messageId
+    Given a "<clientId>" and "<channel>" to send on
+    When try to send digital message to "<receiver>" with a requestId
+    * waiting for scheduling
+    When I try to PATCH request metadata with a messageId
+    When I try to GET request metadata by messageId
+    Then i get response "<rc>"
+    Examples:
+      | clientId           | channel        | receiver                        | rc  |
+      | @clientId-delivery | @channel_email | @email.receiver.digital.address | 200 |
+
+
+
   @PnEcSendMessage @invioSERCQ @complete_sercq
   Scenario Outline: invio SERCQ con allegati e verifica della pubblicazione del messaggio nella coda di debug
     Given a "<clientId>" and "<channel>" to send on

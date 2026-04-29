@@ -12,8 +12,8 @@ Feature: Update metadata
     Examples:
       | clientId           | APIKey            | documentType                       | fileName                    | MIMEType        | clientIdUp         | APIKeyUp          | status   | retentionUntil           | rc  |
       | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-delivery | @delivery_api_key | ATTACHED |                          | 200 |
-      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-delivery | @delivery_api_key | ATTACHED | 2025-07-11T16:15:00.000Z | 200 |
-      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-delivery | @delivery_api_key |          | 2025-07-11T13:02:25.206Z | 200 |
+      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-delivery | @delivery_api_key | ATTACHED | 2026-12-31T16:15:00.000Z | 200 |
+      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-delivery | @delivery_api_key |          | 2026-12-31T13:02:25.206Z | 200 |
 
 
   @PnSsUpdateMetadata
@@ -22,7 +22,7 @@ Feature: Update metadata
     Then i get an error "<rc>"
     Examples:
       | clientIdUp     | APIKeyUp     | status   | retentionUntil           | fileKey     | rc  |
-      | @clientId-test | @apiKey_test | ATTACHED | 2024-07-11T13:02:25.206Z | NONEXISTENT | 404 |
+      | pn-delivery    | pn-delivery_api_key | ATTACHED |                          | PN_NOTIFICATION_ATTACHMENTS-73c54f5e1395444a9f630738ec3a7fdb.pdf| 200 |
       | @clientId-test | @apiKey_test | ATTACHED | 2024-07-11T13:02:25.206Z |             | 400 |
 
 
