@@ -26,6 +26,11 @@ public class RequestEndpoint {
             "/external-channel/gestoreRepository/requests/messageId/{messageId}";
     protected static final String GET_ATTACHMENT =
             "/consolidatore-ingress/v1/get-attachment/{fileKey}";
+    protected static final String GET_REQUEST_METADATA_BY_MESSAGEID_ENDPOINT =
+            "/external-channel/gestoreRepository/requests/emailMessageId/{messageId}";
+    protected static final String SET_PATCH_REQUEST_METADATA_MESSAGEID_ENDPOINT =
+            "/external-channel/gestoreRepository/requests/{requestIdx}/messageId";
+
     protected static final String SAFESTORAGE_FILES_UPLOAD_ENDPOINT = "/safe-storage/v1/files";
     protected static final String SAFESTORAGE_FILES_DOWNLOAD_ENDPOINT = "/safe-storage/v1/files/{fileKey}";
     protected static final String SAFESTORAGE_UPDATE_METADATA_ENDPOINT = SAFESTORAGE_FILES_DOWNLOAD_ENDPOINT;

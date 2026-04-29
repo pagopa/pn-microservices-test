@@ -8,6 +8,7 @@ Feature: Get Digital Message Ec
     Examples:
       | clientId           | rc  |
       | @clientId-delivery | 200 |
+      | @clientId-test | 200 |
 
   @PnEcGetMessage @getClient @getAllClients
   Scenario Outline: Configurazione del client tramite GET all'endpoint
@@ -65,7 +66,8 @@ Feature: Get Digital Message Ec
     Examples:
       | ecClientId     | ssClientId              | ssApiKey              | channel        | receiver                        | rc  |
       | @clientId-cons | @clientId-delivery-push | @apiKey-delivery-push | @channel_paper | @paper.receiver.digital.address | 200 |
-    
+
+
     # --- TEST KO --- #
 
   @PnEcGetMessage @getClient @getClientConfig_ko
