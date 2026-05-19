@@ -1,6 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>it.pagopa.pn</groupId>
 	<artifactId>pn-microservices-test</artifactId>
@@ -10,13 +8,11 @@
 	<properties>
 		<java.version>21</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	<logbackjackson.version>0.1.5</logbackjackson.version>
+		<logbackjackson.version>0.1.5</logbackjackson.version>
 		<spring.boot-version>3.2.0</spring.boot-version>
-
 		<open.api.version>develop</open.api.version>
 		<open.api>3.0.3</open.api>
 	</properties>
-
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -35,75 +31,63 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-
 	<dependencies>
-		<!-- per i commonsLog -->
+		<!--  per i commonsLog  -->
 		<dependency>
 			<groupId>it.pagopa.pn</groupId>
 			<artifactId>pn-commons</artifactId>
-			<version>2.2.7</version>
+			<version>2.17.0</version>
 		</dependency>
-
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>sts</artifactId>
 			<version>2.25.14</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.sun.xml.ws</groupId>
 			<artifactId>jaxws-rt</artifactId>
 			<version>4.0.1</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.cxf.systests</groupId>
 			<artifactId>cxf-systests-transport-hc5</artifactId>
 			<version>4.0.0</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>amazon-kinesis-client</artifactId>
 			<version>1.14.10</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>dynamodb-streams-kinesis-adapter</artifactId>
 			<version>1.6.0</version>
 		</dependency>
-
 		<dependency>
 			<groupId>io.swagger</groupId>
 			<artifactId>swagger-annotations</artifactId>
 			<version>1.6.5</version>
 		</dependency>
-
 		<dependency>
 			<groupId>io.cucumber</groupId>
 			<artifactId>cucumber-java</artifactId>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>io.cucumber</groupId>
 			<artifactId>cucumber-junit-platform-engine</artifactId>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.junit.platform</groupId>
 			<artifactId>junit-platform-suite</artifactId>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>io.rest-assured</groupId>
 			<artifactId>rest-assured</artifactId>
@@ -124,51 +108,45 @@
 			<artifactId>validation-api</artifactId>
 			<version>2.0.1.Final</version>
 		</dependency>
-
+		<dependency>
+			<groupId>jakarta.validation</groupId>
+			<artifactId>jakarta.validation-api</artifactId>
+			<version>3.0.2</version>
+		</dependency>
 		<dependency>
 			<groupId>javax.annotation</groupId>
 			<artifactId>javax.annotation-api</artifactId>
 			<version>1.3.2</version>
 		</dependency>
-
-
 		<dependency>
 			<groupId>joda-time</groupId>
 			<artifactId>joda-time</artifactId>
 			<version>2.12.7</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<version>1.18.30</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.json</groupId>
 			<artifactId>json</artifactId>
 			<version>20240303</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>amazon-sqs-java-messaging-lib</artifactId>
 			<version>2.1.3</version>
 			<type>jar</type>
 		</dependency>
-
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>s3-event-notifications</artifactId>
 			<version>2.25.14</version>
 		</dependency>
-
 	</dependencies>
-
 	<build>
 		<plugins>
-
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -184,7 +162,6 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>3.2.2</version>
 			</plugin>
-
 			<plugin>
 				<groupId>org.apache.cxf</groupId>
 				<artifactId>cxf-codegen-plugin</artifactId>
@@ -214,7 +191,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
 			<plugin>
 				<groupId>org.openapitools</groupId>
 				<artifactId>openapi-generator-maven-plugin</artifactId>
@@ -227,7 +203,6 @@
 						</goals>
 						<phase>process-sources</phase>
 						<configuration>
-
 							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ss/75c7642f987037457bb8d2d55ad87e6fecff89f5/docs/openapi/pn-safestorage-internal-v1-api.yaml</inputSpec>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
@@ -236,20 +211,16 @@
 							<configOptions>
 								<apiPackage>${project.groupId}.safestorage.generated.openapi.server.v1.api</apiPackage>
 								<modelPackage>${project.groupId}.safestorage.generated.openapi.server.v1.dto</modelPackage>
-
 								<dateLibrary>java17</dateLibrary>
 								<annotationLibrary>none</annotationLibrary>
 								<documentationProvider>source</documentationProvider>
 								<openApiNullable>false</openApiNullable>
 								<useAbstractionForFiles>true</useAbstractionForFiles>
 								<useBeanValidation>false</useBeanValidation>
-								<additionalModelTypeAnnotations>
-									@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
-								</additionalModelTypeAnnotations>
+								<additionalModelTypeAnnotations> @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) </additionalModelTypeAnnotations>
 							</configOptions>
 							<apiPackage>${project.groupId}.safestorage.generated.openapi.server.v1.api</apiPackage>
 							<modelPackage>${project.groupId}.safestorage.generated.openapi.server.v1.dto</modelPackage>
-
 						</configuration>
 					</execution>
 					<execution>
@@ -273,15 +244,12 @@
 								<openApiNullable>false</openApiNullable>
 								<useAbstractionForFiles>true</useAbstractionForFiles>
 								<useBeanValidation>false</useBeanValidation>
-								<additionalModelTypeAnnotations>
-									@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
-								</additionalModelTypeAnnotations>
+								<additionalModelTypeAnnotations> @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) </additionalModelTypeAnnotations>
 							</configOptions>
 							<apiPackage>${project.groupId}.safestorage.generated.openapi.server.v1.api</apiPackage>
 							<modelPackage>${project.groupId}.safestorage.generated.openapi.server.v1.dto</modelPackage>
 						</configuration>
 					</execution>
-
 					<execution>
 						<id>generate-gestore-file</id>
 						<goals>
@@ -310,7 +278,6 @@
 							</configOptions>
 						</configuration>
 					</execution>
-
 					<execution>
 						<id>generate-consolidatore-ingress-ec</id>
 						<goals>
@@ -318,7 +285,6 @@
 						</goals>
 						<phase>process-sources</phase>
 						<configuration>
-
 							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/develop/docs/openapi/external/api-consolidatore-ingress-v1.yaml</inputSpec>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
@@ -327,23 +293,18 @@
 							<configOptions>
 								<apiPackage>${project.groupId}.ec.rest.v1.dto</apiPackage>
 								<modelPackage>${project.groupId}.ec.rest.v1.api</modelPackage>
-
 								<dateLibrary>java8</dateLibrary>
 								<annotationLibrary>none</annotationLibrary>
 								<documentationProvider>source</documentationProvider>
 								<openApiNullable>false</openApiNullable>
 								<useAbstractionForFiles>true</useAbstractionForFiles>
 								<useBeanValidation>false</useBeanValidation>
-								<additionalModelTypeAnnotations>
-									@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
-								</additionalModelTypeAnnotations>
+								<additionalModelTypeAnnotations> @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) </additionalModelTypeAnnotations>
 							</configOptions>
 							<apiPackage>${project.groupId}.ec.rest.v1.dto</apiPackage>
 							<modelPackage>${project.groupId}.ec.rest.v1.api</modelPackage>
-
 						</configuration>
 					</execution>
-
 					<execution>
 						<id>generate-gestore-repository-ec</id>
 						<goals>
@@ -351,7 +312,6 @@
 						</goals>
 						<phase>process-sources</phase>
 						<configuration>
-
 							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/40d8d241e8b3e13756eb1153fd354e2ce02ed102/docs/openapi/internal/externalchannel/gestore-repository-v1.yaml</inputSpec>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
@@ -360,16 +320,13 @@
 							<configOptions>
 								<apiPackage>${project.groupId}.ec.rest.v1.dto</apiPackage>
 								<modelPackage>${project.groupId}.ec.rest.v1.api</modelPackage>
-
 								<dateLibrary>java17</dateLibrary>
 								<annotationLibrary>none</annotationLibrary>
 								<documentationProvider>source</documentationProvider>
 								<openApiNullable>false</openApiNullable>
 								<useAbstractionForFiles>true</useAbstractionForFiles>
 								<useBeanValidation>false</useBeanValidation>
-								<additionalModelTypeAnnotations>
-									@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
-								</additionalModelTypeAnnotations>
+								<additionalModelTypeAnnotations> @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) </additionalModelTypeAnnotations>
 								<useJakartaEe>true</useJakartaEe>
 								<useSpringBoot3>true</useSpringBoot3>
 								<delegatePattern>true</delegatePattern>
@@ -384,10 +341,8 @@
 							<apiPackage>${project.groupId}.ec.rest.v1.dto</apiPackage>
 							<modelPackage>${project.groupId}.ec.rest.v1.api</modelPackage>
 							<skipValidateSpec>true</skipValidateSpec>
-
 						</configuration>
 					</execution>
-
 					<execution>
 						<id>generate-paper-schemas-ec</id>
 						<goals>
@@ -403,27 +358,59 @@
 							<configOptions>
 								<apiPackage>${project.groupId}.ec.rest.v1.dto</apiPackage>
 								<modelPackage>${project.groupId}.ec.rest.v1.api</modelPackage>
-
 								<dateLibrary>java17</dateLibrary>
 								<annotationLibrary>none</annotationLibrary>
 								<documentationProvider>source</documentationProvider>
 								<openApiNullable>false</openApiNullable>
 								<useAbstractionForFiles>true</useAbstractionForFiles>
 								<useBeanValidation>false</useBeanValidation>
-								<additionalModelTypeAnnotations>
-									@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
-								</additionalModelTypeAnnotations>
+								<additionalModelTypeAnnotations> @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) </additionalModelTypeAnnotations>
 							</configOptions>
 							<apiPackage>${project.groupId}.ec.rest.v1.dto</apiPackage>
 							<modelPackage>${project.groupId}.ec.rest.v1.api</modelPackage>
-
 						</configuration>
 					</execution>
-
+					<execution>
+						<id>generate-ioconnector-server</id>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<phase>generate-resources</phase>
+						<configuration>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-io-connector/refs/heads/feature/PN-19120/docs/openapi/pn-io-connector-internal.yaml</inputSpec>
+							<typeMappings>
+								<typeMapping>Date=Instant</typeMapping>
+							</typeMappings>
+							<importMappings>
+								<importMapping>java.util.Date=java.time.Instant</importMapping>
+								<importMapping>Date=java.time.Instant</importMapping>
+							</importMappings>
+							<generatorName>spring</generatorName>
+							<library>spring-boot</library>
+							<generateApiDocumentation>false</generateApiDocumentation>
+							<generateApiTests>false</generateApiTests>
+							<generateModelTests>false</generateModelTests>
+							<configOptions>
+								<useSpringBoot3>true</useSpringBoot3>
+								<dateLibrary>java11</dateLibrary>
+								<delegatePattern>true</delegatePattern>
+								<interfaceOnly>true</interfaceOnly>
+								<annotationLibrary>none</annotationLibrary>
+								<documentationProvider>source</documentationProvider>
+								<openApiNullable>false</openApiNullable>
+								<useBeanValidation>false</useBeanValidation>
+								<reactive>false</reactive>
+								<skipDefaultInterface>false</skipDefaultInterface>
+								<useTags>true</useTags>
+								<basePackage>${project.groupId}.ioconnector.generated.openapi.server.v1</basePackage>
+								<apiPackage>${project.groupId}.ioconnector.generated.openapi.server.v1.api</apiPackage>
+								<modelPackage>${project.groupId}.ioconnector.generated.openapi.server.v1.dto</modelPackage>
+								<configPackage>${project.groupId}.ioconnector.generated.openapi.server.v1.config</configPackage>
+							</configOptions>
+						</configuration>
+					</execution>
 				</executions>
-
 			</plugin>
 		</plugins>
 	</build>
-
 </project>
