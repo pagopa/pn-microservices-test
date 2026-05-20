@@ -20,6 +20,7 @@ import static it.pagopa.pn.configuration.TestVariablesConfiguration.getValueIfTa
 import static it.pagopa.pn.cucumber.utils.LogUtils.MDC_CORR_ID_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @CustomLog
 public class IoStepDefinitions {
@@ -43,13 +44,12 @@ public class IoStepDefinitions {
         log.info("cxId={}", this.cxId);
     }
 
-    @Given("un messaggio IO valido con iun {string}, recipientTaxId {string}, senderTaxId {string}, senderServiceId {string}, subject {string}, markdown {string}")
-    public void aValidIoMessage(String iun, String recipientTaxId, String senderTaxId,
+    @Given("un messaggio IO valido con iun {string}, recipientTaxId {string}, senderServiceId {string}, subject {string}, markdown {string}")
+    public void aValidIoMessage(String iun, String recipientTaxId,
                                 String senderServiceId, String subject, String markdown) {
         this.requestBody = IoMessageUtils.buildValidRequest(
                 getValueIfTagged(iun),
                 getValueIfTagged(recipientTaxId),
-                getValueIfTagged(senderTaxId),
                 getValueIfTagged(senderServiceId),
                 subject,
                 markdown
@@ -57,12 +57,11 @@ public class IoStepDefinitions {
         log.info("Prepared IO message: iun={} senderServiceId={}", getValueIfTagged(iun), getValueIfTagged(senderServiceId));
     }
 
-    @Given("un messaggio IO valido senza iun con recipientTaxId {string}, senderTaxId {string}, senderServiceId {string}, subject {string}, markdown {string}")
-    public void aValidIoMessageWithoutIun(String recipientTaxId, String senderTaxId,
+    @Given("un messaggio IO valido senza iun con recipientTaxId {string}, senderServiceId {string}, subject {string}, markdown {string}")
+    public void aValidIoMessageWithoutIun(String recipientTaxId,
                                           String senderServiceId, String subject, String markdown) {
         this.requestBody = IoMessageUtils.buildValidRequestWithoutIun(
                 getValueIfTagged(recipientTaxId),
-                getValueIfTagged(senderTaxId),
                 getValueIfTagged(senderServiceId),
                 subject,
                 markdown
@@ -81,7 +80,6 @@ public class IoStepDefinitions {
         this.requestBody = IoMessageUtils.buildValidRequest(
                 getValueIfTagged("@io.iun"),
                 getValueIfTagged("@io.recipientTaxId"),
-                getValueIfTagged("@io.senderTaxId"),
                 getValueIfTagged("@io.senderServiceId"),
                 "Avviso di pagamento",
                 "Gentile cittadino, hai ricevuto un avviso."
@@ -132,11 +130,10 @@ public class IoStepDefinitions {
         log.info("Set pollingMaxHours={}", hours);
     }
 
-    @Given("una richiesta profilo IO valida con recipientTaxId {string}, senderTaxId {string}, senderServiceId {string}")
-    public void aValidIoProfileRequest(String recipientTaxId, String senderTaxId, String senderServiceId) {
+    @Given("una richiesta profilo IO valida con recipientTaxId {string}, senderServiceId {string}")
+    public void aValidIoProfileRequest(String recipientTaxId, String senderServiceId) {
         this.requestBody = IoMessageUtils.buildProfileRequest(
                 getValueIfTagged(recipientTaxId),
-                getValueIfTagged(senderTaxId),
                 getValueIfTagged(senderServiceId)
         );
         log.info("Prepared IO profile request: recipientTaxId={}", getValueIfTagged(recipientTaxId));
@@ -248,6 +245,37 @@ public class IoStepDefinitions {
     public void responseContainsPreferredLanguages() {
         assertNotNull(response.jsonPath().get("preferredLanguages"),
                 "Il campo 'preferredLanguages' è assente nella risposta");
+    }
+
+    @And("la risposta non contiene il campo preferredLanguages")
+    public void responseDoesNotContainPreferredLanguages() {
+        assertNull(response.jsonPath().get("preferredLanguages"),
+                "Il campo 'preferredLanguages' dovrebbe essere assente nella risposta");
+    }
+
+    @Given("una richiesta profilo IO senza il campo {string}")
+    public void aProfileRequestMissingField(String field) {
+        this.requestBody = IoMessageUtils.buildProfileRequest(
+                getValueIfTagged("@io.recipientTaxId"),
+                getValueIfTagged("@io.senderServiceId")
+        );
+        this.requestBody.remove(field);
+        log.info("Removed field '{}' from IO profile request", field);
+    }
+
+    @And("la richiesta ha subject di {int} caratteri")
+    public void requestHasSubjectOfLength(int length) {
+        this.requestBody.put("subject", "S".repeat(length));
+        log.info("Set subject to {} characters", length);
+    }
+
+    @And("la richiesta include allegati")
+    public void requestIncludesAttachments() {
+        this.requestBody.put("attachments", java.util.List.of(
+                "PN_NOTIFICATION_ATTACHMENTS-test-doc1",
+                "PN_NOTIFICATION_ATTACHMENTS-test-doc2"
+        ));
+        log.info("Added 2 attachments to IO message request");
     }
 
     @And("la risposta contiene i dettagli del messaggio")

@@ -1,6 +1,10 @@
+# GET /messages/{id} non è ancora implementato nel branch feature/PN-19120.
+# Il controller è presente nell'OpenAPI ma non nel codice Java.
+# Questi scenari sono marcati @wip e non vengono eseguiti finché l'endpoint non è disponibile.
+
 Feature: GET /messages/{id} — Recupero metadati allegati messaggio IO
 
-  @invioIO @getMessage @getMessage_ok
+  @wip @invioIO @getMessage @getMessage_ok
   Scenario Outline: Recupero metadati messaggio IO esistente — risposta 200
     Given un ioMessageId "<ioMessageId>"
     When recupero il messaggio IO per id
@@ -11,7 +15,7 @@ Feature: GET /messages/{id} — Recupero metadati allegati messaggio IO
       | ioMessageId     |
       | @io.ioMessageId |
 
-  @invioIO @getMessage @getMessage_notFound
+  @wip @invioIO @getMessage @getMessage_notFound
   Scenario Outline: Recupero messaggio IO con id inesistente — risposta 404
     Given un ioMessageId "<ioMessageId>"
     When recupero il messaggio IO per id
@@ -20,7 +24,7 @@ Feature: GET /messages/{id} — Recupero metadati allegati messaggio IO
       | ioMessageId                |
       | IO-MSG-ID-NOT-EXISTING-XYZ |
 
-  @invioIO @getMessage @getMessage_forbidden
+  @wip @invioIO @getMessage @getMessage_forbidden
   Scenario Outline: Recupero messaggio IO con codice fiscale del chiamante non coerente — risposta 403
     Given un ioMessageId "<ioMessageId>"
     When recupero il messaggio IO per id

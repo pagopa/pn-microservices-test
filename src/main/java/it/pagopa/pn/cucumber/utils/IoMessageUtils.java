@@ -65,12 +65,11 @@ public class IoMessageUtils {
     }
 
     public static Map<String, Object> buildValidRequest(String iun, String recipientTaxId,
-                                                        String senderTaxId, String senderServiceId,
+                                                        String senderServiceId,
                                                         String subject, String markdown) {
         Map<String, Object> body = new HashMap<>();
         body.put("iun", iun);
         body.put("recipientTaxId", recipientTaxId);
-        body.put("senderTaxId", senderTaxId);
         body.put("senderServiceId", senderServiceId);
         body.put("subject", subject);
         body.put("markdown", markdown);
@@ -78,13 +77,11 @@ public class IoMessageUtils {
     }
 
     public static Map<String, Object> buildValidRequestWithoutIun(String recipientTaxId,
-                                                                   String senderTaxId,
                                                                    String senderServiceId,
                                                                    String subject,
                                                                    String markdown) {
         Map<String, Object> body = new HashMap<>();
         body.put("recipientTaxId", recipientTaxId);
-        body.put("senderTaxId", senderTaxId);
         body.put("senderServiceId", senderServiceId);
         body.put("subject", subject);
         body.put("markdown", markdown);
@@ -92,11 +89,9 @@ public class IoMessageUtils {
     }
 
     public static Map<String, Object> buildProfileRequest(String recipientTaxId,
-                                                          String senderTaxId,
                                                           String senderServiceId) {
         Map<String, Object> body = new HashMap<>();
         body.put("recipientTaxId", recipientTaxId);
-        body.put("senderTaxId", senderTaxId);
         body.put("senderServiceId", senderServiceId);
         return body;
     }
