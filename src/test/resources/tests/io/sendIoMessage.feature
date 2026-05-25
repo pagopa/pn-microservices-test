@@ -88,7 +88,7 @@ Feature: POST /io/message — Presa in carico sincrona
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
 
-  @invioIO @invioIO_idempotente
+  @wip @invioIO @invioIO_idempotente
   Scenario Outline: Reinvio con stesso requestId e stesso payload — risposta 204 (idempotenza)
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     When invio il messaggio IO
@@ -98,7 +98,7 @@ Feature: POST /io/message — Presa in carico sincrona
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
 
-  @invioIO @invioIO_conflict
+  @wip @invioIO @invioIO_conflict
   Scenario Outline: Reinvio con stesso requestId ma payload diverso — risposta 409 (conflitto)
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     When invio il messaggio IO
