@@ -7,7 +7,7 @@ Feature: POST /io/message — Presa in carico sincrona
   Scenario Outline: Invio messaggio IO e verifica accettazione
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     When invio il messaggio IO
-    Then la risposta HTTP ha status 202
+    Then la risposta HTTP ha status 200
     And lo status del messaggio è "ACCEPTED"
     And il requestId nella risposta corrisponde a quello inviato
     And il cxId nella risposta corrisponde a quello inviato
@@ -16,59 +16,63 @@ Feature: POST /io/message — Presa in carico sincrona
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
 
   @invioIO @invioIO_accepted @invioIO_no_iun
-  Scenario Outline: Invio messaggio IO senza iun (campo opzionale) — risposta 202 ACCEPTED
+  Scenario Outline: Invio messaggio IO senza iun (campo opzionale) — risposta 200 ACCEPTED
     Given un messaggio IO valido senza iun con recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     When invio il messaggio IO
-    Then la risposta HTTP ha status 202
+    Then la risposta HTTP ha status 200
     And lo status del messaggio è "ACCEPTED"
     And il requestId nella risposta corrisponde a quello inviato
+    And il cxId nella risposta corrisponde a quello inviato
     Examples:
       | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
 
   @invioIO @invioIO_accepted @invioIO_paymentData
-  Scenario Outline: Invio messaggio IO con paymentData — risposta 202 ACCEPTED
+  Scenario Outline: Invio messaggio IO con paymentData — risposta 200 ACCEPTED
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     And la richiesta include paymentData con amount 1500, noticeCode "302000100440009424" e creditorTaxId "01234567890"
     When invio il messaggio IO
-    Then la risposta HTTP ha status 202
+    Then la risposta HTTP ha status 200
     And lo status del messaggio è "ACCEPTED"
     And il requestId nella risposta corrisponde a quello inviato
+    And il cxId nella risposta corrisponde a quello inviato
     Examples:
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
 
   @invioIO @invioIO_accepted @invioIO_paymentData @invioIO_dueDate
-  Scenario Outline: Invio messaggio IO con paymentData e dueDate — risposta 202 ACCEPTED
+  Scenario Outline: Invio messaggio IO con paymentData e dueDate — risposta 200 ACCEPTED
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     And la richiesta include dueDate "2026-12-31T23:59:59Z"
     And la richiesta include paymentData con amount 1500, noticeCode "302000100440009424", creditorTaxId "01234567890" e invalidAfterDueDate "true"
     When invio il messaggio IO
-    Then la risposta HTTP ha status 202
+    Then la risposta HTTP ha status 200
     And lo status del messaggio è "ACCEPTED"
     And il requestId nella risposta corrisponde a quello inviato
+    And il cxId nella risposta corrisponde a quello inviato
     Examples:
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
 
   @invioIO @invioIO_accepted @invioIO_sensitiveContent
-  Scenario Outline: Invio messaggio IO con contenuto sensibile — risposta 202 ACCEPTED
+  Scenario Outline: Invio messaggio IO con contenuto sensibile — risposta 200 ACCEPTED
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     And la richiesta ha sensitiveContent true
     When invio il messaggio IO
-    Then la risposta HTTP ha status 202
+    Then la risposta HTTP ha status 200
     And lo status del messaggio è "ACCEPTED"
     And il requestId nella risposta corrisponde a quello inviato
+    And il cxId nella risposta corrisponde a quello inviato
     Examples:
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
 
   @invioIO @invioIO_accepted @invioIO_pollingMaxHours
-  Scenario Outline: Invio messaggio IO con pollingMaxHours personalizzato — risposta 202 ACCEPTED
+  Scenario Outline: Invio messaggio IO con pollingMaxHours personalizzato — risposta 200 ACCEPTED
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     And la richiesta include pollingMaxHours 72
     When invio il messaggio IO
-    Then la risposta HTTP ha status 202
+    Then la risposta HTTP ha status 200
     And lo status del messaggio è "ACCEPTED"
     And il requestId nella risposta corrisponde a quello inviato
     And il cxId nella risposta corrisponde a quello inviato
@@ -77,18 +81,19 @@ Feature: POST /io/message — Presa in carico sincrona
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
 
   @invioIO @invioIO_accepted @invioIO_attachments
-  Scenario Outline: Invio messaggio IO con lista allegati — risposta 202 ACCEPTED
+  Scenario Outline: Invio messaggio IO con lista allegati — risposta 200 ACCEPTED
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     And la richiesta include allegati
     When invio il messaggio IO
-    Then la risposta HTTP ha status 202
+    Then la risposta HTTP ha status 200
     And lo status del messaggio è "ACCEPTED"
     And il requestId nella risposta corrisponde a quello inviato
+    And il cxId nella risposta corrisponde a quello inviato
     Examples:
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
 
-  @wip @invioIO @invioIO_idempotente
+  @invioIO @invioIO_idempotente
   Scenario Outline: Reinvio con stesso requestId e stesso payload — risposta 204 (idempotenza)
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     When invio il messaggio IO
@@ -98,7 +103,7 @@ Feature: POST /io/message — Presa in carico sincrona
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
 
-  @wip @invioIO @invioIO_conflict
+  @invioIO @invioIO_conflict
   Scenario Outline: Reinvio con stesso requestId ma payload diverso — risposta 409 (conflitto)
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     When invio il messaggio IO
@@ -136,6 +141,6 @@ Feature: POST /io/message — Presa in carico sincrona
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     When invio il messaggio IO senza l'header obbligatorio
     Then la risposta HTTP ha status 400
-    Examples:
+    Examples:a
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |

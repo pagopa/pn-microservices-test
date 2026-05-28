@@ -108,6 +108,7 @@ public class IoMessageUtils {
                 .response();
     }
 
+    // TODO: aggiungere header HEADER_CX_ID e passare cxId prima di rimuovere @wip da getIoMessage.feature
     public static Response getIoMessage(String ioMessageId) {
         return RestAssured.given()
                 .baseUri(getBaseURL(PN_IO))
