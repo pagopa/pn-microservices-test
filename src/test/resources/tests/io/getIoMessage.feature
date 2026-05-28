@@ -1,7 +1,3 @@
-# GET /messages/{id} non è ancora implementato nel branch feature/PN-19120.
-# Il controller è presente nell'OpenAPI ma non nel codice Java.
-# Questi scenari sono marcati @wip e non vengono eseguiti finché l'endpoint non è disponibile.
-
 Feature: GET /messages/{id} — Recupero metadati allegati messaggio IO
 
   @wip @invioIO @getMessage @getMessage_ok

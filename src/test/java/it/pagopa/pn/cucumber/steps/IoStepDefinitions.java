@@ -1,5 +1,6 @@
 package it.pagopa.pn.cucumber.steps;
 
+import io.cucumber.java.Before;
 import io.cucumber.java.BeforeAll;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
@@ -38,6 +39,15 @@ public class IoStepDefinitions {
         Config.getInstance().loadProperties();
     }
 
+    @Before
+    public void resetScenarioState() {
+        this.requestBody = null;
+        this.response = null;
+        this.sentRequestId = null;
+        this.intentionallyAbsentFields.clear();
+        // cxId non resettato: viene reimpostato dal Background di ogni feature
+    }
+
     @Given("il cxId è {string}")
     public void cxIdIs(String cxId) {
         this.cxId = getValueIfTagged(cxId);
@@ -67,12 +77,6 @@ public class IoStepDefinitions {
                 markdown
         );
         log.info("Prepared IO message without iun: senderServiceId={}", getValueIfTagged(senderServiceId));
-    }
-
-    @Given("un messaggio IO senza campi obbligatori")
-    public void anIoMessageMissingRequiredFields() {
-        this.requestBody = new HashMap<>();
-        this.requestBody.put("markdown", "Testo senza altri campi obbligatori");
     }
 
     @Given("un messaggio IO senza il campo {string}")
