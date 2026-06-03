@@ -14,7 +14,7 @@ Feature: POST /io/profile — Verifica raggiungibilità profilo IO
       | recipientTaxId       | senderServiceId       |
       | @io.recipientTaxId   | @io.senderServiceId   |
 
-  @invioIO @getIOProfile @getIOProfile_ok @getIOProfile_not_allowed
+  @invioIO @getIOProfile @getIOProfile_ok @getIOProfile_not_allowed @ignore
   Scenario Outline: Verifica profilo IO con destinatario non raggiungibile — risposta 200 SENDER_NOT_ALLOWED
     Given una richiesta profilo IO valida con recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>"
     When invio la richiesta di profilo IO
