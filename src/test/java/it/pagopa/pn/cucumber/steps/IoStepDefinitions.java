@@ -189,8 +189,8 @@ public class IoStepDefinitions {
         );
         body.put("requestId", sentRequestId);
         body.put("attachments", java.util.List.of(
-                "PN_NOTIFICATION_ATTACHMENTS-test-doc1.pdf",
-                "PN_NOTIFICATION_ATTACHMENTS-test-doc2.pdf"
+                java.util.Map.of("id", "att-001", "fileKey", "PN_NOTIFICATION_ATTACHMENTS-test-doc1.pdf"),
+                java.util.Map.of("id", "att-002", "fileKey", "PN_NOTIFICATION_ATTACHMENTS-test-doc2.pdf")
         ));
         MDC.put(MDC_CORR_ID_KEY, sentRequestId);
         IoMessageUtils.sendIoMessage(body, resolveCxId());
@@ -333,8 +333,8 @@ public class IoStepDefinitions {
     @And("la richiesta include allegati")
     public void requestIncludesAttachments() {
         this.requestBody.put("attachments", java.util.List.of(
-                "PN_NOTIFICATION_ATTACHMENTS-test-doc1.pdf",
-                "PN_NOTIFICATION_ATTACHMENTS-test-doc2.pdf"
+                java.util.Map.of("id", "att-001", "fileKey", "PN_NOTIFICATION_ATTACHMENTS-test-doc1.pdf"),
+                java.util.Map.of("id", "att-002", "fileKey", "PN_NOTIFICATION_ATTACHMENTS-test-doc2.pdf")
         ));
         log.info("Added 2 attachments to IO message request");
     }

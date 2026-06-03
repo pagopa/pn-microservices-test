@@ -20,9 +20,9 @@ public class IoMessageUtils {
     public static final String HEADER_CX_ID = "x-pagopa-iocon-cx-id";
     public static final String HEADER_CX_TAXID = "x-pagopa-cx-taxid";
 
-    private static final String IO_MESSAGE_PATH = "/io/message";
-    private static final String IO_PROFILE_PATH = "/io/profile";
-    private static final String IO_MESSAGES_PATH = "/messages/";
+    private static final String IO_MESSAGE_PATH = "/io-connector/message";
+    private static final String IO_PROFILE_PATH = "/io-connector/profile";
+    private static final String IO_MESSAGES_PATH = "/io-connector/messages/";
 
     public static String generateRequestId() {
         return "IO-REQ-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();

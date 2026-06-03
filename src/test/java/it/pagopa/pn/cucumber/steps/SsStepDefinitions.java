@@ -73,7 +73,6 @@ public class SsStepDefinitions {
 
     @BeforeAll
     public static void init() {
-        /*
         try {
             MDC.clear();
             Config.getInstance().loadProperties();
@@ -82,7 +81,6 @@ public class SsStepDefinitions {
         } catch (JMSException e) {
             throw new RuntimeException("Error initializing queue poller", e);
         }
-         */
     }
 
     @Given("the SafeStorage client {string} authenticated by {string}")
