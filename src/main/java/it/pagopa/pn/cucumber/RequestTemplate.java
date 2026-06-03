@@ -53,6 +53,12 @@ public class RequestTemplate {
         return digitalNotificationRequestFactory;
     }
 
+    protected static PaperEngageRequest createPaperEngageRequest(String requestId, String receiverAddress) {
+        PaperEngageRequest req = createPaperEngageRequest(requestId);
+        req.setReceiverAddress(receiverAddress);
+        return req;
+    }
+
     protected static PaperEngageRequest createPaperEngageRequest(String requestId) {
         PaperEngageRequest paperEngageRequestFactory = new PaperEngageRequest();
         paperEngageRequestFactory.setReceiverName("Paolo Rossi");

@@ -223,6 +223,26 @@ public class EcStepDefinitions {
         sendDigitalMessage(receiver, this.requestId, "Message with same requestId");
     }
 
+    @When("try to send a digital message to {string} with same requestId and same body")
+    public void tryToSendADigitalMessageToWithSameRequestIdAndSameBody(String receiver) {
+        System.out.println("[PN-19053] Secondo invio (stesso body) - requestId: " + ExternalChannelUtils.concatRequestId(clientId, this.requestId));
+        sendDigitalMessage(receiver, this.requestId, this.messageText);
+    }
+
+    @When("try to send a paper message to {string} with same requestId and same body")
+    public void tryToSendAPaperMessageToWithSameRequestIdAndSameBody(String receiver) {
+        System.out.println("[PN-19053] Secondo invio cartaceo (stesso body) - requestId: " + ExternalChannelUtils.concatRequestId(clientId, this.requestId));
+        Response response = ExternalChannelUtils.sendPaperMessage(clientId, this.requestId, attachmentsList);
+        this.sendPaperMessageStatusCode = response.getStatusCode();
+    }
+
+    @When("try to send a paper message to {string} with same requestId and different body")
+    public void tryToSendAPaperMessageToWithSameRequestIdAndDifferentBody(String receiver) {
+        System.out.println("[PN-19053] Secondo invio cartaceo (body diverso) - requestId: " + ExternalChannelUtils.concatRequestId(clientId, this.requestId));
+        Response response = ExternalChannelUtils.sendPaperMessageWithDifferentAddress(clientId, this.requestId, attachmentsList, "Via Milano 5");
+        this.sendPaperMessageStatusCode = response.getStatusCode();
+    }
+
     @When("try to send a digital message to {string}")
     public void presaInCarico(String receiver) {
         sendDigitalMessage(receiver, ExternalChannelUtils.generateRandomRequestId(), "Test message");
@@ -383,8 +403,8 @@ public class EcStepDefinitions {
         this.sendPaperMessageStatusCode = response.getStatusCode();
     }
 
-    @When("it's available")
-    public void it_s_available() throws JsonProcessingException, InterruptedException {
+    @When("it's available ec")
+    public void it_s_available_ec() throws JsonProcessingException, InterruptedException {
         Response oResp;
         iRC = 0;
         Instant timeLimit = Instant.now().plusMillis(Long.parseLong(System.getProperty("pn.ss.document.availability.timeout.millis")));

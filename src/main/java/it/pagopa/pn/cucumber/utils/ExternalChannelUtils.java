@@ -97,6 +97,24 @@ public class ExternalChannelUtils extends RequestTemplate {
         return CommonUtils.myPut(oReq, RequestEndpoint.CARTACEO_ENDPOINT, CommonUtils.PN_EC);
     }
 
+    public static Response sendPaperMessageWithDifferentAddress(String clientId, String requestId, List<PnAttachment> attachments, String receiverAddress) {
+        RequestSpecification oReq = stdReq()
+                .header(X_PAGOPA_EXTCH_CX_ID, clientId)
+                .pathParam(REQUEST_IDX, requestId);
+        PaperEngageRequest paperEngageRequest = createPaperEngageRequest(requestId, receiverAddress);
+        List<PaperEngageRequestAttachmentsInner> paperEngageRequestAttachmentsList = attachments.stream().map(attachment -> {
+            PaperEngageRequestAttachmentsInner paperEngageRequestAttachments = new PaperEngageRequestAttachmentsInner();
+            paperEngageRequestAttachments.setDocumentType(attachment.getDocumentType());
+            paperEngageRequestAttachments.setUri(attachment.getUri());
+            paperEngageRequestAttachments.setSha256(attachment.getSha256());
+            paperEngageRequestAttachments.setOrder(BigDecimal.ZERO);
+            return paperEngageRequestAttachments;
+        }).toList();
+        paperEngageRequest.setAttachments(paperEngageRequestAttachmentsList);
+        oReq.body(paperEngageRequest);
+        return CommonUtils.myPut(oReq, RequestEndpoint.CARTACEO_ENDPOINT, CommonUtils.PN_EC);
+    }
+
     public static Response sendPaperMessageWithDocumentTransformationTypeAndRasterizationFlag(String clientId, String requestId, List<PnAttachment> attachments, String transformationDocumentType,boolean applyRasterizationFlag) {
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
