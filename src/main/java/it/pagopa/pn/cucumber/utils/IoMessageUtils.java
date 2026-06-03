@@ -18,9 +18,11 @@ public class IoMessageUtils {
     }
 
     public static final String HEADER_CX_ID = "x-pagopa-iocon-cx-id";
+    public static final String HEADER_CX_TAXID = "x-pagopa-cx-taxid";
 
     private static final String IO_MESSAGE_PATH = "/io/message";
     private static final String IO_PROFILE_PATH = "/io/profile";
+    private static final String IO_MESSAGES_PATH = "/messages/";
 
     public static String generateRequestId() {
         return "IO-REQ-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
@@ -108,12 +110,12 @@ public class IoMessageUtils {
                 .response();
     }
 
-    // TODO: aggiungere header HEADER_CX_ID e passare cxId prima di rimuovere @wip da getIoMessage.feature
-    public static Response getIoMessage(String ioMessageId) {
+    public static Response getIoMessage(String requestId, String cxTaxId) {
         return RestAssured.given()
                 .baseUri(getBaseURL(PN_IO))
+                .header(HEADER_CX_TAXID, cxTaxId)
                 .when()
-                .get("/messages/" + ioMessageId)
+                .get(IO_MESSAGES_PATH + requestId)
                 .then()
                 .extract()
                 .response();

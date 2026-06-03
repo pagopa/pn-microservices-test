@@ -3,7 +3,7 @@ Feature: POST /io/message — Presa in carico sincrona
   Background:
     Given il cxId è "@clientId-delivery-push"
 
-  @invioIO @invioIO_accepted @smokeTest
+  @invioIO @postMessage @invioIO_accepted @smokeTest
   Scenario Outline: Invio messaggio IO e verifica accettazione
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     When invio il messaggio IO
@@ -15,7 +15,7 @@ Feature: POST /io/message — Presa in carico sincrona
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
 
-  @invioIO @invioIO_accepted @invioIO_no_iun
+  @invioIO @postMessage @invioIO_accepted @invioIO_no_iun
   Scenario Outline: Invio messaggio IO senza iun (campo opzionale) — risposta 200 ACCEPTED
     Given un messaggio IO valido senza iun con recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     When invio il messaggio IO
@@ -27,7 +27,7 @@ Feature: POST /io/message — Presa in carico sincrona
       | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
 
-  @invioIO @invioIO_accepted @invioIO_paymentData
+  @invioIO @postMessage @invioIO_accepted @invioIO_paymentData
   Scenario Outline: Invio messaggio IO con paymentData — risposta 200 ACCEPTED
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     And la richiesta include paymentData con amount 1500, noticeCode "302000100440009424" e creditorTaxId "01234567890"
@@ -40,7 +40,7 @@ Feature: POST /io/message — Presa in carico sincrona
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
 
-  @invioIO @invioIO_accepted @invioIO_paymentData @invioIO_dueDate
+  @invioIO @postMessage @invioIO_accepted @invioIO_paymentData @invioIO_dueDate
   Scenario Outline: Invio messaggio IO con paymentData e dueDate — risposta 200 ACCEPTED
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     And la richiesta include dueDate "2026-12-31T23:59:59Z"
@@ -54,7 +54,7 @@ Feature: POST /io/message — Presa in carico sincrona
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
 
-  @invioIO @invioIO_accepted @invioIO_sensitiveContent
+  @invioIO @postMessage @invioIO_accepted @invioIO_sensitiveContent
   Scenario Outline: Invio messaggio IO con contenuto sensibile — risposta 200 ACCEPTED
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     And la richiesta ha sensitiveContent true
@@ -67,7 +67,7 @@ Feature: POST /io/message — Presa in carico sincrona
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
 
-  @invioIO @invioIO_accepted @invioIO_pollingMaxHours
+  @invioIO @postMessage @invioIO_accepted @invioIO_pollingMaxHours
   Scenario Outline: Invio messaggio IO con pollingMaxHours personalizzato — risposta 200 ACCEPTED
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     And la richiesta include pollingMaxHours 72
@@ -80,7 +80,7 @@ Feature: POST /io/message — Presa in carico sincrona
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
 
-  @invioIO @invioIO_accepted @invioIO_attachments
+  @invioIO @postMessage @invioIO_accepted @invioIO_attachments
   Scenario Outline: Invio messaggio IO con lista allegati — risposta 200 ACCEPTED
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     And la richiesta include allegati
@@ -93,7 +93,7 @@ Feature: POST /io/message — Presa in carico sincrona
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
 
-  @invioIO @invioIO_idempotente
+  @invioIO @postMessage @invioIO_idempotente
   Scenario Outline: Reinvio con stesso requestId e stesso payload — risposta 204 (idempotenza)
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     When invio il messaggio IO
@@ -103,7 +103,7 @@ Feature: POST /io/message — Presa in carico sincrona
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
 
-  @invioIO @invioIO_conflict
+  @invioIO @postMessage @invioIO_conflict
   Scenario Outline: Reinvio con stesso requestId ma payload diverso — risposta 409 (conflitto)
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     When invio il messaggio IO
@@ -113,7 +113,17 @@ Feature: POST /io/message — Presa in carico sincrona
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
 
-  @invioIO @invioIO_ko @invioIO_ko_campo_mancante
+  @invioIO @postMessage @invioIO_conflict @invioIO_conflict_cxId
+  Scenario Outline: Reinvio con stesso requestId ma cxId diverso — risposta 409 (conflitto)
+    Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
+    When invio il messaggio IO
+    And reinvio lo stesso requestId con cxId diverso "pn-delivery-push-DIFFERENT"
+    Then la risposta HTTP ha status 409
+    Examples:
+      | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
+      | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
+
+  @invioIO @postMessage @invioIO_ko @invioIO_ko_campo_mancante
   Scenario Outline: Invio messaggio IO senza campo obbligatorio <campo> — risposta 400
     Given un messaggio IO senza il campo "<campo>"
     When invio il messaggio IO
@@ -126,7 +136,7 @@ Feature: POST /io/message — Presa in carico sincrona
       | senderServiceId |
       | markdown        |
 
-  @invioIO @invioIO_ko @invioIO_ko_subject_lungo
+  @invioIO @postMessage @invioIO_ko @invioIO_ko_subject_lungo
   Scenario Outline: Invio messaggio IO con subject superiore a 120 caratteri — risposta 400
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     And la richiesta ha subject di 121 caratteri
@@ -136,7 +146,7 @@ Feature: POST /io/message — Presa in carico sincrona
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
 
-  @invioIO @invioIO_ko @invioIO_ko_header_mancante
+  @invioIO @postMessage @invioIO_ko @invioIO_ko_header_mancante
   Scenario Outline: Invio messaggio IO senza header obbligatorio x-pagopa-iocon-cx-id — risposta 400
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     When invio il messaggio IO senza l'header obbligatorio
