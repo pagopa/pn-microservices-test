@@ -20,6 +20,7 @@ import java.util.Set;
 import static it.pagopa.pn.configuration.TestVariablesConfiguration.getValueIfTagged;
 import static it.pagopa.pn.cucumber.utils.LogUtils.MDC_CORR_ID_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -31,6 +32,7 @@ public class IoStepDefinitions {
     private String sentRequestId;
     private String cxId;
     private String storedIoMessageId;
+    private String storedRecipientTaxId;
     // Fields explicitly removed in a "senza il campo X" step must not be re-added by sendIoMessage().
     private final Set<String> intentionallyAbsentFields = new HashSet<>();
 
@@ -44,6 +46,8 @@ public class IoStepDefinitions {
         this.requestBody = null;
         this.response = null;
         this.sentRequestId = null;
+        this.storedIoMessageId = null;
+        this.storedRecipientTaxId = null;
         this.intentionallyAbsentFields.clear();
         // cxId non resettato: viene reimpostato dal Background di ogni feature
     }
@@ -155,6 +159,44 @@ public class IoStepDefinitions {
         log.info("ioMessageId={}", this.storedIoMessageId);
     }
 
+    @Given("ho inviato un messaggio IO valido con recipientTaxId {string} e senderServiceId {string}")
+    public void sentAValidIoMessage(String recipientTaxId, String senderServiceId) {
+        this.storedRecipientTaxId = getValueIfTagged(recipientTaxId);
+        this.sentRequestId = IoMessageUtils.generateRequestId();
+        Map<String, Object> body = IoMessageUtils.buildValidRequest(
+                getValueIfTagged("@io.iun"),
+                this.storedRecipientTaxId,
+                getValueIfTagged(senderServiceId),
+                "Avviso di pagamento",
+                "Gentile cittadino, hai ricevuto un avviso."
+        );
+        body.put("requestId", sentRequestId);
+        MDC.put(MDC_CORR_ID_KEY, sentRequestId);
+        IoMessageUtils.sendIoMessage(body, resolveCxId());
+        log.info("Pre-setup: sent IO message requestId={} recipientTaxId={}", sentRequestId, storedRecipientTaxId);
+    }
+
+    @Given("ho inviato un messaggio IO valido con allegati, recipientTaxId {string} e senderServiceId {string}")
+    public void sentAValidIoMessageWithAttachments(String recipientTaxId, String senderServiceId) {
+        this.storedRecipientTaxId = getValueIfTagged(recipientTaxId);
+        this.sentRequestId = IoMessageUtils.generateRequestId();
+        Map<String, Object> body = IoMessageUtils.buildValidRequest(
+                getValueIfTagged("@io.iun"),
+                this.storedRecipientTaxId,
+                getValueIfTagged(senderServiceId),
+                "Avviso di pagamento con allegati",
+                "Gentile cittadino, hai ricevuto un avviso con documenti allegati."
+        );
+        body.put("requestId", sentRequestId);
+        body.put("attachments", java.util.List.of(
+                "PN_NOTIFICATION_ATTACHMENTS-test-doc1.pdf",
+                "PN_NOTIFICATION_ATTACHMENTS-test-doc2.pdf"
+        ));
+        MDC.put(MDC_CORR_ID_KEY, sentRequestId);
+        IoMessageUtils.sendIoMessage(body, resolveCxId());
+        log.info("Pre-setup: sent IO message with attachments requestId={} recipientTaxId={}", sentRequestId, storedRecipientTaxId);
+    }
+
     @When("invio il messaggio IO")
     public void sendIoMessage() {
         this.sentRequestId = IoMessageUtils.generateRequestId();
@@ -192,8 +234,17 @@ public class IoStepDefinitions {
 
     @When("recupero il messaggio IO per id")
     public void getIoMessageById() {
-        this.response = IoMessageUtils.getIoMessage(storedIoMessageId);
-        log.info("GET /messages/{} httpStatus={}", storedIoMessageId, response.getStatusCode());
+        String id = storedIoMessageId != null ? storedIoMessageId : sentRequestId;
+        String taxId = storedRecipientTaxId != null ? storedRecipientTaxId : getValueIfTagged("@io.recipientTaxId");
+        this.response = IoMessageUtils.getIoMessage(id, taxId);
+        log.info("GET /messages/{} httpStatus={}", id, response.getStatusCode());
+    }
+
+    @When("recupero il messaggio IO per id con taxId errato")
+    public void getIoMessageByIdWithWrongTaxId() {
+        String id = storedIoMessageId != null ? storedIoMessageId : sentRequestId;
+        this.response = IoMessageUtils.getIoMessage(id, "WRONG-TAX-ID-00000");
+        log.info("GET /messages/{} with wrong taxId httpStatus={}", id, response.getStatusCode());
     }
 
     @And("reinvio lo stesso messaggio IO con lo stesso requestId")
@@ -208,6 +259,12 @@ public class IoStepDefinitions {
         modifiedBody.put("subject", newSubject);
         this.response = IoMessageUtils.sendIoMessage(modifiedBody, resolveCxId());
         log.info("IO message resent with different subject, requestId={} httpStatus={}", sentRequestId, response.getStatusCode());
+    }
+
+    @And("reinvio lo stesso requestId con cxId diverso {string}")
+    public void resendWithDifferentCxId(String differentCxId) {
+        this.response = IoMessageUtils.sendIoMessage(requestBody, getValueIfTagged(differentCxId));
+        log.info("IO message resent with different cxId={}, requestId={} httpStatus={}", getValueIfTagged(differentCxId), sentRequestId, response.getStatusCode());
     }
 
     @Then("la risposta HTTP ha status {int}")
@@ -276,8 +333,8 @@ public class IoStepDefinitions {
     @And("la richiesta include allegati")
     public void requestIncludesAttachments() {
         this.requestBody.put("attachments", java.util.List.of(
-                "PN_NOTIFICATION_ATTACHMENTS-test-doc1",
-                "PN_NOTIFICATION_ATTACHMENTS-test-doc2"
+                "PN_NOTIFICATION_ATTACHMENTS-test-doc1.pdf",
+                "PN_NOTIFICATION_ATTACHMENTS-test-doc2.pdf"
         ));
         log.info("Added 2 attachments to IO message request");
     }
@@ -292,6 +349,16 @@ public class IoStepDefinitions {
     public void responseContainsAttachments() {
         assertNotNull(response.jsonPath().get("attachments"),
                 "Il campo 'attachments' è assente nella risposta");
+    }
+
+    @And("la risposta contiene almeno un allegato con fileKey e category")
+    public void responseContainsAtLeastOneAttachment() {
+        java.util.List<Map<String, Object>> attachments = response.jsonPath().getList("attachments");
+        assertNotNull(attachments, "Il campo 'attachments' è assente nella risposta");
+        assertFalse(attachments.isEmpty(), "La lista allegati è vuota nella risposta");
+        assertNotNull(attachments.get(0).get("url"), "Il campo 'url' (fileKey) è assente nel primo allegato");
+        assertEquals("DOCUMENT", attachments.get(0).get("category"),
+                "Il campo 'category' del primo allegato non è 'DOCUMENT'");
     }
 
     private String resolveCxId() {
