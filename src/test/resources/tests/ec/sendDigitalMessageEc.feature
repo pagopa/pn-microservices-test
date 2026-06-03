@@ -150,7 +150,7 @@ Feature: Send Digital Message Ec
       | @clientId-delivery | @channel_sms | @sms.receiver.digital.address | 123x      | 400 |
 
   @PnEcSendMessage @invioSMS @invioSMS_ko @invioSMS_ko_duplicate_request
-  Scenario Outline: Invio sms di una richiesta gi� effettuata
+  Scenario Outline: Invio sms di una richiesta già effettuata
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message to "<receiver>"
     And check if the message has been sent
@@ -159,6 +159,18 @@ Feature: Send Digital Message Ec
     Examples:
       | clientId           | channel      | receiver                      | rc  |
       | @clientId-delivery | @channel_sms | @sms.receiver.digital.address | 409 |
+
+
+  @PnEcSendMessage @invioSMS @invioSMS_ok @invioSMS_ok_same_request
+  Scenario Outline: Invio sms con richiesta identica già effettuata restituisce 204
+    Given a "<clientId>" and "<channel>" to send on
+    When try to send a digital message to "<receiver>"
+    And check if the message has been sent
+    When try to send a digital message to "<receiver>" with same requestId and same body
+    Then i get an error code "<rc>"
+    Examples:
+      | clientId           | channel      | receiver                      | rc  |
+      | @clientId-delivery | @channel_sms | @sms.receiver.digital.address | 204 |
 
 
   @PnEcSendMessage @invioPEC @complete_pec_ko @complete_pec_ko_client_not_authorized
@@ -172,7 +184,7 @@ Feature: Send Digital Message Ec
 
 
   @PnEcSendMessage @invioPEC @invioPEC_ko @invioPEC_ko_duplicate_request
-  Scenario Outline: Invio pec di una richiesta gi� effettuata
+  Scenario Outline: Invio pec di una richiesta già effettuata
     Given a "<clientId>" and "<channel>" to send on
     And "<clientId>" authenticated by "<apiKey>" uploads the following attachments:
       | documentType                       | fileName                    | mimeType        |
@@ -184,6 +196,20 @@ Feature: Send Digital Message Ec
     Examples:
       | clientId           | apiKey            | channel      | receiver              | rc  |
       | @clientId-delivery | @delivery_api_key | @channel_pec | test.test@arubapec.it | 409 |
+
+  @PnEcSendMessage @invioPEC @invioPEC_ok @invioPEC_ok_same_request
+  Scenario Outline: Invio pec con richiesta identica già effettuata restituisce 204
+    Given a "<clientId>" and "<channel>" to send on
+    And "<clientId>" authenticated by "<apiKey>" uploads the following attachments:
+      | documentType                       | fileName                    | mimeType        |
+      | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
+    When try to send a digital message to "<receiver>"
+    And check if the message has been sent
+    When try to send a digital message to "<receiver>" with same requestId and same body
+    Then i get an error code "<rc>"
+    Examples:
+      | clientId           | apiKey            | channel      | receiver              | rc  |
+      | @clientId-delivery | @delivery_api_key | @channel_pec | test.test@arubapec.it | 204 |
 
   @PnEcSendMessage @invioPEC @invioPEC_ko @invioPEC_ko_validazione_sintattica
   Scenario Outline: Invio pec con errori di validazione sintattica
@@ -213,6 +239,17 @@ Feature: Send Digital Message Ec
       | clientId           | channel      | receiver      | rc   |
       | @clientId-delivery | @channel_pec | test1@test.it | C009 |
 
+  @PnEcSendMessage @invioEMAIL @invioEMAIL_ok @invioEmail_ok_same_request
+  Scenario Outline: Invio email con richiesta identica già effettuata restituisce 204
+    Given a "<clientId>" and "<channel>" to send on
+    When try to send a digital message to "<receiver>"
+    And check if the message has been sent
+    When try to send a digital message to "<receiver>" with same requestId and same body
+    Then i get an error code "<rc>"
+    Examples:
+      | clientId           | channel        | receiver                        | rc  |
+      | @clientId-delivery | @channel_email | @email.receiver.digital.address | 204 |
+
   @PnEcSendMessage @invioEMAIL @invioEMAIL_ko @invioEmail_ko_client_not_authorized
   Scenario Outline: Invio email con un client non autorizzato
     Given a "<clientId>" and "<channel>" to send on
@@ -241,6 +278,17 @@ Feature: Send Digital Message Ec
     Examples:
       | clientId           | channel        | receiver                        | rc  |
       | @clientId-delivery | @channel_sercq | @sercq.receiver.digital.address | 409 |
+
+  @PnEcSendMessage @invioSERCQ @invioSERCQ_ok @invioSERCQ_ok_same_request
+  Scenario Outline: Invio SERCQ con richiesta identica già effettuata restituisce 204
+    Given a "<clientId>" and "<channel>" to send on
+    When try to send a digital message to "<receiver>"
+    And check if the message has been sent
+    When try to send a digital message to "<receiver>" with same requestId and same body
+    Then i get an error code "<rc>"
+    Examples:
+      | clientId           | channel        | receiver                        | rc  |
+      | @clientId-delivery | @channel_sercq | @sercq.receiver.digital.address | 204 |
 
   @PnEcSendMessage @invioSERCQ @invioSERCQ_ko @invioSERCQ_ko_validazione_sintattica
   Scenario Outline: Invio SERCQ con errori di validazione sintattica
