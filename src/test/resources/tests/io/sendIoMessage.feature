@@ -151,6 +151,6 @@ Feature: POST /io/message — Presa in carico sincrona
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     When invio il messaggio IO senza l'header obbligatorio
     Then la risposta HTTP ha status 400
-    Examples:a
+    Examples:
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
