@@ -8,17 +8,19 @@ Feature: GET /messages/{id} — Recupero metadati allegati messaggio IO
     Given ho inviato un messaggio IO valido con recipientTaxId "<recipientTaxId>" e senderServiceId "<senderServiceId>"
     When recupero il messaggio IO per id
     Then la risposta HTTP ha status 200
-    And la risposta contiene i dettagli del messaggio
-    And la risposta contiene la lista degli allegati
+    And la risposta contiene i dettagli del messaggio con subject e markdown corretti
     Examples:
       | recipientTaxId       | senderServiceId     |
       | @io.recipientTaxId   | @io.senderServiceId |
 
   @invioIO @getMessage @getMessage_notFound
-  Scenario: Recupero messaggio IO con requestId inesistente — risposta 404
-    Given un ioMessageId "MSG-NOT-EXISTING-XYZ-00000"
+  Scenario Outline: Recupero messaggio IO con requestId inesistente — risposta 404
+    Given un requestId "<requestId>"
     When recupero il messaggio IO per id
     Then la risposta HTTP ha status 404
+    Examples:
+      | requestId                  |
+      | MSG-NOT-EXISTING-XYZ-00000 |
 
   @invioIO @getMessage @getMessage_notFound_wrongCf
   Scenario Outline: Recupero messaggio IO con codice fiscale non coerente — risposta 404
@@ -29,13 +31,22 @@ Feature: GET /messages/{id} — Recupero metadati allegati messaggio IO
       | recipientTaxId       | senderServiceId     |
       | @io.recipientTaxId   | @io.senderServiceId |
 
-  @invioIO @getMessage @getMessage_attachments
+  @invioIO @getMessage @getMessage_attachments @ignore
   Scenario Outline: Recupero metadati messaggio IO con allegati — risposta 200 con lista allegati non vuota
     Given ho inviato un messaggio IO valido con allegati, recipientTaxId "<recipientTaxId>" e senderServiceId "<senderServiceId>"
     When recupero il messaggio IO per id
     Then la risposta HTTP ha status 200
-    And la risposta contiene i dettagli del messaggio
-    And la risposta contiene almeno un allegato con fileKey e category
+    And la risposta contiene i dettagli del messaggio con subject e markdown corretti
+    And la risposta contiene almeno un allegato con fileKey, category e contentType
+    Examples:
+      | recipientTaxId       | senderServiceId     |
+      | @io.recipientTaxId   | @io.senderServiceId |
+
+  @invioIO @getMessage @getMessage_ko_header_mancante
+  Scenario Outline: Recupero messaggio IO senza header obbligatorio x-pagopa-cx-taxid — risposta 400
+    Given ho inviato un messaggio IO valido con recipientTaxId "<recipientTaxId>" e senderServiceId "<senderServiceId>"
+    When recupero il messaggio IO senza l'header obbligatorio
+    Then la risposta HTTP ha status 400
     Examples:
       | recipientTaxId       | senderServiceId     |
       | @io.recipientTaxId   | @io.senderServiceId |

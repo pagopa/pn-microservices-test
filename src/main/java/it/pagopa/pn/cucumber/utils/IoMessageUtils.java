@@ -120,4 +120,14 @@ public class IoMessageUtils {
                 .extract()
                 .response();
     }
+
+    public static Response getIoMessageWithoutTaxId(String requestId) {
+        return RestAssured.given()
+                .baseUri(getBaseURL(PN_IO))
+                .when()
+                .get(IO_MESSAGES_PATH + requestId)
+                .then()
+                .extract()
+                .response();
+    }
 }
