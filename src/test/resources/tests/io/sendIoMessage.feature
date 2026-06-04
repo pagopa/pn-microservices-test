@@ -97,7 +97,8 @@ Feature: POST /io/message — Presa in carico sincrona
   Scenario Outline: Reinvio con stesso requestId e stesso payload — risposta 204 (idempotenza)
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     When invio il messaggio IO
-    And reinvio lo stesso messaggio IO con lo stesso requestId
+    Then la risposta HTTP ha status 200
+    When reinvio lo stesso messaggio IO con lo stesso requestId
     Then la risposta HTTP ha status 204
     Examples:
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
@@ -107,7 +108,8 @@ Feature: POST /io/message — Presa in carico sincrona
   Scenario Outline: Reinvio con stesso requestId ma payload diverso — risposta 409 (conflitto)
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     When invio il messaggio IO
-    And reinvio lo stesso requestId con subject diverso "Titolo modificato"
+    Then la risposta HTTP ha status 200
+    When reinvio lo stesso requestId con subject diverso "Titolo modificato"
     Then la risposta HTTP ha status 409
     Examples:
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
@@ -117,8 +119,32 @@ Feature: POST /io/message — Presa in carico sincrona
   Scenario Outline: Reinvio con stesso requestId ma cxId diverso — risposta 409 (conflitto)
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     When invio il messaggio IO
-    And reinvio lo stesso requestId con cxId diverso "pn-delivery-push-DIFFERENT"
+    Then la risposta HTTP ha status 200
+    When reinvio lo stesso requestId con cxId diverso "pn-delivery-push-DIFFERENT"
     Then la risposta HTTP ha status 409
+    Examples:
+      | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
+      | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
+
+  @invioIO @postMessage @invioIO_accepted @invioIO_subject_max
+  Scenario Outline: Invio messaggio IO con subject di esattamente 120 caratteri — risposta 200 ACCEPTED
+    Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
+    And la richiesta ha subject di 120 caratteri
+    When invio il messaggio IO
+    Then la risposta HTTP ha status 200
+    And lo status del messaggio è "ACCEPTED"
+    And il requestId nella risposta corrisponde a quello inviato
+    Examples:
+      | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
+      | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
+
+  @invioIO @postMessage @invioIO_attachments_validation_failed @wip
+  Scenario Outline: Invio messaggio IO con allegati non PDF — accettazione 200, poi ATTACHMENTS_VALIDATION_FAILED (asincrono)
+    Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
+    And la richiesta include allegati non validi non PDF
+    When invio il messaggio IO
+    Then la risposta HTTP ha status 200
+    And lo status del messaggio è "ACCEPTED"
     Examples:
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |

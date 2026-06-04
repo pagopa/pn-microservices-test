@@ -31,8 +31,10 @@ public class IoStepDefinitions {
     private Response response;
     private String sentRequestId;
     private String cxId;
-    private String storedIoMessageId;
+    private String storedRequestId;
     private String storedRecipientTaxId;
+    private String sentSubject;
+    private String sentMarkdown;
     // Fields explicitly removed in a "senza il campo X" step must not be re-added by sendIoMessage().
     private final Set<String> intentionallyAbsentFields = new HashSet<>();
 
@@ -46,8 +48,10 @@ public class IoStepDefinitions {
         this.requestBody = null;
         this.response = null;
         this.sentRequestId = null;
-        this.storedIoMessageId = null;
+        this.storedRequestId = null;
         this.storedRecipientTaxId = null;
+        this.sentSubject = null;
+        this.sentMarkdown = null;
         this.intentionallyAbsentFields.clear();
         // cxId non resettato: viene reimpostato dal Background di ogni feature
     }
@@ -153,22 +157,24 @@ public class IoStepDefinitions {
         log.info("Prepared empty IO profile request (missing required fields)");
     }
 
-    @Given("un ioMessageId {string}")
-    public void anIoMessageId(String ioMessageId) {
-        this.storedIoMessageId = getValueIfTagged(ioMessageId);
-        log.info("ioMessageId={}", this.storedIoMessageId);
+    @Given("un requestId {string}")
+    public void aRequestId(String requestId) {
+        this.storedRequestId = getValueIfTagged(requestId);
+        log.info("storedRequestId={}", this.storedRequestId);
     }
 
     @Given("ho inviato un messaggio IO valido con recipientTaxId {string} e senderServiceId {string}")
     public void sentAValidIoMessage(String recipientTaxId, String senderServiceId) {
         this.storedRecipientTaxId = getValueIfTagged(recipientTaxId);
         this.sentRequestId = IoMessageUtils.generateRequestId();
+        this.sentSubject = "Avviso di pagamento";
+        this.sentMarkdown = "Gentile cittadino, hai ricevuto un avviso.";
         Map<String, Object> body = IoMessageUtils.buildValidRequest(
                 getValueIfTagged("@io.iun"),
                 this.storedRecipientTaxId,
                 getValueIfTagged(senderServiceId),
-                "Avviso di pagamento",
-                "Gentile cittadino, hai ricevuto un avviso."
+                sentSubject,
+                sentMarkdown
         );
         body.put("requestId", sentRequestId);
         MDC.put(MDC_CORR_ID_KEY, sentRequestId);
@@ -180,12 +186,14 @@ public class IoStepDefinitions {
     public void sentAValidIoMessageWithAttachments(String recipientTaxId, String senderServiceId) {
         this.storedRecipientTaxId = getValueIfTagged(recipientTaxId);
         this.sentRequestId = IoMessageUtils.generateRequestId();
+        this.sentSubject = "Avviso di pagamento con allegati";
+        this.sentMarkdown = "Gentile cittadino, hai ricevuto un avviso con documenti allegati.";
         Map<String, Object> body = IoMessageUtils.buildValidRequest(
                 getValueIfTagged("@io.iun"),
                 this.storedRecipientTaxId,
                 getValueIfTagged(senderServiceId),
-                "Avviso di pagamento con allegati",
-                "Gentile cittadino, hai ricevuto un avviso con documenti allegati."
+                sentSubject,
+                sentMarkdown
         );
         body.put("requestId", sentRequestId);
         body.put("attachments", java.util.List.of(
@@ -234,7 +242,7 @@ public class IoStepDefinitions {
 
     @When("recupero il messaggio IO per id")
     public void getIoMessageById() {
-        String id = storedIoMessageId != null ? storedIoMessageId : sentRequestId;
+        String id = storedRequestId != null ? storedRequestId : sentRequestId;
         String taxId = storedRecipientTaxId != null ? storedRecipientTaxId : getValueIfTagged("@io.recipientTaxId");
         this.response = IoMessageUtils.getIoMessage(id, taxId);
         log.info("GET /messages/{} httpStatus={}", id, response.getStatusCode());
@@ -242,9 +250,16 @@ public class IoStepDefinitions {
 
     @When("recupero il messaggio IO per id con taxId errato")
     public void getIoMessageByIdWithWrongTaxId() {
-        String id = storedIoMessageId != null ? storedIoMessageId : sentRequestId;
+        String id = storedRequestId != null ? storedRequestId : sentRequestId;
         this.response = IoMessageUtils.getIoMessage(id, "WRONG-TAX-ID-00000");
         log.info("GET /messages/{} with wrong taxId httpStatus={}", id, response.getStatusCode());
+    }
+
+    @When("recupero il messaggio IO senza l'header obbligatorio")
+    public void getIoMessageWithoutHeader() {
+        String id = storedRequestId != null ? storedRequestId : sentRequestId;
+        this.response = IoMessageUtils.getIoMessageWithoutTaxId(id);
+        log.info("GET /messages/{} WITHOUT taxId header httpStatus={}", id, response.getStatusCode());
     }
 
     @And("reinvio lo stesso messaggio IO con lo stesso requestId")
@@ -339,10 +354,32 @@ public class IoStepDefinitions {
         log.info("Added 2 attachments to IO message request");
     }
 
+    @And("la richiesta include allegati non validi non PDF")
+    public void requestIncludesInvalidAttachments() {
+        this.requestBody.put("attachments", java.util.List.of(
+                java.util.Map.of("id", "att-001", "fileKey", "PN_NOTIFICATION_ATTACHMENTS-test-doc1.docx"),
+                java.util.Map.of("id", "att-002", "fileKey", "PN_NOTIFICATION_ATTACHMENTS-test-doc2.txt")
+        ));
+        log.info("Added 2 non-PDF attachments to IO message request");
+    }
+
     @And("la risposta contiene i dettagli del messaggio")
     public void responseContainsMessageDetails() {
         assertNotNull(response.jsonPath().get("details"),
                 "Il campo 'details' è assente nella risposta");
+    }
+
+    @And("la risposta contiene i dettagli del messaggio con subject e markdown corretti")
+    public void responseContainsCorrectDetails() {
+        assertNotNull(response.jsonPath().get("details"), "Il campo 'details' è assente nella risposta");
+        if (sentSubject != null) {
+            assertEquals(sentSubject, response.jsonPath().getString("details.subject"),
+                    "Il campo 'details.subject' non corrisponde a quello inviato");
+        }
+        if (sentMarkdown != null) {
+            assertEquals(sentMarkdown, response.jsonPath().getString("details.markdown"),
+                    "Il campo 'details.markdown' non corrisponde a quello inviato");
+        }
     }
 
     @And("la risposta contiene la lista degli allegati")
@@ -359,6 +396,19 @@ public class IoStepDefinitions {
         assertNotNull(attachments.get(0).get("url"), "Il campo 'url' (fileKey) è assente nel primo allegato");
         assertEquals("DOCUMENT", attachments.get(0).get("category"),
                 "Il campo 'category' del primo allegato non è 'DOCUMENT'");
+    }
+
+    @And("la risposta contiene almeno un allegato con fileKey, category e contentType")
+    public void responseContainsAtLeastOneAttachmentWithAllFields() {
+        java.util.List<Map<String, Object>> attachments = response.jsonPath().getList("attachments");
+        assertNotNull(attachments, "Il campo 'attachments' è assente nella risposta");
+        assertFalse(attachments.isEmpty(), "La lista allegati è vuota nella risposta");
+        Map<String, Object> first = attachments.get(0);
+        assertNotNull(first.get("url"), "Il campo 'url' (fileKey) è assente nel primo allegato");
+        assertEquals("DOCUMENT", first.get("category"),
+                "Il campo 'category' del primo allegato non è 'DOCUMENT'");
+        assertEquals("application/pdf", first.get("contentType"),
+                "Il campo 'contentType' del primo allegato non è 'application/pdf'");
     }
 
     private String resolveCxId() {
