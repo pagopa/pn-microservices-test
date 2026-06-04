@@ -145,6 +145,7 @@ Feature: POST /io/message — Presa in carico sincrona
     When invio il messaggio IO
     Then la risposta HTTP ha status 200
     And lo status del messaggio è "ACCEPTED"
+    And attendo che lo status del messaggio diventi "ATTACHMENTS_VALIDATION_FAILED"
     Examples:
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |

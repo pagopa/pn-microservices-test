@@ -12,6 +12,7 @@ import it.pagopa.pn.cucumber.utils.IoMessageUtils;
 import lombok.CustomLog;
 import org.slf4j.MDC;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -23,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @CustomLog
 public class IoStepDefinitions {
@@ -35,7 +37,7 @@ public class IoStepDefinitions {
     private String storedRecipientTaxId;
     private String sentSubject;
     private String sentMarkdown;
-    // Fields explicitly removed in a "senza il campo X" step must not be re-added by sendIoMessage().
+
     private final Set<String> intentionallyAbsentFields = new HashSet<>();
 
     @BeforeAll
@@ -409,6 +411,25 @@ public class IoStepDefinitions {
                 "Il campo 'category' del primo allegato non è 'DOCUMENT'");
         assertEquals("application/pdf", first.get("contentType"),
                 "Il campo 'contentType' del primo allegato non è 'application/pdf'");
+    }
+
+    @And("attendo che lo status del messaggio diventi {string}")
+    public void waitForMessageStatus(String expectedStatus) throws InterruptedException {
+        Instant timeLimit = Instant.now().plusMillis(Long.parseLong(System.getProperty("pn.io.message.status.timeout.millis")));
+        String id = sentRequestId;
+        String taxId = storedRecipientTaxId != null ? storedRecipientTaxId : getValueIfTagged("@io.recipientTaxId");
+        boolean reached = false;
+        while (Instant.now().isBefore(timeLimit)) {
+            Response poll = IoMessageUtils.getIoMessage(id, taxId);
+            String actualStatus = poll.jsonPath().getString("status");
+            log.info("Polling status messaggio requestId={} status={}", id, actualStatus);
+            if (expectedStatus.equals(actualStatus)) {
+                reached = true;
+                break;
+            }
+            Thread.sleep(Long.parseLong(System.getProperty("pn.io.message.status.interval.millis")));
+        }
+        assertTrue(reached, "Status '" + expectedStatus + "' non raggiunto entro il timeout per requestId=" + id);
     }
 
     private String resolveCxId() {
