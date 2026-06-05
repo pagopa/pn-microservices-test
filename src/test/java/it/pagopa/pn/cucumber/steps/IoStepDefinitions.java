@@ -165,7 +165,7 @@ public class IoStepDefinitions {
         log.info("storedRequestId={}", this.storedRequestId);
     }
 
-    @Given("ho inviato un messaggio IO valido con recipientTaxId {string} e senderServiceId {string}")
+    @Given("invio messaggio IO valido con recipientTaxId {string} e senderServiceId {string}")
     public void sentAValidIoMessage(String recipientTaxId, String senderServiceId) {
         this.storedRecipientTaxId = getValueIfTagged(recipientTaxId);
         this.sentRequestId = IoMessageUtils.generateRequestId();
@@ -184,7 +184,7 @@ public class IoStepDefinitions {
         log.info("Pre-setup: sent IO message requestId={} recipientTaxId={}", sentRequestId, storedRecipientTaxId);
     }
 
-    @Given("ho inviato un messaggio IO valido con allegati, recipientTaxId {string} e senderServiceId {string}")
+    @Given("invio messaggio IO valido con allegati, recipientTaxId {string} e senderServiceId {string}")
     public void sentAValidIoMessageWithAttachments(String recipientTaxId, String senderServiceId) {
         this.storedRecipientTaxId = getValueIfTagged(recipientTaxId);
         this.sentRequestId = IoMessageUtils.generateRequestId();

@@ -5,7 +5,7 @@ Feature: GET /messages/{id} — Recupero metadati allegati messaggio IO
 
   @invioIO @getMessage @getMessage_ok @smokeTest
   Scenario Outline: Recupero metadati messaggio IO esistente — risposta 200
-    Given ho inviato un messaggio IO valido con recipientTaxId "<recipientTaxId>" e senderServiceId "<senderServiceId>"
+    Given invio messaggio IO valido con recipientTaxId "<recipientTaxId>" e senderServiceId "<senderServiceId>"
     When recupero il messaggio IO per id
     Then la risposta HTTP ha status 200
     And la risposta contiene i dettagli del messaggio con subject e markdown corretti
@@ -24,7 +24,7 @@ Feature: GET /messages/{id} — Recupero metadati allegati messaggio IO
 
   @invioIO @getMessage @getMessage_notFound_wrongCf
   Scenario Outline: Recupero messaggio IO con codice fiscale non coerente — risposta 404
-    Given ho inviato un messaggio IO valido con recipientTaxId "<recipientTaxId>" e senderServiceId "<senderServiceId>"
+    Given invio messaggio IO valido con recipientTaxId "<recipientTaxId>" e senderServiceId "<senderServiceId>"
     When recupero il messaggio IO per id con taxId errato
     Then la risposta HTTP ha status 404
     Examples:
@@ -33,7 +33,7 @@ Feature: GET /messages/{id} — Recupero metadati allegati messaggio IO
 
   @invioIO @getMessage @getMessage_attachments @ignore
   Scenario Outline: Recupero metadati messaggio IO con allegati — risposta 200 con lista allegati non vuota
-    Given ho inviato un messaggio IO valido con allegati, recipientTaxId "<recipientTaxId>" e senderServiceId "<senderServiceId>"
+    Given invio messaggio IO valido con allegati, recipientTaxId "<recipientTaxId>" e senderServiceId "<senderServiceId>"
     When recupero il messaggio IO per id
     Then la risposta HTTP ha status 200
     And la risposta contiene i dettagli del messaggio con subject e markdown corretti
@@ -44,7 +44,7 @@ Feature: GET /messages/{id} — Recupero metadati allegati messaggio IO
 
   @invioIO @getMessage @getMessage_ko_header_mancante
   Scenario Outline: Recupero messaggio IO senza header obbligatorio x-pagopa-cx-taxid — risposta 400
-    Given ho inviato un messaggio IO valido con recipientTaxId "<recipientTaxId>" e senderServiceId "<senderServiceId>"
+    Given invio messaggio IO valido con recipientTaxId "<recipientTaxId>" e senderServiceId "<senderServiceId>"
     When recupero il messaggio IO senza l'header obbligatorio
     Then la risposta HTTP ha status 400
     Examples:
