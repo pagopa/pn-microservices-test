@@ -14,7 +14,7 @@ Feature: POST /io/profile — Verifica raggiungibilità profilo IO
       | recipientTaxId       | senderServiceId       |
       | @io.recipientTaxId   | @io.senderServiceId   |
 
-  @invioIO @getIOProfile @getIOProfile_ok @getIOProfile_not_allowed @ignore
+  @invioIO @getIOProfile @getIOProfile_not_allowed
   Scenario Outline: Verifica profilo IO con destinatario non raggiungibile — risposta 200 SENDER_NOT_ALLOWED
     Given una richiesta profilo IO valida con recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>"
     When invio la richiesta di profilo IO
@@ -22,19 +22,8 @@ Feature: POST /io/profile — Verifica raggiungibilità profilo IO
     And lo status del profilo è "SENDER_NOT_ALLOWED"
     And la risposta non contiene il campo preferredLanguages
     Examples:
-      | recipientTaxId               | senderServiceId       |
-      | @io.recipientTaxId.notOnIo   | @io.senderServiceId   |
-
-  @invioIO @getIOProfile @getIOProfile_ok @getIOProfile_not_allowed @getIOProfile_blocked @ignore
-  Scenario Outline: Verifica profilo IO con destinatario che ha bloccato le notifiche — risposta 200 SENDER_NOT_ALLOWED
-    Given una richiesta profilo IO valida con recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>"
-    When invio la richiesta di profilo IO
-    Then la risposta HTTP ha status 200
-    And lo status del profilo è "SENDER_NOT_ALLOWED"
-    And la risposta non contiene il campo preferredLanguages
-    Examples:
-      | recipientTaxId               | senderServiceId       |
-      | @io.recipientTaxId.blocked   | @io.senderServiceId   |
+      | recipientTaxId              | senderServiceId       |
+      | @io.recipientTaxId.notOnIo  | @io.senderServiceId   |
 
   @invioIO @getIOProfile @getIOProfile_ko @getIOProfile_ko_campo_mancante
   Scenario Outline: Verifica profilo IO senza campo obbligatorio <campo> — risposta 400

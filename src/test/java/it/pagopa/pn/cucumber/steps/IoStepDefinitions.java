@@ -37,6 +37,7 @@ public class IoStepDefinitions {
     private String storedRecipientTaxId;
     private String sentSubject;
     private String sentMarkdown;
+    private String sentFirstFileKey;
 
     private final Set<String> intentionallyAbsentFields = new HashSet<>();
 
@@ -54,6 +55,7 @@ public class IoStepDefinitions {
         this.storedRecipientTaxId = null;
         this.sentSubject = null;
         this.sentMarkdown = null;
+        this.sentFirstFileKey = null;
         this.intentionallyAbsentFields.clear();
         // cxId non resettato: viene reimpostato dal Background di ogni feature
     }
@@ -67,9 +69,10 @@ public class IoStepDefinitions {
     @Given("un messaggio IO valido con iun {string}, recipientTaxId {string}, senderServiceId {string}, subject {string}, markdown {string}")
     public void aValidIoMessage(String iun, String recipientTaxId,
                                 String senderServiceId, String subject, String markdown) {
+        this.storedRecipientTaxId = getValueIfTagged(recipientTaxId);
         this.requestBody = IoMessageUtils.buildValidRequest(
                 getValueIfTagged(iun),
-                getValueIfTagged(recipientTaxId),
+                this.storedRecipientTaxId,
                 getValueIfTagged(senderServiceId),
                 subject,
                 markdown
@@ -198,8 +201,9 @@ public class IoStepDefinitions {
                 sentMarkdown
         );
         body.put("requestId", sentRequestId);
+        this.sentFirstFileKey = "PN_AAR-10b382bdd1a74bfb863918949e8f54f9.pdf";
         body.put("attachments", java.util.List.of(
-                java.util.Map.of("id", "att-001", "fileKey", "PN_NOTIFICATION_ATTACHMENTS-test-doc1.pdf"),
+                java.util.Map.of("id", "att-001", "fileKey", sentFirstFileKey),
                 java.util.Map.of("id", "att-002", "fileKey", "PN_NOTIFICATION_ATTACHMENTS-test-doc2.pdf")
         ));
         MDC.put(MDC_CORR_ID_KEY, sentRequestId);
@@ -264,6 +268,39 @@ public class IoStepDefinitions {
         log.info("GET /messages/{} WITHOUT taxId header httpStatus={}", id, response.getStatusCode());
     }
 
+    @When("recupero l'allegato IO con la prima fileKey del messaggio")
+    public void getIoAttachmentByFirstFileKey() {
+        this.response = IoMessageUtils.getIoAttachment(sentRequestId, sentFirstFileKey, storedRecipientTaxId);
+        log.info("GET /messages/{}/{} httpStatus={}", sentRequestId, sentFirstFileKey, response.getStatusCode());
+    }
+
+    @When("recupero l'allegato IO con la prima fileKey e taxId errato")
+    public void getIoAttachmentWithWrongTaxId() {
+        this.response = IoMessageUtils.getIoAttachment(sentRequestId, sentFirstFileKey, "WRONG-TAX-ID-00000");
+        log.info("GET /messages/{}/{} with wrong taxId httpStatus={}", sentRequestId, sentFirstFileKey, response.getStatusCode());
+    }
+
+    @When("recupero l'allegato IO con fileKey {string} e taxId {string}")
+    public void getIoAttachmentWithFileKeyAndTaxId(String fileKey, String taxId) {
+        String id = storedRequestId != null ? storedRequestId : sentRequestId;
+        this.response = IoMessageUtils.getIoAttachment(id, fileKey, getValueIfTagged(taxId));
+        log.info("GET /messages/{}/{} httpStatus={}", id, fileKey, response.getStatusCode());
+    }
+
+    @When("recupero l'allegato IO senza l'header obbligatorio")
+    public void getIoAttachmentWithoutHeader() {
+        this.response = IoMessageUtils.getIoAttachmentWithoutTaxId(sentRequestId, sentFirstFileKey);
+        log.info("GET /messages/{}/{} WITHOUT taxId header httpStatus={}", sentRequestId, sentFirstFileKey, response.getStatusCode());
+    }
+
+    @And("la risposta è un redirect con header Location valorizzato")
+    public void responseIsRedirectWithLocation() {
+        String location = response.getHeader("Location");
+        assertNotNull(location, "L'header 'Location' è assente nella risposta redirect");
+        assertFalse(location.isEmpty(), "L'header 'Location' è vuoto nella risposta redirect");
+        log.info("Location redirect: {}", location);
+    }
+
     @And("reinvio lo stesso messaggio IO con lo stesso requestId")
     public void resendIoMessageWithSameRequestId() {
         this.response = IoMessageUtils.sendIoMessage(requestBody, resolveCxId());
@@ -296,6 +333,27 @@ public class IoStepDefinitions {
         String actualStatus = response.jsonPath().getString("status");
         assertEquals(expectedStatus, actualStatus,
                 "Status messaggio atteso '" + expectedStatus + "' ma ricevuto '" + actualStatus + "'");
+    }
+
+    @And("attendo che il messaggio abbia status {string}")
+    public void waitForIoMessageStatus(String expectedStatus) throws InterruptedException {
+        long timeoutMillis = Long.parseLong(System.getProperty("pn.io.message.status.timeout.millis"));
+        long intervalMillis = Long.parseLong(System.getProperty("pn.io.message.status.interval.millis"));
+        Instant timeLimit = Instant.now().plusMillis(timeoutMillis);
+        boolean found = false;
+        while (Instant.now().isBefore(timeLimit)) {
+            Response getResponse = IoMessageUtils.getIoMessage(sentRequestId, storedRecipientTaxId);
+            if (getResponse.getStatusCode() == 200) {
+                String actualStatus = getResponse.jsonPath().getString("status");
+                if (expectedStatus.equals(actualStatus)) {
+                    found = true;
+                    break;
+                }
+                log.info("Attendo status='{}', attuale='{}', requestId={}", expectedStatus, actualStatus, sentRequestId);
+            }
+            Thread.sleep(intervalMillis);
+        }
+        assertTrue(found, "Status '" + expectedStatus + "' non raggiunto entro il timeout per requestId=" + sentRequestId);
     }
 
     @And("lo status del profilo è {string}")
@@ -350,19 +408,40 @@ public class IoStepDefinitions {
     @And("la richiesta include allegati")
     public void requestIncludesAttachments() {
         this.requestBody.put("attachments", java.util.List.of(
-                java.util.Map.of("id", "att-001", "fileKey", "PN_NOTIFICATION_ATTACHMENTS-test-doc1.pdf"),
+                java.util.Map.of("id", "att-001", "fileKey", "PN_AAR-10b382bdd1a74bfb863918949e8f54f9.pdf"),
                 java.util.Map.of("id", "att-002", "fileKey", "PN_NOTIFICATION_ATTACHMENTS-test-doc2.pdf")
         ));
         log.info("Added 2 attachments to IO message request");
     }
 
-    @And("la richiesta include allegati non validi non PDF")
-    public void requestIncludesInvalidAttachments() {
+    @And("la richiesta include un allegato senza fileKey")
+    public void requestIncludesAttachmentWithoutFileKey() {
+        java.util.Map<String, Object> attachment = new java.util.HashMap<>();
+        attachment.put("id", "att-001");
+        this.requestBody.put("attachments", java.util.List.of(attachment));
+        log.info("Added attachment without fileKey to IO message request");
+    }
+
+    @And("la richiesta include un allegato senza id")
+    public void requestIncludesAttachmentWithoutId() {
+        java.util.Map<String, Object> attachment = new java.util.HashMap<>();
+        attachment.put("fileKey", "PN_AAR-10b382bdd1a74bfb863918949e8f54f9.pdf");
+        this.requestBody.put("attachments", java.util.List.of(attachment));
+        log.info("Added attachment without id to IO message request");
+    }
+
+    @And("la richiesta include un allegato con fileKey senza estensione pdf")
+    public void requestIncludesAttachmentWithNonPdfFileKey() {
         this.requestBody.put("attachments", java.util.List.of(
-                java.util.Map.of("id", "att-001", "fileKey", "PN_NOTIFICATION_ATTACHMENTS-test-doc1.docx"),
-                java.util.Map.of("id", "att-002", "fileKey", "PN_NOTIFICATION_ATTACHMENTS-test-doc2.txt")
+                java.util.Map.of("id", "att-001", "fileKey", "PN_NOTIFICATION_ATTACHMENTS-test-doc-no-extension")
         ));
-        log.info("Added 2 non-PDF attachments to IO message request");
+        log.info("Added attachment with non-pdf fileKey to IO message request");
+    }
+
+    @And("la richiesta include una lista allegati vuota")
+    public void requestIncludesEmptyAttachmentList() {
+        this.requestBody.put("attachments", java.util.List.of());
+        log.info("Added empty attachments list to IO message request");
     }
 
     @And("la risposta contiene i dettagli del messaggio")
@@ -384,22 +463,6 @@ public class IoStepDefinitions {
         }
     }
 
-    @And("la risposta contiene la lista degli allegati")
-    public void responseContainsAttachments() {
-        assertNotNull(response.jsonPath().get("attachments"),
-                "Il campo 'attachments' è assente nella risposta");
-    }
-
-    @And("la risposta contiene almeno un allegato con fileKey e category")
-    public void responseContainsAtLeastOneAttachment() {
-        java.util.List<Map<String, Object>> attachments = response.jsonPath().getList("attachments");
-        assertNotNull(attachments, "Il campo 'attachments' è assente nella risposta");
-        assertFalse(attachments.isEmpty(), "La lista allegati è vuota nella risposta");
-        assertNotNull(attachments.get(0).get("url"), "Il campo 'url' (fileKey) è assente nel primo allegato");
-        assertEquals("DOCUMENT", attachments.get(0).get("category"),
-                "Il campo 'category' del primo allegato non è 'DOCUMENT'");
-    }
-
     @And("la risposta contiene almeno un allegato con fileKey, category e contentType")
     public void responseContainsAtLeastOneAttachmentWithAllFields() {
         java.util.List<Map<String, Object>> attachments = response.jsonPath().getList("attachments");
@@ -409,27 +472,8 @@ public class IoStepDefinitions {
         assertNotNull(first.get("url"), "Il campo 'url' (fileKey) è assente nel primo allegato");
         assertEquals("DOCUMENT", first.get("category"),
                 "Il campo 'category' del primo allegato non è 'DOCUMENT'");
-        assertEquals("application/pdf", first.get("contentType"),
-                "Il campo 'contentType' del primo allegato non è 'application/pdf'");
-    }
-
-    @And("attendo che lo status del messaggio diventi {string}")
-    public void waitForMessageStatus(String expectedStatus) throws InterruptedException {
-        Instant timeLimit = Instant.now().plusMillis(Long.parseLong(System.getProperty("pn.io.message.status.timeout.millis")));
-        String id = sentRequestId;
-        String taxId = storedRecipientTaxId != null ? storedRecipientTaxId : getValueIfTagged("@io.recipientTaxId");
-        boolean reached = false;
-        while (Instant.now().isBefore(timeLimit)) {
-            Response poll = IoMessageUtils.getIoMessage(id, taxId);
-            String actualStatus = poll.jsonPath().getString("status");
-            log.info("Polling status messaggio requestId={} status={}", id, actualStatus);
-            if (expectedStatus.equals(actualStatus)) {
-                reached = true;
-                break;
-            }
-            Thread.sleep(Long.parseLong(System.getProperty("pn.io.message.status.interval.millis")));
-        }
-        assertTrue(reached, "Status '" + expectedStatus + "' non raggiunto entro il timeout per requestId=" + id);
+        assertEquals("application/pdf", first.get("content_type"),
+                "Il campo 'content_type' del primo allegato non è 'application/pdf'");
     }
 
     private String resolveCxId() {
