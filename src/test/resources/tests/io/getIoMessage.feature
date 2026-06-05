@@ -31,8 +31,8 @@ Feature: GET /messages/{id} — Recupero metadati allegati messaggio IO
       | recipientTaxId       | senderServiceId     |
       | @io.recipientTaxId   | @io.senderServiceId |
 
-  @invioIO @getMessage @getMessage_attachments @ignore
-  Scenario Outline: Recupero metadati messaggio IO con allegati — risposta 200 con lista allegati non vuota
+  @invioIO @getMessage @getMessage_attachments
+  Scenario Outline: Recupero metadati messaggio IO con allegati PDF — risposta 200 con lista allegati valorizzata
     Given invio messaggio IO valido con allegati, recipientTaxId "<recipientTaxId>" e senderServiceId "<senderServiceId>"
     When recupero il messaggio IO per id
     Then la risposta HTTP ha status 200
@@ -43,7 +43,7 @@ Feature: GET /messages/{id} — Recupero metadati allegati messaggio IO
       | @io.recipientTaxId   | @io.senderServiceId |
 
   @invioIO @getMessage @getMessage_ko_header_mancante
-  Scenario Outline: Recupero messaggio IO senza header obbligatorio x-pagopa-cx-taxid — risposta 400
+  Scenario Outline: Recupero messaggio IO senza header obbligatorio x-pagopa-pn-cx-id — risposta 400
     Given invio messaggio IO valido con recipientTaxId "<recipientTaxId>" e senderServiceId "<senderServiceId>"
     When recupero il messaggio IO senza l'header obbligatorio
     Then la risposta HTTP ha status 400

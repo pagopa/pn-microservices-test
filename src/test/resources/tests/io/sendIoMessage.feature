@@ -138,18 +138,6 @@ Feature: POST /io/message — Presa in carico sincrona
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
 
-  @invioIO @postMessage @invioIO_attachments_validation_failed @wip
-  Scenario Outline: Invio messaggio IO con allegati non PDF — accettazione 200, poi ATTACHMENTS_VALIDATION_FAILED (asincrono)
-    Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
-    And la richiesta include allegati non validi non PDF
-    When invio il messaggio IO
-    Then la risposta HTTP ha status 200
-    And lo status del messaggio è "ACCEPTED"
-    And attendo che lo status del messaggio diventi "ATTACHMENTS_VALIDATION_FAILED"
-    Examples:
-      | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
-      | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
-
   @invioIO @postMessage @invioIO_ko @invioIO_ko_campo_mancante
   Scenario Outline: Invio messaggio IO senza campo obbligatorio <campo> — risposta 400
     Given un messaggio IO senza il campo "<campo>"
@@ -178,6 +166,47 @@ Feature: POST /io/message — Presa in carico sincrona
     Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
     When invio il messaggio IO senza l'header obbligatorio
     Then la risposta HTTP ha status 400
+    Examples:
+      | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
+      | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
+
+  @invioIO @postMessage @invioIO_ko @invioIO_ko_allegato_senza_fileKey
+  Scenario Outline: Invio messaggio IO con allegato privo di fileKey — risposta 400
+    Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
+    And la richiesta include un allegato senza fileKey
+    When invio il messaggio IO
+    Then la risposta HTTP ha status 400
+    Examples:
+      | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
+      | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
+
+  @invioIO @postMessage @invioIO_ko @invioIO_ko_allegato_senza_id
+  Scenario Outline: Invio messaggio IO con allegato privo di id — risposta 400
+    Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
+    And la richiesta include un allegato senza id
+    When invio il messaggio IO
+    Then la risposta HTTP ha status 400
+    Examples:
+      | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
+      | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
+
+  @invioIO @postMessage @invioIO_ko_allegato_fileKey_non_pdf @ignore
+  Scenario Outline: Invio messaggio IO con fileKey allegato senza estensione .pdf — status ATTACHMENTS_VALIDATION_FAILED
+    Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
+    And la richiesta include un allegato con fileKey senza estensione pdf
+    When invio il messaggio IO
+    Then la risposta HTTP ha status 200
+    And attendo che il messaggio abbia status "ATTACHMENTS_VALIDATION_FAILED"
+    Examples:
+      | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
+      | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |
+
+  @invioIO @postMessage @invioIO_ok_allegati_lista_vuota
+  Scenario Outline: Invio messaggio IO con lista allegati vuota — risposta 200 ACCEPTED
+    Given un messaggio IO valido con iun "<iun>", recipientTaxId "<recipientTaxId>", senderServiceId "<senderServiceId>", subject "<subject>", markdown "<markdown>"
+    And la richiesta include una lista allegati vuota
+    When invio il messaggio IO
+    Then la risposta HTTP ha status 200
     Examples:
       | iun          | recipientTaxId       | senderServiceId       | subject             | markdown                                       |
       | @io.iun      | @io.recipientTaxId   | @io.senderServiceId   | Avviso di pagamento | Gentile cittadino, hai ricevuto un avviso. |

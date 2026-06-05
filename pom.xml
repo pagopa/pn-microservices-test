@@ -377,7 +377,7 @@
 						</goals>
 						<phase>generate-resources</phase>
 						<configuration>
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-io-connector/44fb60689cc388d235402859740a43a745acc94e/docs/openapi/pn-io-connector-internal.yaml</inputSpec>
+								<inputSpec>https://raw.githubusercontent.com/pagopa/pn-io-connector/d120587d24e0f543da7d06a8e5a9ab7097af9c62/docs/openapi/pn-io-connector-internal.yaml</inputSpec>
 							<typeMappings>
 								<typeMapping>Date=Instant</typeMapping>
 							</typeMappings>

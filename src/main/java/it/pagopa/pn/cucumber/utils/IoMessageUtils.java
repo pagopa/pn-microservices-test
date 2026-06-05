@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static it.pagopa.pn.cucumber.utils.CommonUtils.PN_IO;
+import static it.pagopa.pn.cucumber.utils.CommonUtils.PN_IO_EXTERNAL;
 import static it.pagopa.pn.cucumber.utils.CommonUtils.getBaseURL;
 
 public class IoMessageUtils {
@@ -18,7 +19,7 @@ public class IoMessageUtils {
     }
 
     public static final String HEADER_CX_ID = "x-pagopa-iocon-cx-id";
-    public static final String HEADER_CX_TAXID = "x-pagopa-cx-taxid";
+    public static final String HEADER_CX_TAXID = "x-pagopa-pn-cx-id";
 
     private static final String IO_MESSAGE_PATH = "/io-connector/message";
     private static final String IO_PROFILE_PATH = "/io-connector/profile";
@@ -26,6 +27,7 @@ public class IoMessageUtils {
 
     public static String generateRequestId() {
         return "IO-REQ-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        //return "TEST_REQ-20260604_1";
     }
 
     public static Response sendIoMessage(Map<String, Object> body, String cxId) {
@@ -126,6 +128,29 @@ public class IoMessageUtils {
                 .baseUri(getBaseURL(PN_IO))
                 .when()
                 .get(IO_MESSAGES_PATH + requestId)
+                .then()
+                .extract()
+                .response();
+    }
+
+    public static Response getIoAttachment(String requestId, String fileKey, String cxTaxId) {
+        return RestAssured.given()
+                .baseUri(getBaseURL(PN_IO_EXTERNAL))
+                .header(HEADER_CX_TAXID, cxTaxId)
+                .redirects().follow(false)
+                .when()
+                .get(IO_MESSAGES_PATH + requestId + "/" + fileKey)
+                .then()
+                .extract()
+                .response();
+    }
+
+    public static Response getIoAttachmentWithoutTaxId(String requestId, String fileKey) {
+        return RestAssured.given()
+                .baseUri(getBaseURL(PN_IO_EXTERNAL))
+                .redirects().follow(false)
+                .when()
+                .get(IO_MESSAGES_PATH + requestId + "/" + fileKey)
                 .then()
                 .extract()
                 .response();
