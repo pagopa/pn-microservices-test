@@ -19,7 +19,7 @@ Feature: Send Paper Message Ec
     When "<clientId>" authenticated by "<apiKey>" uploads the following attachments:
       | documentType        | fileName                           | mimeType        |
       | @doc_type_to_raster | src/test/resources/test-raster.pdf | application/pdf |
-    When it's available
+    When it's available ec
     And try to send a paper message to "<receiver>"
     # Bisogna aspettare 2 volte la schedulazione, la prima per lavorare la richiesta con gli allegati ancora da convertire,
     # la seconda per lavorare la richiesta con gli allegati ormai rasterizzati.
@@ -36,7 +36,7 @@ Feature: Send Paper Message Ec
     When "@clientId-delivery" authenticated by "@delivery_api_key" uploads the following attachments:
       | documentType        | fileName                           | mimeType        |
       | @doc_type_to_raster | src/test/resources/test-raster.pdf | application/pdf |
-    When it's available
+    When it's available ec
     When try to send a paper message to "<receiver>" with "<requestPaId>" and "<applyRasterization>"
     # Bisogna aspettare 2 volte la schedulazione, la prima per lavorare la richiesta con gli allegati ancora da convertire,
     # la seconda per lavorare la richiesta con gli allegati ormai rasterizzati.
@@ -67,6 +67,29 @@ Feature: Send Paper Message Ec
     Examples:
       | clientId     | channel        | rc  | receiver |
       | FakeClientId | @channel_paper | 403 | @paper.receiver.digital.address |
+
+
+  @PnEcSendMessage @PAPER @invioCartaceo @invioCartaceo_ok_same_request
+  Scenario Outline: Invio di un messaggio cartaceo con richiesta identica già effettuata restituisce 204
+    Given a "<clientId>" and "<channel>" to send on
+    When try to send a paper message to "<receiver>"
+    * waiting for scheduling
+    When try to send a paper message to "<receiver>" with same requestId and same body
+    Then I get "<rc>" status code
+    Examples:
+      | clientId       | channel        | receiver                        | rc  |
+      | @clientId-cons | @channel_paper | @paper.receiver.digital.address | 204 |
+
+  @PnEcSendMessage @PAPER @invioCartaceo @invioCartaceo_ko_duplicate_request
+  Scenario Outline: Invio di un messaggio cartaceo con richiesta duplicata e body diverso restituisce 409
+    Given a "<clientId>" and "<channel>" to send on
+    When try to send a paper message to "<receiver>"
+    * waiting for scheduling
+    When try to send a paper message to "<receiver>" with same requestId and different body
+    Then I get "<rc>" status code
+    Examples:
+      | clientId       | channel        | receiver                        | rc  |
+      | @clientId-cons | @channel_paper | @paper.receiver.digital.address | 409 |
 
 
   @PnEcSendMessage @PAPER @invioCartaceo @raster @testOk @TransformationDocumentType @TransformationError
