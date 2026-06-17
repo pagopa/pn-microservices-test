@@ -35,7 +35,7 @@ Feature: Upload SafeStorage
     Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
     When request a presigned url to upload the file
     And upload that file
-    And it's available
+    And it's available_ss
     Then i found in S3
     And i check availability message "<rc>"
     Examples:
@@ -53,7 +53,7 @@ Feature: Upload SafeStorage
     Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
     When request a presigned url to upload the file
     And upload that file
-    And it's available
+    And it's available_ss
     And i check availability message "<rc>"
     Then i found in S3 final bucket with a single version
     And the file is no present in the staging S3 bucket

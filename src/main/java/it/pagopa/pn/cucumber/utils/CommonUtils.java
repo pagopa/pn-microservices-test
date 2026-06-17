@@ -37,10 +37,14 @@ public class CommonUtils {
 	private static final String PN_SS_PORT = System.getProperty("pn.ss.port") == null ? "" : System.getProperty("pn.ss.port");
 	private static final String PN_SM_PORT = System.getProperty("pn.sm.port") == null ? "" : System.getProperty("pn.sm.port");
 	private static final String PN_PDFRASTER_PORT = System.getProperty("pn.pdfraster.port") == null ? "" : System.getProperty("pn.pdfraster.port");
+	private static final String PN_IO_PORT = System.getProperty("pn.io.port") == null ? "" : System.getProperty("pn.io.port");
+	private static final String PN_IO_EXTERNAL_PORT = System.getProperty("pn.io.external.port") == null ? "" : System.getProperty("pn.io.external.port");
 	public static final String PN_EC = "pnEc";
 	public static final String PN_SS = "pnSs";
 	public static final String PN_SM = "pnSm";
 	public static final String PN_PDFRASTER = "pnPdfRaster";
+	public static final String PN_IO = "pnIo";
+	public static final String PN_IO_EXTERNAL = "pnIoExternal";
 
 	protected static String getPort(String service) {
 		if (service.equals(PN_EC)) {
@@ -51,6 +55,10 @@ public class CommonUtils {
 			return PN_SM_PORT;
 		} else if (service.equals(PN_PDFRASTER)) {
 			return PN_PDFRASTER_PORT;
+		} else if (service.equals(PN_IO)) {
+			return PN_IO_PORT;
+		} else if (service.equals(PN_IO_EXTERNAL)) {
+			return PN_IO_EXTERNAL_PORT;
 		} else {
 			return "";
 		}
