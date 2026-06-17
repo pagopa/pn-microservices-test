@@ -5,7 +5,7 @@ Feature: Update metadata
     Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
     When request a presigned url to upload the file
     And upload that file
-    And it's available
+    And it's available_ss
     And "<clientIdUp>" authenticated by "<APIKeyUp>" try to update the document using "<status>" and "<retentionUntil>"
     Then i check that the document got updated
     And i check availability message "<rc>"
@@ -31,7 +31,7 @@ Feature: Update metadata
     Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
     When request a presigned url to upload the file
     And upload that file
-    And it's available
+    And it's available_ss
     And "<clientIdUp>" authenticated by "<APIKeyUp>" try to update the document using "<status>" and "<retentionUntil>"
     Then i get an error "<rc>"
     Examples:
@@ -44,7 +44,7 @@ Feature: Update metadata
     Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
     When request a presigned url to upload the file
     And upload that file
-    And it's available
+    And it's available_ss
     And "<clientIdUp>" authenticated by "<APIKeyUp>" try to update the document using "<status>" and "<retentionUntil>"
     Then i get an error "<rc>"
     Examples:

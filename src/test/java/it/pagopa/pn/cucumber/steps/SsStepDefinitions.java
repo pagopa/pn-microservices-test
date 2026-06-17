@@ -228,8 +228,8 @@ public class SsStepDefinitions {
         iRC = CommonUtils.uploadFile(sURL, oFile, sSHA256, sMD5, sMimeType, sSecret, Checksum.SHA256).getStatusCode();
     }
 
-    @When("it's available")
-    public void it_s_available() throws JsonProcessingException, InterruptedException {
+    @When("it's available_ss")
+    public void it_s_available_ss() throws JsonProcessingException, InterruptedException {
         Response oResp;
         iRC = 0;
         //Set a time limit for the availability check.
