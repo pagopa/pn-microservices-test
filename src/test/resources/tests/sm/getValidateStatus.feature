@@ -14,6 +14,7 @@ Feature: Validate Status stateMachine Manager
       | @clientId-delivery | EMAIL   | retry        | error        | true    |
       | @clientId-delivery | EMAIL   | retry        | sent         | true    |
       | @clientId-delivery | EMAIL   | delivered    | spam         | true    |
+      | @clientId-delivery | EMAIL   | delivered    | bounced      | true    |
       | @clientId-delivery | EMAIL   | spam         | delivered    | true    |
       | @clientId-delivery | EMAIL   | booked       | retry        | true    |
       | @clientId-delivery | EMAIL   | booked       | compError    | true    |
