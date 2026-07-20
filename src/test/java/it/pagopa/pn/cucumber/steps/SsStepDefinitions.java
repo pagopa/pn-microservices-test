@@ -208,6 +208,26 @@ public class SsStepDefinitions {
         }
     }
 
+    @When("request a presigned url to upload the file with tag {string} expecting failure")
+    public void getUploadPresignedURLWithTagExpectingFailure(String tag) {
+        tag = getValueIfTagged(tag);
+        Response oResp;
+        var tags = Map.of(tag, List.of("test-value" + randomAlphanumeric(5)));
+        FileCreationRequest fileCreationRequest = new FileCreationRequest().contentType(sMimeType).documentType(sDocumentType).status("SAVED").tags(tags);
+        oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, fileCreationRequest, sSHA256, sMD5, boHeader, Checksum.SHA256, true);
+        iRC = oResp.getStatusCode();
+    }
+
+    @When("request a presigned url to upload the file with multi-value tag {string} expecting failure")
+    public void getUploadPresignedURLWithMultiValueTagExpectingFailure(String tag) {
+        tag = getValueIfTagged(tag);
+        Response oResp;
+        var tags = Map.of(tag, List.of("v1-" + randomAlphanumeric(3), "v2-" + randomAlphanumeric(3)));
+        FileCreationRequest fileCreationRequest = new FileCreationRequest().contentType(sMimeType).documentType(sDocumentType).status("SAVED").tags(tags);
+        oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, fileCreationRequest, sSHA256, sMD5, boHeader, Checksum.SHA256, true);
+        iRC = oResp.getStatusCode();
+    }
+
     @When("request a presigned url to upload the file without traceId")
     public void getUploadPresignedURLWithoutTraceId() {
         Response oResp;
@@ -276,6 +296,15 @@ public class SsStepDefinitions {
     @And("i check unavailability message {string}")
     public void i_check_unavailability_message(String sRC) {
         checkAvailabilityMessage(sRC, sKey, EVENT_BUS_SOURCE_UNAVAILABILITY_EVENT);
+    }
+
+    @And("the availability message exposes tag {string} without local prefix")
+    public void the_availability_message_exposes_tag_without_local_prefix(String tag) {
+        String resolved = getValueIfTagged(tag);
+        Map<String, List<String>> eventTags = queuePoller.getTags(sKey);
+        Assertions.assertNotNull(eventTags, "No tags in availability event for key " + sKey);
+        Assertions.assertTrue(eventTags.containsKey(resolved), "Expected unprefixed tag key '" + resolved + "' in event tags: " + eventTags);
+        Assertions.assertTrue(eventTags.keySet().stream().noneMatch(k -> k.contains("~")), "Event tags must not expose local prefix: " + eventTags);
     }
 
     @And("i check glacier restore availability message {string}")
