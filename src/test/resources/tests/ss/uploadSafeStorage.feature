@@ -139,3 +139,23 @@ Feature: Upload SafeStorage
     Examples:
       | clientId       | APIKey       | documentType                       | fileName                    | MIMEType        | tag       | rc  |
       | @clientId-test | @apiKey_test | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @localTag | 400 |
+
+  @PnSsUpload @tag @PN-20716
+  Scenario Outline: Upload di un file con numero di tag oltre il limite MaxTagsPerRequest e verifica dell'errore di validazione
+    Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
+    When request a presigned url to upload the file with <numTags> tags expecting failure
+    Then i get an error "<rc>"
+    Examples:
+      | clientId       | APIKey       | documentType                       | fileName                    | MIMEType        | numTags | rc  |
+      | @clientId-test | @apiKey_test | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | 51      | 400 |
+
+  # NOTA: dipende dalla configurazione d'ambiente: la property "multiValueTag" deve essere un tag
+  # multivalue realmente configurato nell'ambiente (vedi application-<env>.properties).
+  @PnSsUpload @tag @PN-20716
+  Scenario Outline: Upload di un file con numero di valori per tag oltre il limite MaxValuesPerTagPerRequest e verifica dell'errore di validazione
+    Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
+    When request a presigned url to upload the file with tag "<tag>" having <numValues> values expecting failure
+    Then i get an error "<rc>"
+    Examples:
+      | clientId       | APIKey       | documentType                       | fileName                    | MIMEType        | tag            | numValues | rc  |
+      | @clientId-test | @apiKey_test | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @multiValueTag | 101       | 400 |
