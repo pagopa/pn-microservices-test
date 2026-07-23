@@ -228,6 +228,30 @@ public class SsStepDefinitions {
         iRC = oResp.getStatusCode();
     }
 
+    @When("request a presigned url to upload the file with {int} tags expecting failure")
+    public void getUploadPresignedURLWithManyTagsExpectingFailure(int numTags) {
+        Map<String, List<String>> tags = new HashMap<>();
+        for (int i = 0; i < numTags; i++) {
+            tags.put("limitTag" + i, List.of("test-value" + randomAlphanumeric(5)));
+        }
+        FileCreationRequest fileCreationRequest = new FileCreationRequest().contentType(sMimeType).documentType(sDocumentType).status("SAVED").tags(tags);
+        Response oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, fileCreationRequest, sSHA256, sMD5, boHeader, Checksum.SHA256, true);
+        iRC = oResp.getStatusCode();
+    }
+
+    @When("request a presigned url to upload the file with tag {string} having {int} values expecting failure")
+    public void getUploadPresignedURLWithManyValuesExpectingFailure(String tag, int numValues) {
+        tag = getValueIfTagged(tag);
+        List<String> values = new ArrayList<>();
+        for (int i = 0; i < numValues; i++) {
+            values.add("v" + i + "-" + randomAlphanumeric(3));
+        }
+        Map<String, List<String>> tags = Map.of(tag, values);
+        FileCreationRequest fileCreationRequest = new FileCreationRequest().contentType(sMimeType).documentType(sDocumentType).status("SAVED").tags(tags);
+        Response oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, fileCreationRequest, sSHA256, sMD5, boHeader, Checksum.SHA256, true);
+        iRC = oResp.getStatusCode();
+    }
+
     @When("request a presigned url to upload the file without traceId")
     public void getUploadPresignedURLWithoutTraceId() {
         Response oResp;
