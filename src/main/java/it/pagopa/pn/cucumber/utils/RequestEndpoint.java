@@ -38,6 +38,8 @@ public class RequestEndpoint {
     protected static final String SAFESTORAGE_INTERNAL_DOCUMENTS_PATCH_ENDPOINT = SAFESTORAGE_INTERNAL_DOCUMENTS_GET_ENDPOINT;
     protected static final String SAFESTORAGE_DOCUMENT_TYPES_GET_ENDPOINT = "/safe-storage/v1/configurations/documents-types";
     protected static final String SAFESTORAGE_CONFIGURATION_CLIENT_GET_ENDPOINT = "/safe-storage/v1/configurations/clients/{clientId}";
+    protected static final String SAFESTORAGE_TAGS_ENDPOINT = "/safe-storage/v1/files/tags";
+    protected static final String SAFESTORAGE_FILE_TAGS_ENDPOINT = "/safe-storage/v1/files/{fileKey}/tags";
     protected static final String PDF_RASTER_CONVERT_ENDPOINT = "/PDFRaster/convert";
 
 
