@@ -149,8 +149,6 @@ Feature: Upload SafeStorage
       | clientId       | APIKey       | documentType                       | fileName                    | MIMEType        | numTags | rc  |
       | @clientId-test | @apiKey_test | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | 51      | 400 |
 
-  # NOTA: dipende dalla configurazione d'ambiente: la property "multiValueTag" deve essere un tag
-  # multivalue realmente configurato nell'ambiente (vedi application-<env>.properties).
   @PnSsUpload @tag @PN-20716
   Scenario Outline: Upload di un file con numero di valori per tag oltre il limite MaxValuesPerTagPerRequest e verifica dell'errore di validazione
     Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"

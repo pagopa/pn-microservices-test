@@ -6,10 +6,13 @@ import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import it.pagopa.pn.cucumber.dto.pojo.Checksum;
+import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.AdditionalFileTagsMassiveUpdateRequest;
+import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.AdditionalFileTagsUpdateRequest;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.DocumentChanges;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileCreationRequest;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
 import lombok.extern.slf4j.Slf4j;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static it.pagopa.pn.cucumber.utils.CommonUtils.PN_SS;
@@ -136,5 +139,48 @@ public class SafeStorageUtils {
                 .header(X_API_KEY, sAPIKey)
                 .pathParam("clientId", sCxId);
         return CommonUtils.myGet(oReq, SAFESTORAGE_CONFIGURATION_CLIENT_GET_ENDPOINT,PN_SS);
+    }
+
+    public static Response searchFileTags(String sCxId, String sAPIKey, Map<String, String> tagParams, String logic, Boolean withTags) {
+        RequestSpecification oReq = stdReq()
+                .header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
+                .header(X_API_KEY, sAPIKey);
+        if (tagParams != null) {
+            for (Map.Entry<String, String> entry : tagParams.entrySet()) {
+                oReq.param(entry.getKey(), entry.getValue());
+            }
+        }
+        if (logic != null) {
+            oReq.param("logic", logic);
+        }
+        if (withTags != null) {
+            oReq.param("tags", withTags);
+        }
+        return CommonUtils.myGet(oReq, SAFESTORAGE_TAGS_ENDPOINT, PN_SS);
+    }
+
+    public static Response updateFileTags(String sCxId, String sAPIKey, String sFileKey, AdditionalFileTagsUpdateRequest req) {
+        RequestSpecification oReq = stdReq()
+                .header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
+                .header(X_API_KEY, sAPIKey)
+                .pathParam(FILE_KEY, sFileKey)
+                .body(req);
+        return CommonUtils.myPost(oReq, SAFESTORAGE_FILE_TAGS_ENDPOINT, PN_SS);
+    }
+
+    public static Response massiveUpdateFileTags(String sCxId, String sAPIKey, AdditionalFileTagsMassiveUpdateRequest req) {
+        RequestSpecification oReq = stdReq()
+                .header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
+                .header(X_API_KEY, sAPIKey)
+                .body(req);
+        return CommonUtils.myPost(oReq, SAFESTORAGE_TAGS_ENDPOINT, PN_SS);
+    }
+
+    public static Response getFileTags(String sCxId, String sAPIKey, String sFileKey) {
+        RequestSpecification oReq = stdReq()
+                .header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
+                .header(X_API_KEY, sAPIKey)
+                .pathParam(FILE_KEY, sFileKey);
+        return CommonUtils.myGet(oReq, SAFESTORAGE_FILE_TAGS_ENDPOINT, PN_SS);
     }
 }
