@@ -104,3 +104,56 @@ Feature: Upload SafeStorage
     Examples:
       | clientId       | APIKey       | documentType                       | fileName                    | MIMEType        | tag  | rc  |
       | @clientId-test | @apiKey_test | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @tag | 200 |
+
+  @PnSsUpload @tag @PN-20716
+  Scenario Outline: Upload di un file con tag inesistente e verifica dell'errore di validazione
+    Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
+    When request a presigned url to upload the file with tag "<tag>" expecting failure
+    Then i get an error "<rc>"
+    Examples:
+      | clientId       | APIKey       | documentType                       | fileName                    | MIMEType        | tag                      | rc  |
+      | @clientId-test | @apiKey_test | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | NON_EXISTENT_TAG_PN20716 | 400 |
+
+  # NOTA: gli scenari seguenti dipendono dalla configurazione d'ambiente (pn-configuration / pn-SsTags):
+  # richiedono che la property "localTag" (vedi application-<env>.properties) sia valorizzata con un tag
+  # LOCALE realmente configurato per il client di test @clientId-test in questo ambiente.
+  @PnSsUpload @tag @PN-20716 @localTag
+  Scenario Outline: Upload di un file con tag locale e verifica del tag senza prefisso nel messaggio di disponibilità
+    Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
+    When request a presigned url to upload the file with "<tag>"
+    And upload that file
+    Then i found in S3
+    And i check availability message "<rc>"
+    And the availability message exposes tag "<tag>" without local prefix
+    Examples:
+      | clientId       | APIKey       | documentType                       | fileName                    | MIMEType        | tag       | rc  |
+      | @clientId-test | @apiKey_test | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @localTag | 200 |
+
+  # NOTA: dipende dalla configurazione d'ambiente (pn-configuration / pn-SsTags): richiede che "localTag"
+  # sia un tag locale single-value configurato per il client di test @clientId-test in questo ambiente.
+  @PnSsUpload @tag @PN-20716 @localTag
+  Scenario Outline: Upload di un file con tag single-value e più valori e verifica dell'errore di validazione
+    Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
+    When request a presigned url to upload the file with multi-value tag "<tag>" expecting failure
+    Then i get an error "<rc>"
+    Examples:
+      | clientId       | APIKey       | documentType                       | fileName                    | MIMEType        | tag       | rc  |
+      | @clientId-test | @apiKey_test | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @localTag | 400 |
+
+  @PnSsUpload @tag @PN-20716
+  Scenario Outline: Upload di un file con numero di tag oltre il limite MaxTagsPerRequest e verifica dell'errore di validazione
+    Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
+    When request a presigned url to upload the file with <numTags> tags expecting failure
+    Then i get an error "<rc>"
+    Examples:
+      | clientId       | APIKey       | documentType                       | fileName                    | MIMEType        | numTags | rc  |
+      | @clientId-test | @apiKey_test | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | 51      | 400 |
+
+  @PnSsUpload @tag @PN-20716
+  Scenario Outline: Upload di un file con numero di valori per tag oltre il limite MaxValuesPerTagPerRequest e verifica dell'errore di validazione
+    Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
+    When request a presigned url to upload the file with tag "<tag>" having <numValues> values expecting failure
+    Then i get an error "<rc>"
+    Examples:
+      | clientId       | APIKey       | documentType                       | fileName                    | MIMEType        | tag            | numValues | rc  |
+      | @clientId-test | @apiKey_test | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @multiValueTag | 101       | 400 |

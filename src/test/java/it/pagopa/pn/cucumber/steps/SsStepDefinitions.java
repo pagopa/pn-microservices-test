@@ -2,6 +2,7 @@ package it.pagopa.pn.cucumber.steps;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.cucumber.datatable.DataTable;
 import io.cucumber.java.AfterAll;
 import io.cucumber.java.BeforeAll;
 import io.cucumber.java.en.And;
@@ -69,6 +70,14 @@ public class SsStepDefinitions {
     private boolean metadataOnly;
     private FileDownloadResponse fileDownloadResponse;
     public static final String TRANSFORMATION_TAG_PREFIX = "Transformation-";
+    private final Map<String, String> fileKeysByAlias = new HashMap<>();
+    private final Map<String, Map<String, String>> tagValuesByAlias = new HashMap<>();
+    private Response searchResponse;
+    private AdditionalFileTagsSearchResponse searchResult;
+    private Response massiveResponse;
+    private AdditionalFileTagsMassiveUpdateResponse massiveResult;
+    private Response getTagsResponse;
+    private AdditionalFileTagsGetResponse getTagsResult;
 
 
     @BeforeAll
@@ -195,10 +204,12 @@ public class SsStepDefinitions {
     @When("request a presigned url to upload the file with {string}")
     public void getUploadPresignedURLWithTagAndValue(String tag) {
         tag = getValueIfTagged(tag);
-        Response oResp;
-        var tags = Map.of(tag, List.of("test-value" + randomAlphanumeric(5)));
+        requestPresignedUrlWithTags(Map.of(tag, List.of("test-value" + randomAlphanumeric(5))));
+    }
+
+    private void requestPresignedUrlWithTags(Map<String, List<String>> tags) {
         FileCreationRequest fileCreationRequest = new FileCreationRequest().contentType(sMimeType).documentType(sDocumentType).status("SAVED").tags(tags);
-        oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, fileCreationRequest, sSHA256, sMD5, boHeader, Checksum.SHA256, true);
+        Response oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, fileCreationRequest, sSHA256, sMD5, boHeader, Checksum.SHA256, true);
         iRC = oResp.getStatusCode();
         Assertions.assertEquals(200, iRC);
         if (iRC == 200) {
@@ -206,6 +217,413 @@ public class SsStepDefinitions {
             sKey = oResp.then().extract().path("key");
             sSecret = oResp.then().extract().path("secret");
         }
+    }
+
+    private void uploadAndIndexDocument(String sPNClient, String sPNClient_AK, String sDocumentType, Map<String, String> tagBaseValues, String alias) throws NoSuchAlgorithmException, IOException, JsonProcessingException, InterruptedException {
+        sPNClient = getValueIfTagged(sPNClient);
+        sPNClient_AK = getValueIfTagged(sPNClient_AK);
+        sDocumentType = getValueIfTagged(sDocumentType);
+
+        a_file_to_upload(sPNClient, sPNClient_AK, sDocumentType, "application/pdf", "src/main/resources/test.pdf");
+
+        Map<String, List<String>> tags = new HashMap<>();
+        Map<String, String> resolvedValues = new HashMap<>();
+        for (Map.Entry<String, String> entry : tagBaseValues.entrySet()) {
+            String uniqueValue = entry.getValue() + randomAlphanumeric(8);
+            tags.put(entry.getKey(), List.of(uniqueValue));
+            resolvedValues.put(entry.getKey(), uniqueValue);
+        }
+
+        requestPresignedUrlWithTags(tags);
+        uploadFile();
+        it_s_available_ss();
+
+        fileKeysByAlias.put(alias, sKey);
+        tagValuesByAlias.put(alias, resolvedValues);
+    }
+
+    @Given("{string} authenticated by {string} upload and index a document of type {string} with tag {string} value {string} as {string}")
+    public void uploadAndIndexDocumentWithTagValueAsAlias(String sPNClient, String sPNClient_AK, String sDocumentType, String tag, String value, String alias) throws NoSuchAlgorithmException, IOException, JsonProcessingException, InterruptedException {
+        tag = getValueIfTagged(tag);
+        value = getValueIfTagged(value);
+        uploadAndIndexDocument(sPNClient, sPNClient_AK, sDocumentType, Map.of(tag, value), alias);
+    }
+
+    @Given("{string} authenticated by {string} upload and index a document of type {string} with tags as {string}")
+    public void uploadAndIndexDocumentWithTagsAsAlias(String sPNClient, String sPNClient_AK, String sDocumentType, String alias, DataTable dataTable) throws NoSuchAlgorithmException, IOException, JsonProcessingException, InterruptedException {
+        Map<String, String> tagBaseValues = new HashMap<>();
+        for (Map<String, String> row : dataTable.asMaps()) {
+            tagBaseValues.put(getValueIfTagged(row.get("tag")), getValueIfTagged(row.get("value")));
+        }
+        uploadAndIndexDocument(sPNClient, sPNClient_AK, sDocumentType, tagBaseValues, alias);
+    }
+
+    private void executeSearch(Map<String, String> tagParams, String logic, Boolean withTags) {
+        searchResponse = SafeStorageUtils.searchFileTags(sPNClient, sPNClient_AK, tagParams, logic, withTags);
+        iRC = searchResponse.getStatusCode();
+        searchResult = null;
+        if (iRC == 200) {
+            try {
+                searchResult = new ObjectMapper().readValue(searchResponse.getBody().asString(), AdditionalFileTagsSearchResponse.class);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @When("search files using tag {string} value from {string}")
+    public void searchFilesUsingTagValueFrom(String tag, String alias) {
+        tag = getValueIfTagged(tag);
+        Map<String, String> tagParams = new HashMap<>();
+        tagParams.put(tag, tagValuesByAlias.get(alias).get(tag));
+        executeSearch(tagParams, null, false);
+    }
+
+    @When("search files using tag {string} value from {string} including tags in response")
+    public void searchFilesUsingTagValueFromIncludingTagsInResponse(String tag, String alias) {
+        tag = getValueIfTagged(tag);
+        Map<String, String> tagParams = new HashMap<>();
+        tagParams.put(tag, tagValuesByAlias.get(alias).get(tag));
+        executeSearch(tagParams, null, true);
+    }
+
+    @When("search files using tags {string} from {string}")
+    public void searchFilesUsingTagsFrom(String tagsCsv, String alias) {
+        Map<String, String> tagParams = new HashMap<>();
+        for (String tagToken : tagsCsv.split(",")) {
+            String tag = getValueIfTagged(tagToken.trim());
+            tagParams.put(tag, tagValuesByAlias.get(alias).get(tag));
+        }
+        executeSearch(tagParams, null, false);
+    }
+
+    @When("search files using tag {string} value from {string} and non matching tag {string}")
+    public void searchFilesUsingTagValueFromAndNonMatchingTag(String tag, String alias, String nonMatchingTag) {
+        tag = getValueIfTagged(tag);
+        nonMatchingTag = getValueIfTagged(nonMatchingTag);
+        Map<String, String> tagParams = new HashMap<>();
+        tagParams.put(tag, tagValuesByAlias.get(alias).get(tag));
+        tagParams.put(nonMatchingTag, "non-matching-value-" + randomAlphanumeric(8));
+        executeSearch(tagParams, null, false);
+    }
+
+    @When("search files using tag {string} value from {string} and non matching tag {string} with logic {string}")
+    public void searchFilesUsingTagValueFromAndNonMatchingTagWithLogic(String tag, String alias, String nonMatchingTag, String logic) {
+        tag = getValueIfTagged(tag);
+        nonMatchingTag = getValueIfTagged(nonMatchingTag);
+        logic = getValueIfTagged(logic);
+        Map<String, String> tagParams = new HashMap<>();
+        tagParams.put(tag, tagValuesByAlias.get(alias).get(tag));
+        tagParams.put(nonMatchingTag, "non-matching-value-" + randomAlphanumeric(8));
+        executeSearch(tagParams, logic, false);
+    }
+
+    @When("search files with {int} tag params")
+    public void searchFilesWithTagParams(int numTags) {
+        Map<String, String> tagParams = new HashMap<>();
+        for (int i = 0; i < numTags; i++) {
+            tagParams.put("searchLimitTag" + i, "search-limit-value" + randomAlphanumeric(5));
+        }
+        executeSearch(tagParams, null, false);
+    }
+
+    @When("search files with no tag params")
+    public void searchFilesWithNoTagParams() {
+        executeSearch(new HashMap<>(), null, false);
+    }
+
+    @Then("the search response contains fileKey alias {string}")
+    public void theSearchResponseContainsFileKeyAlias(String alias) {
+        Assertions.assertNotNull(searchResult);
+        Assertions.assertNotNull(searchResult.getFileKeys());
+        String expectedFileKey = fileKeysByAlias.get(alias);
+        Assertions.assertTrue(searchResult.getFileKeys().stream().anyMatch(entry -> entry.getFileKey().equals(expectedFileKey)));
+    }
+
+    @Then("the search response is empty")
+    public void theSearchResponseIsEmpty() {
+        Assertions.assertNotNull(searchResult);
+        Assertions.assertTrue(searchResult.getFileKeys() == null || searchResult.getFileKeys().isEmpty());
+    }
+
+    @Then("the search response fileKey alias {string} has tags without local prefix")
+    public void theSearchResponseFileKeyAliasHasTagsWithoutLocalPrefix(String alias) {
+        Assertions.assertNotNull(searchResult);
+        Assertions.assertNotNull(searchResult.getFileKeys());
+        String expectedFileKey = fileKeysByAlias.get(alias);
+        var matchingEntry = searchResult.getFileKeys().stream().filter(entry -> entry.getFileKey().equals(expectedFileKey)).findFirst();
+        Assertions.assertTrue(matchingEntry.isPresent());
+        Map<String, List<String>> tags = matchingEntry.get().getTags();
+        Assertions.assertNotNull(tags);
+        Assertions.assertFalse(tags.isEmpty());
+        Assertions.assertTrue(tags.keySet().stream().noneMatch(k -> k.contains("~")));
+    }
+
+    @Given("{string} authenticated by {string} upload and index a document of type {string} as {string}")
+    public void uploadAndIndexDocumentWithoutTagsAsAlias(String sPNClient, String sPNClient_AK, String sDocumentType, String alias) throws NoSuchAlgorithmException, IOException, JsonProcessingException, InterruptedException {
+        uploadAndIndexDocument(sPNClient, sPNClient_AK, sDocumentType, new HashMap<>(), alias);
+    }
+
+    @When("set tag {string} value {string} on document alias {string}")
+    public void setTagValueOnDocumentAlias(String tag, String value, String alias) {
+        tag = getValueIfTagged(tag);
+        String uniqueValue = getValueIfTagged(value) + randomAlphanumeric(8);
+        AdditionalFileTagsUpdateRequest request = new AdditionalFileTagsUpdateRequest().SET(Map.of(tag, List.of(uniqueValue)));
+        Response response = SafeStorageUtils.updateFileTags(sPNClient, sPNClient_AK, fileKeysByAlias.get(alias), request);
+        iRC = response.getStatusCode();
+        tagValuesByAlias.computeIfAbsent(alias, k -> new HashMap<>()).put(tag, uniqueValue);
+    }
+
+    @When("delete tag {string} on document alias {string}")
+    public void deleteTagOnDocumentAlias(String tag, String alias) {
+        tag = getValueIfTagged(tag);
+        String value = tagValuesByAlias.get(alias).get(tag);
+        AdditionalFileTagsUpdateRequest request = new AdditionalFileTagsUpdateRequest().DELETE(Map.of(tag, List.of(value)));
+        Response response = SafeStorageUtils.updateFileTags(sPNClient, sPNClient_AK, fileKeysByAlias.get(alias), request);
+        iRC = response.getStatusCode();
+    }
+
+    @When("set tag {string} and delete tag {string} on document alias {string}")
+    public void setTagAndDeleteTagOnDocumentAlias(String setTag, String deleteTag, String alias) {
+        setTag = getValueIfTagged(setTag);
+        deleteTag = getValueIfTagged(deleteTag);
+        String setValue = "update-mix-set-value-" + randomAlphanumeric(8);
+        String deleteValue = tagValuesByAlias.get(alias).get(deleteTag);
+        AdditionalFileTagsUpdateRequest request = new AdditionalFileTagsUpdateRequest()
+                .SET(Map.of(setTag, List.of(setValue)))
+                .DELETE(Map.of(deleteTag, List.of(deleteValue)));
+        Response response = SafeStorageUtils.updateFileTags(sPNClient, sPNClient_AK, fileKeysByAlias.get(alias), request);
+        iRC = response.getStatusCode();
+        tagValuesByAlias.computeIfAbsent(alias, k -> new HashMap<>()).put(setTag, setValue);
+    }
+
+    @When("set and delete the same tag {string} on document alias {string} expecting failure")
+    public void setAndDeleteTheSameTagOnDocumentAliasExpectingFailure(String tag, String alias) {
+        tag = getValueIfTagged(tag);
+        AdditionalFileTagsUpdateRequest request = new AdditionalFileTagsUpdateRequest()
+                .SET(Map.of(tag, List.of("conflict-set-value-" + randomAlphanumeric(5))))
+                .DELETE(Map.of(tag, List.of("conflict-delete-value-" + randomAlphanumeric(5))));
+        Response response = SafeStorageUtils.updateFileTags(sPNClient, sPNClient_AK, fileKeysByAlias.get(alias), request);
+        iRC = response.getStatusCode();
+    }
+
+    @When("set tag {string} value {string} on document alias {string} expecting failure")
+    public void setTagValueOnDocumentAliasExpectingFailure(String tag, String value, String alias) {
+        tag = getValueIfTagged(tag);
+        value = getValueIfTagged(value);
+        AdditionalFileTagsUpdateRequest request = new AdditionalFileTagsUpdateRequest().SET(Map.of(tag, List.of(value + randomAlphanumeric(5))));
+        Response response = SafeStorageUtils.updateFileTags(sPNClient, sPNClient_AK, fileKeysByAlias.get(alias), request);
+        iRC = response.getStatusCode();
+    }
+
+    @When("set tag {string} with {int} values on document alias {string} expecting failure")
+    public void setTagWithValuesOnDocumentAliasExpectingFailure(String tag, int numValues, String alias) {
+        tag = getValueIfTagged(tag);
+        List<String> values = new ArrayList<>();
+        for (int i = 0; i < numValues; i++) {
+            values.add("v" + i + "-" + randomAlphanumeric(3));
+        }
+        AdditionalFileTagsUpdateRequest request = new AdditionalFileTagsUpdateRequest().SET(Map.of(tag, values));
+        Response response = SafeStorageUtils.updateFileTags(sPNClient, sPNClient_AK, fileKeysByAlias.get(alias), request);
+        iRC = response.getStatusCode();
+    }
+
+    @When("update with {int} operations on document alias {string} expecting failure")
+    public void updateWithOperationsOnDocumentAliasExpectingFailure(int numOperations, String alias) {
+        Map<String, List<String>> set = new HashMap<>();
+        for (int i = 0; i < numOperations; i++) {
+            set.put("updateLimitTag" + i, List.of("update-limit-value-" + randomAlphanumeric(5)));
+        }
+        AdditionalFileTagsUpdateRequest request = new AdditionalFileTagsUpdateRequest().SET(set);
+        Response response = SafeStorageUtils.updateFileTags(sPNClient, sPNClient_AK, fileKeysByAlias.get(alias), request);
+        iRC = response.getStatusCode();
+    }
+
+    @When("update tag {string} on a non existing fileKey expecting failure")
+    public void updateTagOnANonExistingFileKeyExpectingFailure(String tag) {
+        tag = getValueIfTagged(tag);
+        String nonExistingFileKey = "non-existing-" + randomAlphanumeric(16);
+        AdditionalFileTagsUpdateRequest request = new AdditionalFileTagsUpdateRequest().SET(Map.of(tag, List.of("update-value-" + randomAlphanumeric(5))));
+        Response response = SafeStorageUtils.updateFileTags(sPNClient, sPNClient_AK, nonExistingFileKey, request);
+        iRC = response.getStatusCode();
+    }
+
+    private void executeMassiveUpdate(List<Tags> tags) {
+        AdditionalFileTagsMassiveUpdateRequest request = new AdditionalFileTagsMassiveUpdateRequest().tags(tags);
+        massiveResponse = SafeStorageUtils.massiveUpdateFileTags(sPNClient, sPNClient_AK, request);
+        iRC = massiveResponse.getStatusCode();
+        massiveResult = null;
+        if (iRC == 200) {
+            try {
+                massiveResult = new ObjectMapper().readValue(massiveResponse.getBody().asString(), AdditionalFileTagsMassiveUpdateResponse.class);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @When("massive set tag {string} value {string} on documents {string}")
+    public void massiveSetTagValueOnDocuments(String tag, String value, String aliasesCsv) {
+        tag = getValueIfTagged(tag);
+        String uniqueValue = getValueIfTagged(value) + randomAlphanumeric(8);
+        List<Tags> tags = new ArrayList<>();
+        for (String aliasToken : aliasesCsv.split(",")) {
+            String alias = aliasToken.trim();
+            tags.add(new Tags().fileKey(fileKeysByAlias.get(alias)).SET(Map.of(tag, List.of(uniqueValue))));
+            tagValuesByAlias.computeIfAbsent(alias, k -> new HashMap<>()).put(tag, uniqueValue);
+        }
+        executeMassiveUpdate(tags);
+    }
+
+    @When("massive delete tag {string} on documents {string}")
+    public void massiveDeleteTagOnDocuments(String tag, String aliasesCsv) {
+        tag = getValueIfTagged(tag);
+        List<Tags> tags = new ArrayList<>();
+        for (String aliasToken : aliasesCsv.split(",")) {
+            String alias = aliasToken.trim();
+            String value = tagValuesByAlias.get(alias).get(tag);
+            tags.add(new Tags().fileKey(fileKeysByAlias.get(alias)).DELETE(Map.of(tag, List.of(value))));
+        }
+        executeMassiveUpdate(tags);
+    }
+
+    @When("massive request with duplicate file key alias {string} expecting failure")
+    public void massiveRequestWithDuplicateFileKeyAliasExpectingFailure(String alias) {
+        String tag = getValueIfTagged("@tag");
+        String fileKey = fileKeysByAlias.get(alias);
+        List<Tags> tags = new ArrayList<>();
+        tags.add(new Tags().fileKey(fileKey).SET(Map.of(tag, List.of("massive-duplicate-value-" + randomAlphanumeric(5)))));
+        tags.add(new Tags().fileKey(fileKey).SET(Map.of(tag, List.of("massive-duplicate-value-" + randomAlphanumeric(5)))));
+        executeMassiveUpdate(tags);
+    }
+
+    @When("massive update with {int} file keys expecting failure")
+    public void massiveUpdateWithFileKeysExpectingFailure(int numFileKeys) {
+        String tag = getValueIfTagged("@tag");
+        List<Tags> tags = new ArrayList<>();
+        for (int i = 0; i < numFileKeys; i++) {
+            String fileKey = "massive-limit-" + i + "-" + randomAlphanumeric(8);
+            tags.add(new Tags().fileKey(fileKey).SET(Map.of(tag, List.of("massive-limit-value-" + randomAlphanumeric(5)))));
+        }
+        executeMassiveUpdate(tags);
+    }
+
+    @When("massive update tag {string} value {string} on document alias {string} and invalid tag {string} on document alias {string} expecting partial errors")
+    public void massiveUpdateTagValueOnDocumentAliasAndInvalidTagOnDocumentAliasExpectingPartialErrors(String validTag, String value, String validAlias, String invalidTag, String invalidAlias) {
+        validTag = getValueIfTagged(validTag);
+        String uniqueValue = getValueIfTagged(value) + randomAlphanumeric(8);
+        List<Tags> tags = new ArrayList<>();
+        tags.add(new Tags().fileKey(fileKeysByAlias.get(validAlias)).SET(Map.of(validTag, List.of(uniqueValue))));
+        tags.add(new Tags().fileKey(fileKeysByAlias.get(invalidAlias)).SET(Map.of(invalidTag, List.of("massive-partial-invalid-value-" + randomAlphanumeric(5)))));
+        tagValuesByAlias.computeIfAbsent(validAlias, k -> new HashMap<>()).put(validTag, uniqueValue);
+        executeMassiveUpdate(tags);
+    }
+
+    @Then("the massive response has {int} errors")
+    public void theMassiveResponseHasErrors(int numErrors) {
+        Assertions.assertNotNull(massiveResult);
+        Assertions.assertNotNull(massiveResult.getErrors());
+        Assertions.assertEquals(numErrors, massiveResult.getErrors().size());
+    }
+
+    @Then("the massive response has an error for fileKey alias {string}")
+    public void theMassiveResponseHasAnErrorForFileKeyAlias(String alias) {
+        Assertions.assertNotNull(massiveResult);
+        Assertions.assertNotNull(massiveResult.getErrors());
+        String expectedFileKey = fileKeysByAlias.get(alias);
+        Assertions.assertTrue(massiveResult.getErrors().stream()
+                .anyMatch(error -> error.getFileKey() != null && error.getFileKey().contains(expectedFileKey)));
+    }
+
+    @When("get the tags of document alias {string}")
+    public void getTheTagsOfDocumentAlias(String alias) {
+        getTagsResponse = SafeStorageUtils.getFileTags(sPNClient, sPNClient_AK, fileKeysByAlias.get(alias));
+        iRC = getTagsResponse.getStatusCode();
+        getTagsResult = null;
+        if (iRC == 200) {
+            try {
+                getTagsResult = new ObjectMapper().readValue(getTagsResponse.getBody().asString(), AdditionalFileTagsGetResponse.class);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @When("get the tags of a non existing fileKey expecting failure")
+    public void getTheTagsOfANonExistingFileKeyExpectingFailure() {
+        String nonExistingFileKey = "non-existing-" + randomAlphanumeric(16);
+        getTagsResponse = SafeStorageUtils.getFileTags(sPNClient, sPNClient_AK, nonExistingFileKey);
+        iRC = getTagsResponse.getStatusCode();
+        getTagsResult = null;
+    }
+
+    @Then("the document tags contain {string} with value from alias {string}")
+    public void theDocumentTagsContainWithValueFromAlias(String tag, String alias) {
+        tag = getValueIfTagged(tag);
+        Assertions.assertNotNull(getTagsResult);
+        Assertions.assertNotNull(getTagsResult.getTags());
+        String expectedValue = tagValuesByAlias.get(alias).get(tag);
+        Assertions.assertTrue(getTagsResult.getTags().containsKey(tag));
+        Assertions.assertTrue(getTagsResult.getTags().get(tag).contains(expectedValue));
+    }
+
+    @Then("the document tags are empty")
+    public void theDocumentTagsAreEmpty() {
+        Assertions.assertNotNull(getTagsResult);
+        Assertions.assertTrue(getTagsResult.getTags() == null || getTagsResult.getTags().isEmpty());
+    }
+
+    @Then("the document tags key {string} has no local prefix")
+    public void theDocumentTagsKeyHasNoLocalPrefix(String tag) {
+        tag = getValueIfTagged(tag);
+        Assertions.assertNotNull(getTagsResult);
+        Assertions.assertNotNull(getTagsResult.getTags());
+        Assertions.assertTrue(getTagsResult.getTags().containsKey(tag));
+        Assertions.assertTrue(getTagsResult.getTags().keySet().stream().noneMatch(k -> k.contains("~")));
+    }
+
+    @When("request a presigned url to upload the file with tag {string} expecting failure")
+    public void getUploadPresignedURLWithTagExpectingFailure(String tag) {
+        tag = getValueIfTagged(tag);
+        Response oResp;
+        var tags = Map.of(tag, List.of("test-value" + randomAlphanumeric(5)));
+        FileCreationRequest fileCreationRequest = new FileCreationRequest().contentType(sMimeType).documentType(sDocumentType).status("SAVED").tags(tags);
+        oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, fileCreationRequest, sSHA256, sMD5, boHeader, Checksum.SHA256, true);
+        iRC = oResp.getStatusCode();
+    }
+
+    @When("request a presigned url to upload the file with multi-value tag {string} expecting failure")
+    public void getUploadPresignedURLWithMultiValueTagExpectingFailure(String tag) {
+        tag = getValueIfTagged(tag);
+        Response oResp;
+        var tags = Map.of(tag, List.of("v1-" + randomAlphanumeric(3), "v2-" + randomAlphanumeric(3)));
+        FileCreationRequest fileCreationRequest = new FileCreationRequest().contentType(sMimeType).documentType(sDocumentType).status("SAVED").tags(tags);
+        oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, fileCreationRequest, sSHA256, sMD5, boHeader, Checksum.SHA256, true);
+        iRC = oResp.getStatusCode();
+    }
+
+    @When("request a presigned url to upload the file with {int} tags expecting failure")
+    public void getUploadPresignedURLWithManyTagsExpectingFailure(int numTags) {
+        Map<String, List<String>> tags = new HashMap<>();
+        for (int i = 0; i < numTags; i++) {
+            tags.put("limitTag" + i, List.of("test-value" + randomAlphanumeric(5)));
+        }
+        FileCreationRequest fileCreationRequest = new FileCreationRequest().contentType(sMimeType).documentType(sDocumentType).status("SAVED").tags(tags);
+        Response oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, fileCreationRequest, sSHA256, sMD5, boHeader, Checksum.SHA256, true);
+        iRC = oResp.getStatusCode();
+    }
+
+    @When("request a presigned url to upload the file with tag {string} having {int} values expecting failure")
+    public void getUploadPresignedURLWithManyValuesExpectingFailure(String tag, int numValues) {
+        tag = getValueIfTagged(tag);
+        List<String> values = new ArrayList<>();
+        for (int i = 0; i < numValues; i++) {
+            values.add("v" + i + "-" + randomAlphanumeric(3));
+        }
+        Map<String, List<String>> tags = Map.of(tag, values);
+        FileCreationRequest fileCreationRequest = new FileCreationRequest().contentType(sMimeType).documentType(sDocumentType).status("SAVED").tags(tags);
+        Response oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, fileCreationRequest, sSHA256, sMD5, boHeader, Checksum.SHA256, true);
+        iRC = oResp.getStatusCode();
     }
 
     @When("request a presigned url to upload the file without traceId")
@@ -276,6 +694,15 @@ public class SsStepDefinitions {
     @And("i check unavailability message {string}")
     public void i_check_unavailability_message(String sRC) {
         checkAvailabilityMessage(sRC, sKey, EVENT_BUS_SOURCE_UNAVAILABILITY_EVENT);
+    }
+
+    @And("the availability message exposes tag {string} without local prefix")
+    public void the_availability_message_exposes_tag_without_local_prefix(String tag) {
+        String resolved = getValueIfTagged(tag);
+        Map<String, List<String>> eventTags = queuePoller.getTags(sKey);
+        Assertions.assertNotNull(eventTags, "No tags in availability event for key " + sKey);
+        Assertions.assertTrue(eventTags.containsKey(resolved), "Expected unprefixed tag key '" + resolved + "' in event tags: " + eventTags);
+        Assertions.assertTrue(eventTags.keySet().stream().noneMatch(k -> k.contains("~")), "Event tags must not expose local prefix: " + eventTags);
     }
 
     @And("i check glacier restore availability message {string}")
