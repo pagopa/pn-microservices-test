@@ -9,7 +9,9 @@ import lombok.CustomLog;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static it.pagopa.pn.cucumber.utils.SqsUtils.isSsMessage;
 import static it.pagopa.pn.cucumber.utils.SqsUtils.parseMessageBody;
@@ -18,6 +20,8 @@ import static it.pagopa.pn.cucumber.utils.SqsUtils.parseMessageBody;
 public class PnSsQueuePoller extends QueuePoller {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private final Map<String, Map<String, List<String>>> tagsMap = new ConcurrentHashMap<>();
 
     public PnSsQueuePoller() {
         super(System.getProperty("pn.ss.gestore.disponibilita.queue.name"));
@@ -37,6 +41,9 @@ public class PnSsQueuePoller extends QueuePoller {
                     Set<String> documentStatusList = this.messageMap.get(notificationMessage.getKey());
                     documentStatusList.add(detailType);
                     this.messageMap.put(notificationMessage.getKey(), documentStatusList);
+                }
+                if (notificationMessage.getTags() != null) {
+                    this.tagsMap.put(notificationMessage.getKey(), notificationMessage.getTags());
                 }
             }
         } catch (Exception e) {
@@ -61,6 +68,10 @@ public class PnSsQueuePoller extends QueuePoller {
             }
         }
         return check;
+    }
+
+    public Map<String, List<String>> getTags(String fileKey) {
+        return tagsMap.get(fileKey);
     }
 
 }
