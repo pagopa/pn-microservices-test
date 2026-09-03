@@ -1,21 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE xml>
-<configuration scan="true" scanPeriod="30 seconds" >
-    <root level="OFF">
-        <appender-ref ref="STDOUT" />
-    </root>
+<configuration scan="true" scanPeriod="30 seconds">
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
         <encoder>
-            <pattern>%d [%X{trace_id}] %highlight(%-5level) - %-4relative - [%thread] - %cyan(%logger{20}) - %red([%X{cx_id}]) - %msg %n</pattern>
+            <pattern>%d [%X{trace_id}] %highlight(%-5level) - %-4relative - [%thread] - %cyan(%logger{20}) - %msg %n</pattern>
         </encoder>
     </appender>
-
-    <logger name="it.pagopa.pn.cucumber.steps.SsStepDefinitions" level="DEBUG" />
-    <logger name="it.pagopa.pn.cucumber.steps.EcStepDefinitions" level="DEBUG" />
-    <logger name="it.pagopa.pn.tests" level="DEBUG" />
-    <logger name="it.pagopa.pn" level="DEBUG" />
-    <root level="DEBUG">
+    <logger name="it.pagopa.pn" level="INFO"/>
+    <root level="INFO">
         <appender-ref ref="STDOUT"/>
     </root>
 </configuration>
