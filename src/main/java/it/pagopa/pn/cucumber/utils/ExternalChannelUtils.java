@@ -40,14 +40,13 @@ public class ExternalChannelUtils extends RequestTemplate {
 
     //SMS
     public static Response sendSmsCourtesySimpleMessage(String clientId, String requestId, String receiver, String messageText) {
-        log.info("requestId {}", requestId);
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
         DigitalCourtesySmsRequest digitalCourtesySmsRequest = createSmsRequest(requestId, receiver, messageText);
         oReq.body(digitalCourtesySmsRequest);
         Response response = CommonUtils.myPut(oReq, RequestEndpoint.SMS_ENDPOINT, CommonUtils.PN_EC);
-        log.info(oReq.get().asString());
+        log.debug("SMS request {} sent for client {}: httpStatus={}", requestId, clientId, response.getStatusCode());
         return response;
     }
 
@@ -136,7 +135,7 @@ public class ExternalChannelUtils extends RequestTemplate {
     }
 
     public static Response sendPaperMessageWithDocumentTransformationType(String clientId, String requestId, List<PnAttachment> attachments, String transformationDocumentType, String paId) {
-        log.info("transformationDocumentType: {} ", transformationDocumentType);
+        log.debug("Sending paper message {} with transformationDocumentType {}", requestId, transformationDocumentType);
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
@@ -159,7 +158,7 @@ public class ExternalChannelUtils extends RequestTemplate {
     }
 
     public static Response sendPaperMessageRasterFlag(String clientId, String requestId, String requestPaId, String applyRasterization, List<PnAttachment> attachments) {
-        log.info("sendPaperMessageRasterFlag {}", applyRasterization);
+        log.debug("Sending paper message {} with applyRasterization {}", requestId, applyRasterization);
         RequestSpecification oReq = stdReq()
                 .header(X_PAGOPA_EXTCH_CX_ID, clientId)
                 .pathParam(REQUEST_IDX, requestId);
