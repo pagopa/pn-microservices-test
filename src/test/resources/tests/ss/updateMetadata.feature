@@ -22,7 +22,7 @@ Feature: Update metadata
     Then i get an error "<rc>"
     Examples:
       | clientIdUp     | APIKeyUp     | status   | retentionUntil           | fileKey     | rc  |
-      | pn-delivery    | pn-delivery_api_key | ATTACHED |                          | PN_NOTIFICATION_ATTACHMENTS-73c54f5e1395444a9f630738ec3a7fdb.pdf| 200 |
+      | @clientId-test | @apiKey_test | ATTACHED | 2024-07-11T13:02:25.206Z | NONEXISTENT | 404 |
       | @clientId-test | @apiKey_test | ATTACHED | 2024-07-11T13:02:25.206Z |             | 400 |
 
 
