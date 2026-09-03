@@ -1,6 +1,7 @@
 package it.pagopa.pn.cucumber.poller;
 
 import it.pagopa.pn.cucumber.dto.NotificationMessage;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.cucumber.dto.MessageBodyDto;
 import jakarta.jms.*;
@@ -19,7 +20,7 @@ import static it.pagopa.pn.cucumber.utils.SqsUtils.parseMessageBody;
 @CustomLog
 public class PnSsQueuePoller extends QueuePoller {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
     private final Map<String, Map<String, List<String>>> tagsMap = new ConcurrentHashMap<>();
 
@@ -33,8 +34,8 @@ public class PnSsQueuePoller extends QueuePoller {
             MessageBodyDto messageBodyDto = parseMessageBody(((TextMessage) message).getText());
             String detailType = messageBodyDto.getDetailType();
             log.debug("Retrieved message from queue: " + messageBodyDto);
-            NotificationMessage notificationMessage = objectMapper.readValue(messageBodyDto.getDetail(), NotificationMessage.class);
             if (isSsMessage(messageBodyDto)) {
+                NotificationMessage notificationMessage = objectMapper.readValue(messageBodyDto.getDetail(), NotificationMessage.class);
                 if (!this.messageMap.containsKey(notificationMessage.getKey()))
                     this.messageMap.put(notificationMessage.getKey(), new HashSet<>(List.of(detailType)));
                 else {
