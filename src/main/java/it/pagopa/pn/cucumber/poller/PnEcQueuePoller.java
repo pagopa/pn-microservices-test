@@ -63,7 +63,7 @@ public class PnEcQueuePoller extends QueuePoller {
         }
     }
 
-    public boolean checkMessageAvailability(String requestId, List<String> statusesToCheck) {
+    public boolean waitForStatuses(String requestId, List<String> statusesToCheck) {
         boolean check = false;
         long pollingInterval = Long.parseLong(System.getProperty("pn.ec.sqs.lookup.interval.millis"));
         Instant timeLimit = Instant.now().plusMillis(Long.parseLong(System.getProperty("pn.ec.sqs.lookup.timeout.millis")));

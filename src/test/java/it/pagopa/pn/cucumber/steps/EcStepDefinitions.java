@@ -353,7 +353,7 @@ public class EcStepDefinitions {
         Assertions.assertEquals("200.00", sendPaperProgressStatusResultCode);
         Assertions.assertEquals("Accepted", sendPaperProgressStatusResultDescription);
         Assertions.assertNull(sendPaperProgressStatusErrorList);
-        Assertions.assertTrue(queuePoller.checkMessageAvailability(requestId, new ArrayList<>(statusesToCheck)));
+        Assertions.assertTrue(queuePoller.waitForStatuses(requestId, new ArrayList<>(statusesToCheck)));
     }
 
     @And("waiting for scheduling")
@@ -426,18 +426,18 @@ public class EcStepDefinitions {
     }
 
     //THEN
-    @Then("check if the message has been sent")
-    public void checkStatusMessage() {
+    @Then("wait for the message to be sent")
+    public void waitForMessageSent() {
         boolean checked = switch (this.channel.toUpperCase()) {
             case "SMS" ->
-                    queuePoller.checkMessageAvailability(requestId, List.of(CourtesyMessageProgressEvent.EventCodeEnum.S003.getValue()));
+                    queuePoller.waitForStatuses(requestId, List.of(CourtesyMessageProgressEvent.EventCodeEnum.S003.getValue()));
             case "EMAIL" ->
-                    queuePoller.checkMessageAvailability(requestId, List.of(CourtesyMessageProgressEvent.EventCodeEnum.M003.getValue()));
+                    queuePoller.waitForStatuses(requestId, List.of(CourtesyMessageProgressEvent.EventCodeEnum.M003.getValue()));
             case "PEC" ->
-                    queuePoller.checkMessageAvailability(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.C000.getValue()));
+                    queuePoller.waitForStatuses(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.C000.getValue()));
             case "SERCQ" ->
-                    queuePoller.checkMessageAvailability(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.Q003.getValue()));
-            case "PAPER" -> queuePoller.checkMessageAvailability(requestId, List.of("P000"));
+                    queuePoller.waitForStatuses(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.Q003.getValue()));
+            case "PAPER" -> queuePoller.waitForStatuses(requestId, List.of("P000"));
             default ->
                     throw new IllegalArgumentException(String.format("The given channel '%s' is not valid.", this.channel));
         };
@@ -446,14 +446,14 @@ public class EcStepDefinitions {
 
     @Then("check SES event {string} is {string}")
     public void checkSesEvent(String expectedEvent, String expectedResult ) {
-        boolean checked = queuePoller.checkMessageAvailability(requestId, List.of(expectedEvent));
+        boolean checked = queuePoller.waitForStatuses(requestId, List.of(expectedEvent));
         boolean expected = Boolean.parseBoolean(expectedResult);
         Assertions.assertEquals(expected, checked);
     }
 
-    @Then("check if the message has status {string}")
-    public void checkStatusMessage(String status) {
-        boolean checked = queuePoller.checkMessageAvailability(requestId,List.of(status));
+    @Then("wait for the request to have status {string}")
+    public void waitForStatus(String status) {
+        boolean checked = queuePoller.waitForStatuses(requestId,List.of(status));
         Assertions.assertTrue(checked);
     }
 
@@ -512,14 +512,14 @@ public class EcStepDefinitions {
         }
     }
 
-    @Then("check if the message has been accepted and has been delivered")
-    public void checkIfTheMessageIsAcceptedAndDelivered() {
-        Assertions.assertTrue(queuePoller.checkMessageAvailability(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.C001.getValue(), LegalMessageSentDetails.EventCodeEnum.C003.getValue())));
+    @Then("wait for the request to be accepted and delivered")
+    public void waitForMessageAcceptedAndDelivered() {
+        Assertions.assertTrue(queuePoller.waitForStatuses(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.C001.getValue(), LegalMessageSentDetails.EventCodeEnum.C003.getValue())));
     }
 
-    @Then("check if the message has event code error {string}")
-    public void checkIfTheMessageHasEventCodeError(String sRc) {
-        Assertions.assertTrue(queuePoller.checkMessageAvailability(requestId, List.of(sRc)));
+    @Then("wait for the request to have event code error {string}")
+    public void waitForMessageEventCodeError(String sRc) {
+        Assertions.assertTrue(queuePoller.waitForStatuses(requestId, List.of(sRc)));
     }
 
     @Then("I get {string} status code")
