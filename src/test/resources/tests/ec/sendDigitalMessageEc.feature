@@ -81,7 +81,7 @@ Feature: Send Digital Message Ec
     #bounce M005
     #complaint M006
       | clientId            | apiKey            | channel        | receiver                                        | expectedEvent |
-      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address                 | M004          |
+      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.success         | M004          |
       | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.bounce          | M005          |
       | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.hard.bounce     | M005          |
       | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.complaint       | M006          |
