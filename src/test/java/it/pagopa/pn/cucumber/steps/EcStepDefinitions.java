@@ -97,8 +97,7 @@ public class EcStepDefinitions {
     public void messageToSend(String clientId, String channel) {
         this.clientId = getValueIfTagged(clientId);
         this.channel = getValueIfTagged(channel);
-        log.info("ClientId {}", this.clientId);
-        log.debug("Channel {}", this.channel);
+        log.info("Sending as client {} on channel {}", this.clientId, this.channel);
     }
 
     @Given("a {string} authenticated by {string} and {string} to send on")
@@ -106,9 +105,7 @@ public class EcStepDefinitions {
         this.clientId = getValueIfTagged(clientId);
         this.apiKey = getValueIfTagged(apiKey);
         this.channel = getValueIfTagged(channel);
-        log.info("ClientId {}", this.clientId);
-        log.info("ApiKey {}", this.apiKey);
-        log.debug("Channel {}", this.channel);
+        log.info("Sending as authenticated client {} on channel {}", this.clientId, this.channel);
     }
 
     @Given("the ExternalChannel client {string} authenticated by {string}")
@@ -120,7 +117,7 @@ public class EcStepDefinitions {
     @Given("a {string} to send request")
     public void aClientToSendRequest(String clientId) {
         this.clientId = getValueIfTagged(clientId);
-        log.info("ClientId {}",this.clientId);
+        log.info("Sending requests as client {}", this.clientId);
     }
 
 
@@ -145,14 +142,14 @@ public class EcStepDefinitions {
     @When("try to get client configurations")
     public void tryToGetClientConfigurations() {
         this.response = ExternalChannelUtils.getClient(this.clientId);
-        System.out.println("Response: "+response.asString());
+        log.debug("Client {} detail response: {}", this.clientId, response.asString());
         this.sRC = String.valueOf(response.getStatusCode());
     }
 
     @When("try to get all client configurations")
     public void tryToGetAllClientConfigurations() {
         this.response = ExternalChannelUtils.getClientConfigurations(this.clientId);
-        System.out.println("Response: "+this.response.asString());
+        log.debug("Client {} configurations response: {}", this.clientId, this.response.asString());
         this.sRC = String.valueOf(response.getStatusCode());
     }
 
@@ -191,7 +188,7 @@ public class EcStepDefinitions {
             case "PAPER" -> ExternalChannelUtils.getPaperByRequestId(clientId, requestId);
             default -> throw new IllegalArgumentException();
         };
-        log.info("Channel {}",channel);
+        log.info("Result requested on channel {} for requestId {}: httpStatus={}", channel, requestId, response.getStatusCode());
         this.sRC = String.valueOf(response.getStatusCode());
     }
 
@@ -204,7 +201,7 @@ public class EcStepDefinitions {
             case "PAPER" -> ExternalChannelUtils.getPaperByRequestId(clientId, getValueIfTagged(requestId));
             default -> throw new IllegalArgumentException();
         };
-        log.info("Channel {}",channel);
+        log.info("Result requested on channel {} for requestId {}: httpStatus={}", channel, getValueIfTagged(requestId), response.getStatusCode());
         this.sRC = String.valueOf(response.getStatusCode());
     }
 
@@ -225,20 +222,20 @@ public class EcStepDefinitions {
 
     @When("try to send a digital message to {string} with same requestId and same body")
     public void tryToSendADigitalMessageToWithSameRequestIdAndSameBody(String receiver) {
-        System.out.println("[PN-19053] Secondo invio (stesso body) - requestId: " + ExternalChannelUtils.concatRequestId(clientId, this.requestId));
+        log.info("Resending digital message with same requestId and same body: requestId={}", ExternalChannelUtils.concatRequestId(clientId, this.requestId));
         sendDigitalMessage(receiver, this.requestId, this.messageText);
     }
 
     @When("try to send a paper message to {string} with same requestId and same body")
     public void tryToSendAPaperMessageToWithSameRequestIdAndSameBody(String receiver) {
-        System.out.println("[PN-19053] Secondo invio cartaceo (stesso body) - requestId: " + ExternalChannelUtils.concatRequestId(clientId, this.requestId));
+        log.info("Resending paper message with same requestId and same body: requestId={}", ExternalChannelUtils.concatRequestId(clientId, this.requestId));
         Response response = ExternalChannelUtils.sendPaperMessage(clientId, this.requestId, attachmentsList);
         this.sendPaperMessageStatusCode = response.getStatusCode();
     }
 
     @When("try to send a paper message to {string} with same requestId and different body")
     public void tryToSendAPaperMessageToWithSameRequestIdAndDifferentBody(String receiver) {
-        System.out.println("[PN-19053] Secondo invio cartaceo (body diverso) - requestId: " + ExternalChannelUtils.concatRequestId(clientId, this.requestId));
+        log.info("Resending paper message with same requestId and different body: requestId={}", ExternalChannelUtils.concatRequestId(clientId, this.requestId));
         Response response = ExternalChannelUtils.sendPaperMessageWithDifferentAddress(clientId, this.requestId, attachmentsList, "Via Milano 5");
         this.sendPaperMessageStatusCode = response.getStatusCode();
     }
@@ -254,8 +251,7 @@ public class EcStepDefinitions {
         MessageIdRequestMetadataDto body = new MessageIdRequestMetadataDto();
         this.sentMessageId = ExternalChannelUtils.generateRandomMessageId();
         //this.sentMessageId=getValueIfTagged(messageId);
-        System.out.println("MESSAGE ID PATCH: "+this.sentMessageId);
-        System.out.println("Request ID PATCH: "+ ExternalChannelUtils.concatRequestId(clientId,requestId));
+        log.info("Patching request metadata: requestId={} messageId={}", ExternalChannelUtils.concatRequestId(clientId, requestId), this.sentMessageId);
         body.setMessageId(sentMessageId);
         requestId = ExternalChannelUtils.concatRequestId(clientId,this.requestId);
         response = ExternalChannelUtils.setRequestMetadataMessageId(clientId, requestId, body);
@@ -263,7 +259,7 @@ public class EcStepDefinitions {
 
     @When("I try to GET request metadata by messageId")
     public void getRequestMetadataByMessageId() {
-        System.out.println("MESSAGE ID GET: "+this.sentMessageId);
+        log.info("Getting request metadata by messageId={}", this.sentMessageId);
         response = ExternalChannelUtils.getRequestMetadataByMessageId(this.sentMessageId);
     }
 
@@ -385,7 +381,7 @@ public class EcStepDefinitions {
 
     @And("try to send a paper message to {string} with {string} as documentType and {string} as PaId")
     public void tryToSendAPaperMessageToWithDocumentType(String receiver, String transformationDocumentType, String paId) {
-        log.info("nel  send -  receiver: {}, transformationDocumentType: {}, paId: {} ",receiver,transformationDocumentType,paId);
+        log.info("Sending paper message to {} with transformationDocumentType={} paId={}", receiver, transformationDocumentType, paId);
         this.requestId = ExternalChannelUtils.generateRandomRequestId();
         MDC.put(MDC_CORR_ID_KEY, requestId);
         this.receiver = getValueIfTagged(receiver);
@@ -414,11 +410,11 @@ public class EcStepDefinitions {
             iRC = oResp.getStatusCode();
             if (iRC == 200) {
                 ObjectMapper objectMapper = new ObjectMapper();
-                log.trace(oResp.getBody().asString());
                 DocumentResponse oFDR = objectMapper.readValue(oResp.getBody().asString(), DocumentResponse.class);
                 DocumentResponseDocument document = oFDR.getDocument();
                 assert document != null;
                 assert document.getDocumentState() != null;
+                log.debug("Waiting for attachment {} to become available, current state is {}", sKey, document.getDocumentState());
                 if (document.getDocumentState().equalsIgnoreCase("available")) {
                     hasBeenFound = true;
                     break;
@@ -465,7 +461,7 @@ public class EcStepDefinitions {
     @Then("I send the following paper progress status requests:")
     public void sendPaperProgressStatusRequests(DataTable dataTable) {
         {
-            log.info("requestId {}", this.requestId);
+            log.info("Sending paper progress status events for requestId {}", this.requestId);
             if (testStartTime == null) {
                 testStartTime = OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS);
             }
@@ -534,7 +530,7 @@ public class EcStepDefinitions {
     @Then("I get {string} result code")
     public void i_get_result_code(String sRC) {
         Assertions.assertEquals(sRC, sendPaperProgressStatusResultCode);
-        log.debug("Error list: " + sendPaperProgressStatusErrorList);
+        log.debug("Error list returned by the request: {}", sendPaperProgressStatusErrorList);
     }
 
     @Then("i get response {string}")
@@ -544,8 +540,7 @@ public class EcStepDefinitions {
 
     @Then("i get an error code {string}")
     public void getError(String errorCode) {
-        log.debug("Error code {}", errorCode);
-        log.debug("Response : {}", response.asString());
+        log.debug("Expecting error code {}, response was: {}", errorCode, response.asString());
         Assertions.assertEquals(errorCode, String.valueOf(response.getStatusCode()));
     }
 
@@ -565,13 +560,13 @@ public class EcStepDefinitions {
     public void iGetCourier(String courier, String statusCode) throws Exception{
         this.courier = getValueIfTagged(courier);
         this.statusCode = getValueIfTagged(statusCode);
-        log.info("Courier {}", this.courier, " - statusCode {} ", this.statusCode);
+        log.info("Expecting courier {} with statusCode {}", this.courier, this.statusCode);
         boolean result = false;
         if(this.courier.equals("null")) {
             Assertions.assertNull(this.courier);
         } else {
             String clientId = "pn-cons-000~" + requestId;
-            log.info("clientId {}", clientId);
+            log.debug("Looking up pn-EcRichiesteMetadati with key {}", clientId);
             QueryResponse response = dynamoDbService.queryByRequestId(System.getProperty("pn.ec.richieste-metadati.table.name"),clientId);
             Optional<Map<String, AttributeValue>> matchingItem = response.items().stream()
                     .filter(item -> item.get("requestId").s().equals(clientId))
@@ -579,19 +574,19 @@ public class EcStepDefinitions {
 
             if(matchingItem != null && !matchingItem.isEmpty()){
                 Map<String, AttributeValue> itemsMap = matchingItem.get(); //record
-                log.info("Record trovato: {} ", itemsMap);
+                log.debug("Metadata record found: {}", itemsMap);
                 List<AttributeValue> itemsValue = itemsMap.get("eventsList").l(); //eventList
                 if(itemsValue != null)
-                    log.info("itemsValue size: {} ", itemsValue.size());
+                    log.debug("Metadata record contains {} events", itemsValue.size());
                 for (AttributeValue eventValue : itemsValue) {
                     if (eventValue != null && eventValue.m() != null && eventValue.m().containsKey("paperProgrStatus") ){
                         AttributeValue paperProgrStatusMap = eventValue.m().get("paperProgrStatus");
                         if(paperProgrStatusMap != null && !paperProgrStatusMap.m().isEmpty()){
-                            log.info("paperProgrStatusMap trovato: {} ", paperProgrStatusMap);
+                            log.debug("Event carries paperProgrStatus: {}", paperProgrStatusMap);
                             if ( paperProgrStatusMap.m().containsKey("statusCode") && paperProgrStatusMap.m().get("statusCode").s() != null &&
                                     paperProgrStatusMap.m().get("statusCode").s().equals(statusCode)){
                                 String paperProgrStatusCourier = paperProgrStatusMap.m().get("courier").s();
-                                log.info("paperProgrStatusCourier trovato: {} ", paperProgrStatusCourier);
+                                log.info("Courier {} found on event with statusCode {}", paperProgrStatusCourier, statusCode);
                                 result = true;
                                 //Assertions.assertEquals(paperProgrStatusCourier, this.courier);
                             }
@@ -617,7 +612,7 @@ public class EcStepDefinitions {
         this.clientId = getValueIfTagged(clientId);
         this.receiver = getValueIfTagged(receiver);
         this.messageText = messageText;
-        log.info("receiver address {}", this.receiver);
+        log.info("Sending digital message on channel {} to {} with requestId {}", this.channel, this.receiver, this.requestId);
         //switch sul canale
         this.response = switch (this.channel) {
             case "SMS" ->
@@ -627,7 +622,7 @@ public class EcStepDefinitions {
                     ExternalChannelUtils.sendDigitalNotification(clientId, requestId, attachmentsList, this.receiver, this.channel, this.messageText);
             default -> throw new IllegalArgumentException();
         };
-        log.debug("RESPONSE : {}", response.getStatusCode());
+        log.debug("Digital message sent for requestId {}: httpStatus={}", this.requestId, response.getStatusCode());
         this.sRC = String.valueOf(this.response.getStatusCode());
     }
 

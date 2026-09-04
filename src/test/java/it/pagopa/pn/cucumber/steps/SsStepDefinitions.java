@@ -107,8 +107,7 @@ public class SsStepDefinitions {
         sMimeType = getValueIfTagged(sMimeType);
         sFileName = getValueIfTagged(sFileName);
 
-        log.info("FILENAME:{} ", sFileName);
-        System.out.println("FILENAME: "+ sFileName);
+        log.info("Upload prepared by client {}: documentType={} contentType={} file={}", sPNClient, sDocumentType, sMimeType, sFileName);
         this.sPNClient = sPNClient;
         this.sPNClient_AK = sPNClient_AK;
         this.sDocumentType = sDocumentType;
@@ -173,7 +172,7 @@ public class SsStepDefinitions {
         this.sPNClientUp = sPNClientUp;
         this.sPNClient_AKUp = sPNClient_AKUp;
 
-        log.debug("client: " + sPNClientUp);
+        log.debug("Update prepared by client {}", sPNClientUp);
 
         Response oResp;
 
@@ -198,7 +197,7 @@ public class SsStepDefinitions {
             MDC.put(MDC_CORR_ID_KEY, sKey);
             sSecret = oResp.then().extract().path("secret");
         }
-        System.out.println("KEY: "+ sKey);
+        log.info("Upload presigned url requested: httpStatus={} fileKey={}", iRC, sKey);
     }
 
     @When("request a presigned url to upload the file with {string}")
@@ -660,11 +659,11 @@ public class SsStepDefinitions {
             iRC = oResp.getStatusCode();
             if (iRC == 200) {
                 ObjectMapper objectMapper = new ObjectMapper();
-                log.trace(oResp.getBody().asString());
                 DocumentResponse oFDR = objectMapper.readValue(oResp.getBody().asString(), DocumentResponse.class);
                 DocumentResponseDocument document = oFDR.getDocument();
                 assert document != null;
                 assert document.getDocumentState() != null;
+                log.debug("Waiting for document {} to become available, current state is {}", sKey, document.getDocumentState());
                 //If the document is available, exit the loop.
                 if (document.getDocumentState().equalsIgnoreCase("available")) {
                     hasBeenFound = true;
@@ -681,7 +680,7 @@ public class SsStepDefinitions {
     public void i_found_in_s3() {
         Assertions.assertEquals(200, SafeStorageUtils.getPresignedURLDownload(sPNClient, sPNClient_AK, sKey, false).getStatusCode());// Ok
 
-        System.out.println("S3 KEY: "+sKey);
+        log.info("Document {} is downloadable from S3", sKey);
         statusCode = 200;
     }
 
@@ -713,13 +712,12 @@ public class SsStepDefinitions {
     private void checkAvailabilityMessage(String statusCode, String fileKey, String detailType) {
         int sCode;
         boolean check = queuePoller.checkMessageAvailability(fileKey, detailType);
-        System.out.println("CHECK: "+ check);
         if (!check) {
             sCode = 404;
-            log.info("Message not found for key {}", sKey);
+            log.warn("Event {} not received for key {}", detailType, fileKey);
         } else {
             sCode = 200;
-            log.debug("Message found for key {}", sKey);
+            log.info("Event {} received for key {}", detailType, fileKey);
         }
         Assertions.assertEquals(Integer.parseInt(statusCode), sCode);
     }
@@ -808,7 +806,7 @@ public class SsStepDefinitions {
 
     @Then("i get that presigned url")
     public void iGetThatPresignedUrl() {
-        log.debug("fileDownloadResponse {}", fileDownloadResponse);
+        log.debug("Download presigned url for key {}: {}", sKey, fileDownloadResponse);
         Assertions.assertEquals(200, statusCode);
         Assertions.assertNotNull(fileDownloadResponse);
         Assertions.assertNotNull(fileDownloadResponse.getDownload());
@@ -816,7 +814,7 @@ public class SsStepDefinitions {
 
     @Then("i get file metadata")
     public void iGetFileMetadata() {
-        log.debug("fileDownloadResponse {}", fileDownloadResponse);
+        log.debug("Metadata for key {}: {}", sKey, fileDownloadResponse);
         Assertions.assertEquals(200, statusCode);
         Assertions.assertNotNull(fileDownloadResponse);
         Assertions.assertNull(fileDownloadResponse.getDownload());
@@ -876,11 +874,10 @@ public class SsStepDefinitions {
 
         String finalBucket = System.getProperty("pn.ss.availability.bucket.name");
         if (finalBucket == null || finalBucket.isEmpty()) {
-            System.out.println("FinalBucket property is empty");
             finalBucket = s3Service.getBucketName(
                     System.getProperty("pn.ss.availability.bucket.prefix")
             );
-            System.out.println("FinalBucket property: "+finalBucket);
+            log.debug("Final bucket name not configured, resolved by prefix to {}", finalBucket);
         }
 
         ListObjectVersionsResponse response = s3Service.listObjectVersions(sKey, finalBucket);
@@ -889,7 +886,7 @@ public class SsStepDefinitions {
                 .filter(v -> v.key().equals(sKey))
                 .count();
 
-        System.out.println("Final bucket version count for key " + sKey + ": " + versionCount);
+        log.info("Key {} has {} version(s) in final bucket {}", sKey, versionCount, finalBucket);
 
         Assertions.assertEquals(1, versionCount,
                 "Expected exactly 1 version in final bucket for key " + sKey + ", but found " + versionCount);
@@ -902,11 +899,10 @@ public class SsStepDefinitions {
 
         String stagingBucket = System.getProperty("pn.ss.availability.bucket.staging.name");
         if (stagingBucket == null || stagingBucket.isEmpty()) {
-            System.out.println("StagingBucket property is empty");
             stagingBucket = s3Service.getBucketName(
                     System.getProperty("pn.ss.availability.staging.bucket.prefix")
             );
-            System.out.println("stagingBucket property: "+stagingBucket);
+            log.debug("Staging bucket name not configured, resolved by prefix to {}", stagingBucket);
         }
 
         ListObjectVersionsResponse response = s3Service.listObjectVersions(sKey, stagingBucket);
@@ -915,7 +911,7 @@ public class SsStepDefinitions {
                 .filter(v -> v.key().equals(sKey))
                 .count();
 
-        System.out.println("Staging bucket version count for key " + sKey + ": " + versionCount);
+        log.info("Key {} has {} version(s) in staging bucket {}", sKey, versionCount, stagingBucket);
 
         Assertions.assertEquals(0, versionCount,
                 "Expected 0 versions in staging bucket for key " + sKey + ", but found " + versionCount);
@@ -928,20 +924,18 @@ public class SsStepDefinitions {
 
         String finalBucket = System.getProperty("pn.ss.availability.bucket.name");
         if (finalBucket == null || finalBucket.isEmpty()) {
-            System.out.println("FinalBucket property is empty");
             finalBucket = s3Service.getBucketName(
                     System.getProperty("pn.ss.availability.bucket.prefix")
             );
-            System.out.println("FinalBucket property: "+finalBucket);
+            log.debug("Final bucket name not configured, resolved by prefix to {}", finalBucket);
         }
 
         String stagingBucket = System.getProperty("pn.ss.availability.bucket.staging.name");
         if (stagingBucket == null || stagingBucket.isEmpty()) {
-            System.out.println("StagingBucket property is empty");
             stagingBucket = s3Service.getBucketName(
                     System.getProperty("pn.ss.availability.staging.bucket.prefix")
             );
-            System.out.println("stagingBucket property: "+stagingBucket);
+            log.debug("Staging bucket name not configured, resolved by prefix to {}", stagingBucket);
         }
 
         GetObjectTaggingResponse taggingResponse = s3Service.getObjectTagging(sKey, stagingBucket);
@@ -949,11 +943,11 @@ public class SsStepDefinitions {
 
         long versionCount = response.versions().stream().filter(v -> v.key().equals(sKey)).count();
 
-        System.out.println("Final bucket version count for key " + sKey + ": " + versionCount);
+        log.info("After the failed transformation key {} has {} version(s) in final bucket {}", sKey, versionCount, finalBucket);
 
         Assertions.assertEquals(0, versionCount, "Expected 0 versions in final bucket for key " + sKey + ", but found " + versionCount);
         boolean hasErrorTag = taggingResponse.tagSet().stream().anyMatch(tag -> tag.value().equals("ERROR"));
-        System.out.println("Object " + sKey + " has ERROR tag: " + hasErrorTag);
+        log.info("Object {} in staging bucket {} has ERROR tag: {}", sKey, stagingBucket, hasErrorTag);
         Assertions.assertTrue(hasErrorTag, "Expected object " + sKey + " to have a tag with value ERROR, but it does not.");
     }
 

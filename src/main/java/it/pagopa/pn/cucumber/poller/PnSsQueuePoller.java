@@ -33,7 +33,7 @@ public class PnSsQueuePoller extends QueuePoller {
         try {
             MessageBodyDto messageBodyDto = parseMessageBody(((TextMessage) message).getText());
             String detailType = messageBodyDto.getDetailType();
-            log.debug("Retrieved message from queue: " + messageBodyDto);
+            log.debug("Retrieved message from queue {}: {}", super.queueName, messageBodyDto);
             if (isSsMessage(messageBodyDto)) {
                 NotificationMessage notificationMessage = objectMapper.readValue(messageBodyDto.getDetail(), NotificationMessage.class);
                 if (!this.messageMap.containsKey(notificationMessage.getKey()))
@@ -48,7 +48,7 @@ public class PnSsQueuePoller extends QueuePoller {
                 }
             }
         } catch (Exception e) {
-            log.error("Error while receiving message from SS queue", e);
+            log.warn("Discarding unreadable message from SS queue", e);
         }
     }
 
