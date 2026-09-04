@@ -94,9 +94,9 @@ Feature: Get Digital Message Ec
     When try to get request by messageId "<messageId>"
     Then i get response "<rc>"
     Examples:
-      | clientId           | messageId         | rc  |
-      | @clientId-delivery |                   | 400 |
-      | @clientId-delivery | messageIdNotFound | 404 |
+      | clientId           | messageId             | rc  |
+      | @clientId-delivery | notDecodableMessageId | 400 |
+      | @clientId-delivery | @notExistingMessageId | 404 |
 
     @PnEcGetMessage @getPec @getPec_ko
       Scenario Outline: Get di una PEC con un requestId non presente a sistema

@@ -53,6 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class EcStepDefinitions {
 
     public static final String NOW_PARAMETER = "@now";
+    public static final String NOT_EXISTING_MESSAGE_ID_PARAMETER = "@notExistingMessageId";
     private String clientId;
     private String apiKey;
     private String requestId;
@@ -163,7 +164,7 @@ public class EcStepDefinitions {
     @When("try to get request by messageId {string}")
     public void tryToGetRequestByMessageId(String messageId) {
 
-        if(Objects.equals(messageId, "messageIdNotFound")) {
+        if(Objects.equals(messageId, NOT_EXISTING_MESSAGE_ID_PARAMETER)) {
             this.response = ExternalChannelUtils.getRequestByMessageId(ExternalChannelUtils.encodeMessageId(clientId,
                     ExternalChannelUtils.generateRandomRequestId()));
 
