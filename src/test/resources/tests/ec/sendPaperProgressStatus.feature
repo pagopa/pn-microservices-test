@@ -97,6 +97,7 @@ Feature: Send Paper Progress Status
     When I send the following paper progress status requests:
       | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   | courier     |
       | RECAG010   |                      | @requestId | @testStartTime | <productType> | <courier1>  |
+    And check if the message has status "RECAG010"
     And I send the following paper progress status requests:
       | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   | courier     |
       | RECAG010   |                      | @requestId | @testStartTime | <productType> | <courier2>  |
@@ -122,6 +123,7 @@ Feature: Send Paper Progress Status
     When I send the following paper progress status requests:
       | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   |
       | RECAG010   |                      | @requestId | @testStartTime | <productType> |
+    And check if the message has status "RECAG010"
     And I send the following paper progress status requests:
       | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   |
       | RECAG010   |                      | @requestId | @testStartTime | <productType> |

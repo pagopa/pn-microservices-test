@@ -135,7 +135,7 @@ public class EcStepDefinitions {
         this.requestId = ExternalChannelUtils.generateRandomRequestId();
         MDC.put(MDC_CORR_ID_KEY, requestId);
         this.receiver = getValueIfTagged(receiver);
-        Response response = ExternalChannelUtils.sendPaperMessage(clientId, requestId, attachmentsList);
+        Response response = ExternalChannelUtils.sendPaperMessageWithDifferentAddress(clientId, requestId, attachmentsList, this.receiver);
         this.sendPaperMessageStatusCode = response.getStatusCode();
     }
 
@@ -307,7 +307,7 @@ public class EcStepDefinitions {
             pnAttachment.setDocumentId(UUID.randomUUID().toString());
             pnAttachment.setId(RandomStringUtils.randomAlphanumeric(10));
             attachmentsList.add(pnAttachment);
-            this.sKey = "safestorage://" + sKey;
+            this.sKey = sKey;
 
             Response uploadResp = CommonUtils.uploadFile(sURL, file, sha256, md5, mimeType, sSecret, Checksum.SHA256);
             assertEquals(200, uploadResp.getStatusCode());
