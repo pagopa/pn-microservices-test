@@ -86,4 +86,10 @@ public class PnEcQueuePoller extends QueuePoller {
         return check;
     }
 
+    public boolean hasStatuses(String requestId, List<String> statusesToCheck) {
+        Set<String> statusesFound = this.messageMap.get(requestId);
+        log.debug("Statuses collected for the request under check: {}", statusesFound);
+        return statusesFound != null && statusesFound.containsAll(statusesToCheck);
+    }
+
 }
