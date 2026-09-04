@@ -23,7 +23,7 @@ Feature: Get Digital Message Ec
   Scenario Outline: Get di una PEC tramite requestId
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message to "<receiver>"
-    And check if the message has been sent
+    And wait for the message to be sent
     When try to get result
     Then i get response "<rc>"
     Examples:
@@ -34,7 +34,7 @@ Feature: Get Digital Message Ec
   Scenario Outline: Get di una email tramite requestId
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message to "<receiver>"
-    And check if the message has been sent
+    And wait for the message to be sent
     When try to get result
     Then i get response "<rc>"
     Examples:
@@ -45,7 +45,7 @@ Feature: Get Digital Message Ec
   Scenario Outline: Get di un SMS tramite requestId
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message to "<receiver>"
-    And check if the message has been sent
+    And wait for the message to be sent
     When try to get result
     Then i get response "<rc>"
     Examples:
@@ -60,7 +60,7 @@ Feature: Get Digital Message Ec
       | @doc_type_aar | src/test/resources/test.pdf | application/pdf |
     When try to send a paper message to "<receiver>"
     * waiting for scheduling
-    And check if the message has been sent
+    And wait for the message to be sent
     And try to get result
     Then i get response "<rc>"
     Examples:
