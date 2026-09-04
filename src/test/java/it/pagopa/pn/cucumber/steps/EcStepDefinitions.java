@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.AfterAll;
 import io.cucumber.java.BeforeAll;
+import io.cucumber.java.ParameterType;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -444,11 +445,15 @@ public class EcStepDefinitions {
         Assertions.assertTrue(checked);
     }
 
-    @Then("check SES event {string} is {string}")
-    public void checkSesEvent(String expectedEvent, String expectedResult ) {
-        boolean checked = queuePoller.waitForStatuses(requestId, List.of(expectedEvent));
-        boolean expected = Boolean.parseBoolean(expectedResult);
-        Assertions.assertEquals(expected, checked);
+    @ParameterType("has|does not have")
+    public boolean presence(String presence) {
+        return "has".equals(presence);
+    }
+
+    @Then("check that the request {presence} the {string} status")
+    public void checkStatusPresence(boolean shouldBePresent, String status) {
+        boolean present = queuePoller.hasStatuses(requestId, List.of(status));
+        Assertions.assertEquals(shouldBePresent, present);
     }
 
     @Then("wait for the request to have status {string}")

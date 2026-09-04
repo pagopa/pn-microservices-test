@@ -75,18 +75,30 @@ Feature: Send Digital Message Ec
       | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
     When try to send a digital message to "<receiver>"
     Then wait for the message to be sent
-    And check SES event "<expectedEvent>" is "<expectedResult>"
+    And wait for the request to have status "<expectedEvent>"
     Examples:
     #delivery M004
     #bounce M005
     #complaint M006
-      | clientId            | apiKey            | channel        | receiver                                        | expectedEvent |  expectedResult  |
-      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address                 | M004          |  true            |
-      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.bounce          | M005          |  true            |
-      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.hard.bounce     | M005          |  true            |
-      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.complaint       | M006          |  true            |
-      #configurazione di default (solo M003)
-      | @clientId-delivery  | @delivery_api_key | @channel_email | @email.receiver.digital.address                 | M005          | false            |
+      | clientId            | apiKey            | channel        | receiver                                        | expectedEvent |
+      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address                 | M004          |
+      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.bounce          | M005          |
+      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.hard.bounce     | M005          |
+      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.complaint       | M006          |
+
+  @PnEcSendMessage @invioEMAIL @email_ses_filtered
+  Scenario Outline: invio email e verifica che un evento SES non abilitato non venga inoltrato
+    Given a "<clientId>" and "<channel>" to send on
+    And "<clientId>" authenticated by "<apiKey>" uploads the following attachments:
+      | documentType                       | fileName                    | mimeType        |
+      | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
+    When try to send a digital message to "<receiver>"
+    Then wait for the message to be sent
+    And check that the request does not have the "<notExpectedEvent>" status
+    Examples:
+    #configurazione di default (solo M003)
+      | clientId            | apiKey            | channel        | receiver                                        | notExpectedEvent |
+      | @clientId-delivery  | @delivery_api_key | @channel_email | @email.receiver.digital.address                 | M005             |
 
   @PnEcSendMessage @invioEMAIL @email_rejected_ses
   Scenario Outline: invio email con allegato infetto e verifica reject SES
@@ -96,11 +108,11 @@ Feature: Send Digital Message Ec
       | @doc_type_notification_attachments  | text/plain |
     When try to send a digital message to "<receiver>"
     Then wait for the message to be sent
-    And check SES event "<expectedEvent>" is "<expectedResult>"
+    And wait for the request to have status "<expectedEvent>"
     Examples:
     #reject M009
-      | clientId       | apiKey       | channel        | receiver                                 | expectedEvent | expectedResult  |
-      | @clientId-test | @apiKey_test | @channel_email | @email.receiver.digital.address          | M009          | true            |
+      | clientId       | apiKey       | channel        | receiver                                 | expectedEvent |
+      | @clientId-test | @apiKey_test | @channel_email | @email.receiver.digital.address          | M009          |
 
 
   @PnEcPatchMessage @patchRequestByMessageId @PatchAndGetMessageId
