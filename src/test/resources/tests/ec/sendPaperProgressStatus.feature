@@ -141,8 +141,9 @@ Feature: Send Paper Progress Status
     When I send the following paper progress status requests:
       | statusCode   | deliveryFailureCause   | courier   | iun   | statusDateTime   | clientRequestTimestamp   |
       | <statusCode> | <deliveryFailureCause> | <courier> | <iun> | <statusDateTime> | <clientRequestTimestamp> |
+    And check if the message has status "<statusCode>"
     Then I get "<courier>" courier and I get "<statusCode>" statusCode:
     Examples:
-      | clientId       | apiKey       | statusCode | deliveryFailureCause | courier  | iun        | statusDateTime           | clientRequestTimestamp   | rc     |
-      | @clientId-cons | @apiKey-cons | CON080     |                      | XXXXX    |            | @now                     | @now                     | 200.00 |
-      | @clientId-cons | @apiKey-cons | RECRS002A  | M02                  |          | @requestId | @now                     | @now                     | 200.00 |
+      | clientId       | apiKey       | statusCode | deliveryFailureCause | courier  | iun        | statusDateTime           | clientRequestTimestamp   |
+      | @clientId-cons | @apiKey-cons | CON080     |                      | XXXXX    |            | @now                     | @now                     |
+      | @clientId-cons | @apiKey-cons | RECRS002A  | M02                  |          | @requestId | @now                     | @now                     |
