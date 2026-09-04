@@ -93,11 +93,11 @@ Feature: Send Paper Message Ec
 
 
   @PnEcSendMessage @PAPER @invioCartaceo @raster @testOk @TransformationDocumentType @TransformationError
-  Scenario Outline: Invio di un messaggio cartaceo con allegato vuoto e verifica dello stato di avanzamento
+  Scenario Outline: Invio di un messaggio cartaceo con allegato non valido e verifica dello stato di avanzamento
     Given a "<clientId>" and "<channel>" to send on
     When "<clientId>" authenticated by "<apiKey>" uploads the following attachments:
       | documentType        | fileName                     | mimeType        |
-      | @doc_type_to_raster | src/test/resources/empty.pdf | application/pdf |
+      | @doc_type_to_raster | src/main/resources/wrong.pdf | application/pdf |
     And try to send a paper message to "<receiver>" with "<transformationDocumentType>" as documentType
     # Attesa della schedulazione
     * waiting for scheduling
