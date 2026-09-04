@@ -7,7 +7,6 @@ import lombok.Getter;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
 import java.util.Properties;
 
 @Getter
@@ -36,13 +35,13 @@ public class Config {
             Properties prop = new Properties();
             InputStream fileStream = this.getClass().getClassLoader().getResourceAsStream(propertyFileName);
             if (fileStream == null) {
-                log.error(FILE_NOT_FOUND);
+                log.error("{}: {}", FILE_NOT_FOUND, propertyFileName);
                 System.exit(1);
             }
             prop.load(fileStream);
             prop.forEach((key, value) -> System.setProperty((String) key, (String) value));
         } catch (IOException ex) {
-            log.error("Errore nel caricamento delle properties -> " + ex.getMessage());
+            log.error("Errore nel caricamento del file properties {}", propertyFileName, ex);
             System.exit(1);
         }
     }

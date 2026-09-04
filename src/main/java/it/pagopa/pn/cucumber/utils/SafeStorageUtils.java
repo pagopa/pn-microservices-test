@@ -51,7 +51,7 @@ public class SafeStorageUtils {
 }
 
 	public static Response getPresignedURLUpload(String sCxId, String sAPIKey, FileCreationRequest fileCreationRequest, String sSHA256, String sMD5, boolean boHeader, Checksum eCS, boolean traceId) {
-		log.debug(INVOKING_SAFE_STORAGE, GET_PRESIGNED_URL_DOWNLOAD, Stream.of(sCxId, sAPIKey, fileCreationRequest, sSHA256, sMD5, (boHeader ? "header" : "body"), eCS.name()).toList());
+		log.debug(INVOKING_SAFE_STORAGE, GET_PRESIGNED_URL_UPLOAD, Stream.of(sCxId, fileCreationRequest, sSHA256, sMD5, (boHeader ? "header" : "body"), eCS.name()).toList());
 		RequestSpecification oReq = stdReq()
 				.header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
 				.header(X_API_KEY, sAPIKey);
@@ -75,7 +75,7 @@ public class SafeStorageUtils {
 	}
 
 	public static Response getPresignedURLDownload(String sCxId, String sAPIKey, String sFileKey, boolean metadataOnly) {
-		log.debug(INVOKING_SAFE_STORAGE, GET_PRESIGNED_URL_DOWNLOAD, Stream.of(sCxId, sAPIKey, sFileKey).toList());
+		log.debug(INVOKING_SAFE_STORAGE, GET_PRESIGNED_URL_DOWNLOAD, Stream.of(sCxId, sFileKey).toList());
 		RequestSpecification oReq = stdReq()
 				.pathParam(FILE_KEY, sFileKey)
 				.param(METADATA_ONLY, metadataOnly)
@@ -85,7 +85,7 @@ public class SafeStorageUtils {
 	}
 
 	public static Response getObjectMetadata(String sCxId, String sAPIKey, String sFileKey) {
-		log.debug(INVOKING_SAFE_STORAGE, GET_OBJECT_METADATA, Stream.of(sCxId, sAPIKey, sFileKey).toList());
+		log.debug(INVOKING_SAFE_STORAGE, GET_OBJECT_METADATA, Stream.of(sCxId, sFileKey).toList());
 		RequestSpecification oReq = stdReq()
 				.header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
 				.header(X_API_KEY, sAPIKey)

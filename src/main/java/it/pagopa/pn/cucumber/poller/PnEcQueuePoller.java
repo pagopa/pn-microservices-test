@@ -32,7 +32,7 @@ public class PnEcQueuePoller extends QueuePoller {
         try {
             MessageBodyDto messageBodyDto = parseMessageBody(((TextMessage) message).getText());
             SingleStatusUpdate singleStatusUpdate = objectMapper.readValue(messageBodyDto.getDetail(), SingleStatusUpdate.class);
-            log.debug("Retrieved message from queue {}: {}", System.getProperty("pn.ec.notifiche.esterne.queue.name"), messageBodyDto);
+            log.debug("Retrieved message from queue {}: {}", super.queueName, messageBodyDto);
             String requestId = "";
             String status = "";
             if (isEcMessage(messageBodyDto)) {
@@ -60,7 +60,7 @@ public class PnEcQueuePoller extends QueuePoller {
                 }
             }
         } catch (Exception e) {
-            log.error("Error while receiving message from EC queue", e);
+            log.warn("Discarding unreadable message from EC queue", e);
         }
     }
 
@@ -82,8 +82,8 @@ public class PnEcQueuePoller extends QueuePoller {
                 Thread.currentThread().interrupt();
             }
         }
-        log.debug("Messages queue : {} ", this.messageMap);
-        log.debug("Statuses found : {}", statusesFound);
+        log.debug("Messages collected so far: {}", this.messageMap);
+        log.debug("Statuses found for the request under check: {}", statusesFound);
         return check;
     }
 

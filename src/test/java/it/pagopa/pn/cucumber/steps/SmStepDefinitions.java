@@ -35,7 +35,7 @@ public class SmStepDefinitions {
         this.process = getValueIfTagged(process);
         this.nextStatus = getValueIfTagged(nextStatus);
 
-        log.info("Validating process: {}, status: {}, nextStatus: {}", this.process, this.status, this.nextStatus);
+        log.info("Validating transition of process {} from status {} to {}", this.process, this.status, this.nextStatus);
 
 
         try {
@@ -44,9 +44,8 @@ public class SmStepDefinitions {
 
                 this.isAllowed = response.then().extract().path("allowed");
 
-                log.info("SM response -> {}", response.asString());
+                log.debug("validateStatus response: {}", response.asString());
         } catch (Exception e) {
-            log.error("Errore durante la chiamata a validateStatus o nel parsing della risposta: {}", e.getMessage(), e);
             throw new RuntimeException("Errore durante la chiamata a validateStatus: " + e.getMessage(), e);
         }
     }
@@ -65,7 +64,7 @@ public class SmStepDefinitions {
         this.status = getValueIfTagged(status);
         this.process = getValueIfTagged(process);
 
-        log.info("Validating process: {}, status: {}", this.process, this.status);
+        log.info("Decoding logical status {} of process {}", this.status, this.process);
 
 
         try {
@@ -73,11 +72,10 @@ public class SmStepDefinitions {
 
             externalStatus= response.then().extract().path("externalStatus");
             logicStatus= response.then().extract().path("logicStatus");
-            log.info("Response {}", response.asString());
+            log.debug("validateExternalStatus response: {}", response.asString());
 
         } catch (Exception e) {
-            log.error("Errore durante la chiamata a validateStatus o nel parsing della risposta: {}", e.getMessage(), e);
-            throw new RuntimeException("Errore durante la chiamata a validateStatus: " + e.getMessage(), e);
+            throw new RuntimeException("Errore durante la chiamata a validateExternalStatus: " + e.getMessage(), e);
 
         }
         }
