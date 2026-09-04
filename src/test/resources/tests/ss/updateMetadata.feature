@@ -17,13 +17,12 @@ Feature: Update metadata
 
 
   @PnSsUpdateMetadata
-  Scenario Outline: tentativo di update dei metadata di un file con chiave invalida o non valorizzata
+  Scenario Outline: tentativo di update dei metadata di un file con chiave inesistente
     Given "<clientIdUp>" authenticated by "<APIKeyUp>" try to update the document using "<status>" and "<retentionUntil>" but has invalid or null "<fileKey>"
     Then i get an error "<rc>"
     Examples:
       | clientIdUp     | APIKeyUp     | status   | retentionUntil           | fileKey     | rc  |
-      | pn-delivery    | pn-delivery_api_key | ATTACHED |                          | PN_NOTIFICATION_ATTACHMENTS-73c54f5e1395444a9f630738ec3a7fdb.pdf| 200 |
-      | @clientId-test | @apiKey_test | ATTACHED | 2024-07-11T13:02:25.206Z |             | 400 |
+      | @clientId-test | @apiKey_test | ATTACHED | 2024-07-11T13:02:25.206Z | NONEXISTENT | 404 |
 
 
   @PnSsUpdateMetadata

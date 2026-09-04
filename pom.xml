@@ -9,6 +9,7 @@
 		<java.version>21</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<logbackjackson.version>0.1.5</logbackjackson.version>
+		<logback.version>1.4.14</logback.version>
 		<spring.boot-version>3.2.0</spring.boot-version>
 		<open.api.version>develop</open.api.version>
 		<open.api>3.0.3</open.api>
@@ -143,6 +144,11 @@
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>s3-event-notifications</artifactId>
 			<version>2.25.14</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>${logback.version}</version>
 		</dependency>
 	</dependencies>
 	<build>
