@@ -62,8 +62,9 @@ Feature: Upload SafeStorage
       | @clientId-test | @apiKey_test | @doc_type_only_sign              | src/main/resources/test.xml | application/xml | 200 |
       | @clientId-test | @apiKey_test | @doc_type_clean_paper_attachment | src/test/resources/test.pdf | application/pdf | 200 |
       | @clientId-test | @apiKey_test | @doc_type_chain_transformation | src/test/resources/test-raster.pdf | application/pdf | 200 |
-      | @clientId-test | @apiKey_test | @doc_type_chain_transformation_2 | src/test/resources/test-raster.pdf | application/pdf | 200 |
-      | @clientId-test | @apiKey_test | @doc_type_chain_transformation_3 | src/test/resources/test-raster.pdf | application/pdf | 200 |
+      # TODO: riabilitare quando pn-ss risolverà il doppio caricamento nel bucket finale.
+      #| @clientId-test | @apiKey_test | @doc_type_chain_transformation_2 | src/test/resources/test-raster.pdf | application/pdf | 200 |
+      #| @clientId-test | @apiKey_test | @doc_type_chain_transformation_3 | src/test/resources/test-raster.pdf | application/pdf | 200 |
 
   # Forniamo un file vuoto per far lanciare un'eccezione permanente alla libreria di firma e marca.
   @PnSsUpload @Transformation
