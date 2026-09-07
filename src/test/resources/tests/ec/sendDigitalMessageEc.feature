@@ -5,7 +5,7 @@ Feature: Send Digital Message Ec
   Scenario Outline: Invio sms e verifica della pubblicazione del messaggio nella coda di debug
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message to "<receiver>"
-    Then check if the message has been sent
+    Then wait for the message to be sent
     Examples:
       | clientId           | channel      | receiver                      |
       | @clientId-delivery | @channel_sms | @sms.receiver.digital.address |
@@ -15,9 +15,9 @@ Feature: Send Digital Message Ec
   Scenario Outline: Invio pec e verifica della pubblicazione del messaggio nella coda di debug
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message to "<receiver>"
-    * check if the message has been sent
+    * wait for the message to be sent
     * waiting for scheduling
-    Then check if the message has been accepted and has been delivered
+    Then wait for the request to be accepted and delivered
     Examples:
       | clientId           | channel      | receiver                      |
       | @clientId-delivery | @channel_pec | @pec.receiver.digital.address |
@@ -26,7 +26,7 @@ Feature: Send Digital Message Ec
   Scenario Outline: Invio email e verifica della pubblicazione del messaggio nella coda di debug
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message to "<receiver>"
-    Then check if the message has been sent
+    Then wait for the message to be sent
     Examples:
       | clientId           | channel        | receiver                        |
       | @clientId-delivery | @channel_email | @email.receiver.digital.address |
@@ -35,7 +35,7 @@ Feature: Send Digital Message Ec
   Scenario Outline: Invio SERCQ e verifica della pubblicazione del messaggio nella coda di debug
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message to "<receiver>"
-    Then check if the message has been sent
+    Then wait for the message to be sent
     Examples:
       | clientId           | channel        | receiver                        |
       | @clientId-delivery | @channel_sercq | @sercq.receiver.digital.address |
@@ -47,9 +47,9 @@ Feature: Send Digital Message Ec
       | documentType                       | fileName                    | mimeType        |
       | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
     When try to send a digital message to "<receiver>"
-    * check if the message has been sent
+    * wait for the message to be sent
     * waiting for scheduling
-    Then check if the message has been accepted and has been delivered
+    Then wait for the request to be accepted and delivered
     Examples:
       | clientId           | apiKey            | channel      | receiver                      |
       | @clientId-delivery | @delivery_api_key | @channel_pec | @pec.receiver.digital.address |
@@ -62,7 +62,7 @@ Feature: Send Digital Message Ec
       | documentType                       | fileName                    | mimeType        |
       | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
     When try to send a digital message to "<receiver>"
-    Then check if the message has been sent
+    Then wait for the message to be sent
     Examples:
       | clientId           | apiKey            | channel        | receiver                        |
       | @clientId-delivery | @delivery_api_key | @channel_email | @email.receiver.digital.address |
@@ -74,19 +74,31 @@ Feature: Send Digital Message Ec
       | documentType                       | fileName                    | mimeType        |
       | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
     When try to send a digital message to "<receiver>"
-    Then check if the message has been sent
-    And check SES event "<expectedEvent>" is "<expectedResult>"
+    Then wait for the message to be sent
+    And wait for the request to have status "<expectedEvent>"
     Examples:
     #delivery M004
     #bounce M005
     #complaint M006
-      | clientId            | apiKey            | channel        | receiver                                        | expectedEvent |  expectedResult  |
-      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address                 | M004          |  true            |
-      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.bounce          | M005          |  true            |
-      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.hard.bounce     | M005          |  true            |
-      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.complaint       | M006          |  true            |
-      #configurazione di default (solo M003)
-      | @clientId-delivery  | @delivery_api_key | @channel_email | @email.receiver.digital.address                 | M005          | false            |
+      | clientId            | apiKey            | channel        | receiver                                        | expectedEvent |
+      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.success         | M004          |
+      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.bounce          | M005          |
+      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.hard.bounce     | M005          |
+      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.complaint       | M006          |
+
+  @PnEcSendMessage @invioEMAIL @email_ses_filtered
+  Scenario Outline: invio email e verifica che un evento SES non abilitato non venga inoltrato
+    Given a "<clientId>" and "<channel>" to send on
+    And "<clientId>" authenticated by "<apiKey>" uploads the following attachments:
+      | documentType                       | fileName                    | mimeType        |
+      | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
+    When try to send a digital message to "<receiver>"
+    Then wait for the message to be sent
+    And check that the request does not have the "<notExpectedEvent>" status
+    Examples:
+    #configurazione di default (solo M003)
+      | clientId            | apiKey            | channel        | receiver                                        | notExpectedEvent |
+      | @clientId-delivery  | @delivery_api_key | @channel_email | @email.receiver.digital.address                 | M005             |
 
   @PnEcSendMessage @invioEMAIL @email_rejected_ses
   Scenario Outline: invio email con allegato infetto e verifica reject SES
@@ -95,12 +107,12 @@ Feature: Send Digital Message Ec
       | documentType                        | mimeType |
       | @doc_type_notification_attachments  | text/plain |
     When try to send a digital message to "<receiver>"
-    Then check if the message has been sent
-    And check SES event "<expectedEvent>" is "<expectedResult>"
+    Then wait for the message to be sent
+    And wait for the request to have status "<expectedEvent>"
     Examples:
     #reject M009
-      | clientId       | apiKey       | channel        | receiver                                 | expectedEvent | expectedResult  |
-      | @clientId-test | @apiKey_test | @channel_email | @email.receiver.digital.address          | M009          | true            |
+      | clientId       | apiKey       | channel        | receiver                                 | expectedEvent |
+      | @clientId-test | @apiKey_test | @channel_email | @email.receiver.digital.address          | M009          |
 
 
   @PnEcPatchMessage @patchRequestByMessageId @PatchAndGetMessageId
@@ -124,7 +136,7 @@ Feature: Send Digital Message Ec
       | documentType                       | fileName                    | mimeType        |
       | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
     When try to send a digital message to "<receiver>"
-    Then check if the message has been sent
+    Then wait for the message to be sent
     Examples:
       | clientId           | apiKey            | channel        | receiver                        |
       | @clientId-delivery | @delivery_api_key | @channel_sercq | @sercq.receiver.digital.address |
@@ -153,7 +165,7 @@ Feature: Send Digital Message Ec
   Scenario Outline: Invio sms di una richiesta già effettuata
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message to "<receiver>"
-    And check if the message has been sent
+    And wait for the message to be sent
     When try to send a digital message to "<receiver>" with same requestId
     Then i get an error code "<rc>"
     Examples:
@@ -165,7 +177,7 @@ Feature: Send Digital Message Ec
   Scenario Outline: Invio sms con richiesta identica già effettuata restituisce 204
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message to "<receiver>"
-    And check if the message has been sent
+    And wait for the message to be sent
     When try to send a digital message to "<receiver>" with same requestId and same body
     Then i get an error code "<rc>"
     Examples:
@@ -190,7 +202,7 @@ Feature: Send Digital Message Ec
       | documentType                       | fileName                    | mimeType        |
       | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
     When try to send a digital message to "<receiver>"
-    And check if the message has been sent
+    And wait for the message to be sent
     When try to send a digital message to "<receiver>" with same requestId
     Then i get an error code "<rc>"
     Examples:
@@ -204,7 +216,7 @@ Feature: Send Digital Message Ec
       | documentType                       | fileName                    | mimeType        |
       | @doc_type_notification_attachments | src/test/resources/test.pdf | application/pdf |
     When try to send a digital message to "<receiver>"
-    And check if the message has been sent
+    And wait for the message to be sent
     When try to send a digital message to "<receiver>" with same requestId and same body
     Then i get an error code "<rc>"
     Examples:
@@ -224,7 +236,7 @@ Feature: Send Digital Message Ec
   Scenario Outline: Invio digitale ad un indirizzo PEC non valido
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message to "<receiver>"
-    Then check if the message has event code error "<rc>"
+    Then wait for the request to have event code error "<rc>"
     Examples:
       | clientId           | channel      | receiver                 | rc   |
       | @clientId-delivery | @channel_pec | .mario.rossi@arubapec.it | C011 |
@@ -234,7 +246,7 @@ Feature: Send Digital Message Ec
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message to "<receiver>"
     * waiting for scheduling
-    Then check if the message has event code error "<rc>"
+    Then wait for the request to have event code error "<rc>"
     Examples:
       | clientId           | channel      | receiver      | rc   |
       | @clientId-delivery | @channel_pec | test1@test.it | C009 |
@@ -243,7 +255,7 @@ Feature: Send Digital Message Ec
   Scenario Outline: Invio email con richiesta identica già effettuata restituisce 204
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message to "<receiver>"
-    And check if the message has been sent
+    And wait for the message to be sent
     When try to send a digital message to "<receiver>" with same requestId and same body
     Then i get an error code "<rc>"
     Examples:
@@ -272,7 +284,7 @@ Feature: Send Digital Message Ec
   Scenario Outline: Invio SERCQ di una richiesta già effettuata
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message to "<receiver>"
-    And check if the message has been sent
+    And wait for the message to be sent
     When try to send a digital message to "<receiver>" with same requestId
     Then i get an error code "<rc>"
     Examples:
@@ -283,7 +295,7 @@ Feature: Send Digital Message Ec
   Scenario Outline: Invio SERCQ con richiesta identica già effettuata restituisce 204
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message to "<receiver>"
-    And check if the message has been sent
+    And wait for the message to be sent
     When try to send a digital message to "<receiver>" with same requestId and same body
     Then i get an error code "<rc>"
     Examples:
@@ -304,7 +316,7 @@ Feature: Send Digital Message Ec
   Scenario Outline: Invio digitale ad un indirizzo SERCQ non valido
     Given a "<clientId>" and "<channel>" to send on
     When try to send a digital message to "<receiver>"
-    Then check if the message has event code error "<rc>"
+    Then wait for the request to have event code error "<rc>"
     Examples:
       | clientId           | channel        | receiver                 | rc   |
       | @clientId-delivery | @channel_sercq | invalid.sercq@domain.com | Q011 |

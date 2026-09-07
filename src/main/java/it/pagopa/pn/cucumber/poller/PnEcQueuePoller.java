@@ -1,13 +1,12 @@
 package it.pagopa.pn.cucumber.poller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.cucumber.dto.MessageBodyDto;
 import it.pagopa.pn.ec.rest.v1.api.CourtesyMessageProgressEvent;
 import it.pagopa.pn.ec.rest.v1.api.LegalMessageSentDetails;
 import it.pagopa.pn.ec.rest.v1.api.PaperProgressStatusEvent;
 import it.pagopa.pn.ec.rest.v1.api.SingleStatusUpdate;
-import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
 import lombok.CustomLog;
@@ -21,7 +20,7 @@ import static it.pagopa.pn.cucumber.utils.SqsUtils.parseMessageBody;
 @CustomLog
 public class PnEcQueuePoller extends QueuePoller {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
     public PnEcQueuePoller() {
         super(System.getProperty("pn.ec.notifiche.esterne.queue.name"));
@@ -31,11 +30,11 @@ public class PnEcQueuePoller extends QueuePoller {
     public void onMessage(Message message) {
         try {
             MessageBodyDto messageBodyDto = parseMessageBody(((TextMessage) message).getText());
-            SingleStatusUpdate singleStatusUpdate = objectMapper.readValue(messageBodyDto.getDetail(), SingleStatusUpdate.class);
             log.debug("Retrieved message from queue {}: {}", super.queueName, messageBodyDto);
             String requestId = "";
             String status = "";
             if (isEcMessage(messageBodyDto)) {
+                SingleStatusUpdate singleStatusUpdate = objectMapper.readValue(messageBodyDto.getDetail(), SingleStatusUpdate.class);
 
                 if (singleStatusUpdate.getDigitalCourtesy() != null) {
                     CourtesyMessageProgressEvent digitalCourtesy = singleStatusUpdate.getDigitalCourtesy();
@@ -64,7 +63,7 @@ public class PnEcQueuePoller extends QueuePoller {
         }
     }
 
-    public boolean checkMessageAvailability(String requestId, List<String> statusesToCheck) {
+    public boolean waitForStatuses(String requestId, List<String> statusesToCheck) {
         boolean check = false;
         long pollingInterval = Long.parseLong(System.getProperty("pn.ec.sqs.lookup.interval.millis"));
         Instant timeLimit = Instant.now().plusMillis(Long.parseLong(System.getProperty("pn.ec.sqs.lookup.timeout.millis")));
@@ -85,6 +84,12 @@ public class PnEcQueuePoller extends QueuePoller {
         log.debug("Messages collected so far: {}", this.messageMap);
         log.debug("Statuses found for the request under check: {}", statusesFound);
         return check;
+    }
+
+    public boolean hasStatuses(String requestId, List<String> statusesToCheck) {
+        Set<String> statusesFound = this.messageMap.get(requestId);
+        log.debug("Statuses collected for the request under check: {}", statusesFound);
+        return statusesFound != null && statusesFound.containsAll(statusesToCheck);
     }
 
 }

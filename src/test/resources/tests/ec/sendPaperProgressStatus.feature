@@ -7,7 +7,7 @@ Feature: Send Paper Progress Status
       | @doc_type_aar | src/test/resources/test.pdf | application/pdf |
     * try to send a paper message
     * waiting for scheduling
-    Then check if the message has been sent
+    Then wait for the message to be sent
 
   @PnEcSendMessage @PAPER @complete
   Scenario Outline: Invio di un messaggio cartaceo, verifica della pubblicazione del messaggio nella coda di debug e verifica dello stato di avanzamento
@@ -97,6 +97,7 @@ Feature: Send Paper Progress Status
     When I send the following paper progress status requests:
       | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   | courier     |
       | RECAG010   |                      | @requestId | @testStartTime | <productType> | <courier1>  |
+    And wait for the request to have status "RECAG010"
     And I send the following paper progress status requests:
       | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   | courier     |
       | RECAG010   |                      | @requestId | @testStartTime | <productType> | <courier2>  |
@@ -122,6 +123,7 @@ Feature: Send Paper Progress Status
     When I send the following paper progress status requests:
       | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   |
       | RECAG010   |                      | @requestId | @testStartTime | <productType> |
+    And wait for the request to have status "RECAG010"
     And I send the following paper progress status requests:
       | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   |
       | RECAG010   |                      | @requestId | @testStartTime | <productType> |
@@ -139,8 +141,9 @@ Feature: Send Paper Progress Status
     When I send the following paper progress status requests:
       | statusCode   | deliveryFailureCause   | courier   | iun   | statusDateTime   | clientRequestTimestamp   |
       | <statusCode> | <deliveryFailureCause> | <courier> | <iun> | <statusDateTime> | <clientRequestTimestamp> |
+    And wait for the request to have status "<statusCode>"
     Then I get "<courier>" courier and I get "<statusCode>" statusCode:
     Examples:
-      | clientId       | apiKey       | statusCode | deliveryFailureCause | courier  | iun        | statusDateTime           | clientRequestTimestamp   | rc     |
-      | @clientId-cons | @apiKey-cons | CON080     |                      | XXXXX    |            | @now                     | @now                     | 200.00 |
-      | @clientId-cons | @apiKey-cons | RECRS002A  | M02                  |          | @requestId | @now                     | @now                     | 200.00 |
+      | clientId       | apiKey       | statusCode | deliveryFailureCause | courier  | iun        | statusDateTime           | clientRequestTimestamp   |
+      | @clientId-cons | @apiKey-cons | CON080     |                      | XXXXX    |            | @now                     | @now                     |
+      | @clientId-cons | @apiKey-cons | RECRS002A  | M02                  |          | @requestId | @now                     | @now                     |

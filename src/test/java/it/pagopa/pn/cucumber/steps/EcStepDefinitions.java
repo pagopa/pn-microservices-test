@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.AfterAll;
 import io.cucumber.java.BeforeAll;
+import io.cucumber.java.ParameterType;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -52,6 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class EcStepDefinitions {
 
     public static final String NOW_PARAMETER = "@now";
+    public static final String NOT_EXISTING_MESSAGE_ID_PARAMETER = "@notExistingMessageId";
     private String clientId;
     private String apiKey;
     private String requestId;
@@ -135,7 +137,7 @@ public class EcStepDefinitions {
         this.requestId = ExternalChannelUtils.generateRandomRequestId();
         MDC.put(MDC_CORR_ID_KEY, requestId);
         this.receiver = getValueIfTagged(receiver);
-        Response response = ExternalChannelUtils.sendPaperMessage(clientId, requestId, attachmentsList);
+        Response response = ExternalChannelUtils.sendPaperMessageWithDifferentAddress(clientId, requestId, attachmentsList, this.receiver);
         this.sendPaperMessageStatusCode = response.getStatusCode();
     }
 
@@ -162,7 +164,7 @@ public class EcStepDefinitions {
     @When("try to get request by messageId {string}")
     public void tryToGetRequestByMessageId(String messageId) {
 
-        if(Objects.equals(messageId, "messageIdNotFound")) {
+        if(Objects.equals(messageId, NOT_EXISTING_MESSAGE_ID_PARAMETER)) {
             this.response = ExternalChannelUtils.getRequestByMessageId(ExternalChannelUtils.encodeMessageId(clientId,
                     ExternalChannelUtils.generateRandomRequestId()));
 
@@ -307,7 +309,7 @@ public class EcStepDefinitions {
             pnAttachment.setDocumentId(UUID.randomUUID().toString());
             pnAttachment.setId(RandomStringUtils.randomAlphanumeric(10));
             attachmentsList.add(pnAttachment);
-            this.sKey = "safestorage://" + sKey;
+            this.sKey = sKey;
 
             Response uploadResp = CommonUtils.uploadFile(sURL, file, sha256, md5, mimeType, sSecret, Checksum.SHA256);
             assertEquals(200, uploadResp.getStatusCode());
@@ -353,7 +355,7 @@ public class EcStepDefinitions {
         Assertions.assertEquals("200.00", sendPaperProgressStatusResultCode);
         Assertions.assertEquals("Accepted", sendPaperProgressStatusResultDescription);
         Assertions.assertNull(sendPaperProgressStatusErrorList);
-        Assertions.assertTrue(queuePoller.checkMessageAvailability(requestId, new ArrayList<>(statusesToCheck)));
+        Assertions.assertTrue(queuePoller.waitForStatuses(requestId, new ArrayList<>(statusesToCheck)));
     }
 
     @And("waiting for scheduling")
@@ -426,34 +428,38 @@ public class EcStepDefinitions {
     }
 
     //THEN
-    @Then("check if the message has been sent")
-    public void checkStatusMessage() {
+    @Then("wait for the message to be sent")
+    public void waitForMessageSent() {
         boolean checked = switch (this.channel.toUpperCase()) {
             case "SMS" ->
-                    queuePoller.checkMessageAvailability(requestId, List.of(CourtesyMessageProgressEvent.EventCodeEnum.S003.getValue()));
+                    queuePoller.waitForStatuses(requestId, List.of(CourtesyMessageProgressEvent.EventCodeEnum.S003.getValue()));
             case "EMAIL" ->
-                    queuePoller.checkMessageAvailability(requestId, List.of(CourtesyMessageProgressEvent.EventCodeEnum.M003.getValue()));
+                    queuePoller.waitForStatuses(requestId, List.of(CourtesyMessageProgressEvent.EventCodeEnum.M003.getValue()));
             case "PEC" ->
-                    queuePoller.checkMessageAvailability(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.C000.getValue()));
+                    queuePoller.waitForStatuses(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.C000.getValue()));
             case "SERCQ" ->
-                    queuePoller.checkMessageAvailability(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.Q003.getValue()));
-            case "PAPER" -> queuePoller.checkMessageAvailability(requestId, List.of("P000"));
+                    queuePoller.waitForStatuses(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.Q003.getValue()));
+            case "PAPER" -> queuePoller.waitForStatuses(requestId, List.of("P000"));
             default ->
                     throw new IllegalArgumentException(String.format("The given channel '%s' is not valid.", this.channel));
         };
         Assertions.assertTrue(checked);
     }
 
-    @Then("check SES event {string} is {string}")
-    public void checkSesEvent(String expectedEvent, String expectedResult ) {
-        boolean checked = queuePoller.checkMessageAvailability(requestId, List.of(expectedEvent));
-        boolean expected = Boolean.parseBoolean(expectedResult);
-        Assertions.assertEquals(expected, checked);
+    @ParameterType("has|does not have")
+    public boolean presence(String presence) {
+        return "has".equals(presence);
     }
 
-    @Then("check if the message has status {string}")
-    public void checkStatusMessage(String status) {
-        boolean checked = queuePoller.checkMessageAvailability(requestId,List.of(status));
+    @Then("check that the request {presence} the {string} status")
+    public void checkStatusPresence(boolean shouldBePresent, String status) {
+        boolean present = queuePoller.hasStatuses(requestId, List.of(status));
+        Assertions.assertEquals(shouldBePresent, present);
+    }
+
+    @Then("wait for the request to have status {string}")
+    public void waitForStatus(String status) {
+        boolean checked = queuePoller.waitForStatuses(requestId,List.of(status));
         Assertions.assertTrue(checked);
     }
 
@@ -512,14 +518,14 @@ public class EcStepDefinitions {
         }
     }
 
-    @Then("check if the message has been accepted and has been delivered")
-    public void checkIfTheMessageIsAcceptedAndDelivered() {
-        Assertions.assertTrue(queuePoller.checkMessageAvailability(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.C001.getValue(), LegalMessageSentDetails.EventCodeEnum.C003.getValue())));
+    @Then("wait for the request to be accepted and delivered")
+    public void waitForMessageAcceptedAndDelivered() {
+        Assertions.assertTrue(queuePoller.waitForStatuses(requestId, List.of(LegalMessageSentDetails.EventCodeEnum.C001.getValue(), LegalMessageSentDetails.EventCodeEnum.C003.getValue())));
     }
 
-    @Then("check if the message has event code error {string}")
-    public void checkIfTheMessageHasEventCodeError(String sRc) {
-        Assertions.assertTrue(queuePoller.checkMessageAvailability(requestId, List.of(sRc)));
+    @Then("wait for the request to have event code error {string}")
+    public void waitForMessageEventCodeError(String sRc) {
+        Assertions.assertTrue(queuePoller.waitForStatuses(requestId, List.of(sRc)));
     }
 
     @Then("I get {string} status code")
