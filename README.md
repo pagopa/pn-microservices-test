@@ -47,6 +47,30 @@ Per eseguire i test sull'ambiente reale, è necessario avere un tunnel SSM attiv
 
 Assicurati di avviare correttamente la sessione SSM (ad esempio tramite aws ssm start-session) prima di eseguire i test, così che il traffico venga instradato correttamente verso i servizi interni.
 
+### Tunnel SSM necessari
+
+La suite raggiunge i microservizi su `localhost`: l'URL di ogni chiamata è composto da `baseURL`
+(`application.properties`) e dalla porta del servizio, definita per profilo in
+`application-<profile>.properties`.
+
+| Servizio | Property | Valore in `dev` |
+|---|---|---|
+| pn-ec, pn-ss, pn-statemachinemanager | `pn.ec.port`, `pn.ss.port`, `pn.sm.port` | `8080` |
+| pn-pdfraster | `pn.pdfraster.port` | `8081` |
+
+`pn-pdfraster` è esposto su una **porta dedicata**, quindi non è raggiungibile attraverso il tunnel
+usato per gli altri microservizi: serve una seconda sessione SSM che inoltri quella porta.
+
+**Per eseguire `PdfRasterCucumberTest` devono essere attivi entrambi i tunnel contemporaneamente:**
+
+- il tunnel verso l'ambiente **confinfo** (porta `8080`), usato dagli scenari `@Transformation`, che
+  caricano il documento tramite l'API di upload di `pn-ss` e ne verificano l'evento di disponibilità;
+- il tunnel **specifico per pn-pdfraster** (porta `8081`), usato dagli scenari sull'endpoint sincrono
+  `/PDFRaster/convert`.
+
+Con un solo tunnel attivo la suite fallisce parzialmente con `Connection refused` sugli scenari che
+dipendono dall'altro.
+
 La suite può essere eseguita in diversi modi:
 
 ### 1. Esecuzione completa via Maven
@@ -69,6 +93,7 @@ Puoi eseguire singolarmente le suite principali:
 
 - `EcCucumberTest` – suite per i test del microservizio EC
 - `SsCucumberTest` – suite per i test del microservizio SS
+- `PdfRasterCucumberTest` – suite per i test del microservizio PDFRaster (richiede entrambi i tunnel, vedi sopra)
 
 Questo può essere fatto da un IDE come IntelliJ IDEA o Eclipse cliccando sul test JUnit, oppure via terminale con Maven:
 
