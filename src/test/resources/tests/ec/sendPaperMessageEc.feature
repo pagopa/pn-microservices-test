@@ -105,7 +105,7 @@ Feature: Send Paper Message Ec
     Examples:
       | clientId           | apiKey            | channel        | receiver                        | transformationDocumentType       | status |
       | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | @doc_type_paper_attachment       | P013   |
-      | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | @doc_type_clean_paper_attachment | P013   |
+      | @clientId-cons     | @apiKey-cons      | @channel_paper | @paper.receiver.digital.address | @doc_type_clean_paper_attachment | P013   |
 
 
   @PnEcSendMessage @PAPER @invioCartaceo @raster @testOk @TransformationDocumentType @TransformationError @P000
@@ -122,7 +122,7 @@ Feature: Send Paper Message Ec
     Examples:
       | clientId           | apiKey            | channel        | receiver                        | transformationDocumentType       | status |
       | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | @doc_type_paper_attachment       | P000   |
-      | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | @doc_type_clean_paper_attachment | P000   |
+      | @clientId-cons     | @apiKey-cons      | @channel_paper | @paper.receiver.digital.address | @doc_type_clean_paper_attachment | P000   |
 
 
   @PnEcSendMessage @PAPER @invioCartaceo @raster @testOk @TransformationDocumentType @TransformationError @P000
