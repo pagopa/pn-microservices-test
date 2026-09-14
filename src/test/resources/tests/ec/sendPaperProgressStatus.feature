@@ -12,14 +12,16 @@ Feature: Send Paper Progress Status
   @PnEcSendMessage @PAPER @complete
   Scenario Outline: Invio di un messaggio cartaceo, verifica della pubblicazione del messaggio nella coda di debug e verifica dello stato di avanzamento
     Given the ExternalChannel client "<clientId>" authenticated by "<apiKey>"
-    And "@clientId-delivery-push" authenticated by "@apiKey-delivery-push" uploads the following attachments:
+    And "@clientId-delivery-push" authenticated by "@apiKey-delivery-push" uploads the following paper progress status event attachments:
       | documentType  | fileName                    | mimeType        | attachmentDocumentType |
       | @doc_type_aar | src/test/resources/test.pdf | application/pdf | AR                     |
     When I send the following paper progress status requests:
-      | statusCode | deliveryFailureCause | iun        | statusDateTime | courier  |
-      | CON080     |                      | @requestId | @now           |          |
-      | RECAG004   |                      | @requestId | @now           | YXYXYXYX |
+      | statusCode | deliveryFailureCause | iun        | statusDateTime | courier  | sourceType | originType |
+      | CON080     |                      | @requestId | @now           |          | SCANNED    | DUPLICATED |
+      | RECAG004   |                      | @requestId | @now           | YXYXYXYX | SCANNED    | DUPLICATED |
     Then check if paper progress status requests have been accepted
+    And the "CON080" event attachments have "SCANNED" sourceType and "DUPLICATED" originType
+    And the "RECAG004" event attachments have "SCANNED" sourceType and "DUPLICATED" originType
     Examples:
       | clientId       | apiKey       |
       | @clientId-cons | @apiKey-cons |
@@ -95,22 +97,30 @@ Feature: Send Paper Progress Status
       | documentType  | fileName                    | mimeType        | attachmentDocumentType |
       | @doc_type_aar | src/test/resources/test.pdf | application/pdf | AR                     |
     When I send the following paper progress status requests:
-      | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   | courier     |
-      | RECAG010   |                      | @requestId | @testStartTime | <productType> | <courier1>  |
+      | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   | courier    | sourceType    | originType    |
+      | RECAG010   |                      | @requestId | @testStartTime | <productType> | <courier1> | <sourceType1> | <originType1> |
     And wait for the request to have status "RECAG010"
     And I send the following paper progress status requests:
-      | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   | courier     |
-      | RECAG010   |                      | @requestId | @testStartTime | <productType> | <courier2>  |
+      | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   | courier    | sourceType    | originType    |
+      | RECAG010   |                      | @requestId | @testStartTime | <productType> | <courier2> | <sourceType2> | <originType2> |
     Then I get "<rc>" result code
     Examples:
-      | clientId       | apiKey       | productType                          | courier1        | courier2        | rc     |
+      | clientId       | apiKey       | productType                           | courier1        | courier2        | sourceType1 | originType1 | sourceType2 | originType2 | rc     |
       # Il productType è presente nella configurazione di ExternalChannel PnEcDuplicatesCheck
-      | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check    | @paper.courier1 | @paper.courier2 | 400.02 |
-      | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check    |                 | @paper.courier2 | 400.02 |
-      | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check    | @paper.courier1 | @paper.courier1 | 400.02 |
-      | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check    |                 |                 | 400.02 |
+      | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check     | @paper.courier1 | @paper.courier2 |             |             |             |             | 400.02 |
+      | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check     |                 | @paper.courier2 |             |             |             |             | 400.02 |
+      | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check     | @paper.courier1 | @paper.courier1 |             |             |             |             | 400.02 |
+      | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check     |                 |                 |             |             |             |             | 400.02 |
       # Il productType non è presente in PnEcDuplicatesCheck
-      | @clientId-cons | @apiKey-cons | @productType_not_for_duplicates_check| @paper.courier1 | @paper.courier2 | 200.00 |
+      | @clientId-cons | @apiKey-cons | @productType_not_for_duplicates_check | @paper.courier1 | @paper.courier2 |             |             |             |             | 200.00 |
+      # stessi sourceType/originType => resta un duplicato
+      | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check     | @paper.courier1 | @paper.courier1 | SCANNED     | DUPLICATED  | SCANNED     | DUPLICATED  | 400.02 |
+      # sourceType diverso => non è più un duplicato
+      | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check     | @paper.courier1 | @paper.courier1 | SCANNED     | ORIGINAL    | DIGITAL     | ORIGINAL    | 200.00 |
+      # originType diverso => non è più un duplicato
+      | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check     | @paper.courier1 | @paper.courier1 | DIGITAL     | ORIGINAL    | DIGITAL     | DUPLICATED  | 200.00 |
+      # campi valorizzati solo sul secondo evento => non è un duplicato
+      | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check     | @paper.courier1 | @paper.courier1 |             |             | SCANNED     | ORIGINAL    | 200.00 |
 
     #per gli allegati multipli è stato fatto un test puntuale con una chiamata postman
   @PnEcSendMessage @PAPER @verificaDuplicati @MultipleAttachments
@@ -121,19 +131,21 @@ Feature: Send Paper Progress Status
       | @doc_type_aar | src/test/resources/test.pdf | application/pdf | AR                     |
       | @doc_type_aar | src/test/resources/test_pdf.pdf | application/pdf | AR                     |
     When I send the following paper progress status requests:
-      | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   |
-      | RECAG010   |                      | @requestId | @testStartTime | <productType> |
+      | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   | sourceType    | originType    |
+      | RECAG010   |                      | @requestId | @testStartTime | <productType> | <sourceType1> | <originType1> |
     And wait for the request to have status "RECAG010"
     And I send the following paper progress status requests:
-      | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   |
-      | RECAG010   |                      | @requestId | @testStartTime | <productType> |
+      | statusCode | deliveryFailureCause | iun        | statusDateTime | productType   | sourceType    | originType    |
+      | RECAG010   |                      | @requestId | @testStartTime | <productType> | <sourceType2> | <originType2> |
     Then I get "<rc>" result code
     Examples:
-      | clientId       | apiKey       | productType                            | rc     |
+      | clientId       | apiKey       | productType                           | sourceType1 | originType1 | sourceType2 | originType2 | rc     |
       # Il productType è presente nella configurazione di ExternalChannel PnEcDuplicatesCheck
-       | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check     | 400.02 |
+      | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check     |             |             |             |             | 400.02 |
       # Il productType non è presente in PnEcDuplicatesCheck
-      | @clientId-cons | @apiKey-cons | @productType_not_for_duplicates_check | 200.00 |
+      | @clientId-cons | @apiKey-cons | @productType_not_for_duplicates_check |             |             |             |             | 200.00 |
+      # con più allegati il confronto è per-allegato, un sourceType diverso rompe il duplicato
+      | @clientId-cons | @apiKey-cons | @productType_for_duplicates_check     | SCANNED     | ORIGINAL    | DIGITAL     | ORIGINAL    | 200.00 |
 
   @PnEcSendMessage @PAPER @validaCourier
   Scenario Outline: Verifica la valorizzazione del courier:
