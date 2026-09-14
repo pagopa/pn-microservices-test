@@ -291,7 +291,8 @@
 						</goals>
 						<phase>process-sources</phase>
 						<configuration>
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/develop/docs/openapi/external/api-consolidatore-ingress-v1.yaml</inputSpec>
+							<!-- PN-21312: pin temporaneo al branch feature/PN-21312. Ripristinare 'develop' dopo il merge. -->
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/ea0a64df28319af648d870188218414ae62c2402/docs/openapi/external/api-consolidatore-ingress-v1.yaml</inputSpec>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
 							<generateApiTests>false</generateApiTests>
@@ -356,7 +357,7 @@
 						</goals>
 						<phase>process-sources</phase>
 						<configuration>
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/e8c7288ceea9f8d7c8e092ee32f393ee99f85e1f/docs/openapi/external/api-internal-v1.yaml</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/ea0a64df28319af648d870188218414ae62c2402/docs/openapi/external/api-internal-v1.yaml</inputSpec>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
 							<generateApiTests>false</generateApiTests>

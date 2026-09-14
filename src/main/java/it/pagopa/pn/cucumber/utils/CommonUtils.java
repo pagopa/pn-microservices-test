@@ -165,6 +165,10 @@ public class CommonUtils {
 		}
 	}
 
+	public static String blankToNull(String value) {
+		return (value == null || value.isBlank()) ? null : value;
+	}
+
 	public static String getValueOrDefault(Map<String, String> map, String key, String defaultValue) {
 		try {
 			String value = map.get(key);
