@@ -111,14 +111,6 @@ public class SafeStorageUtils {
 	}
 
 	public static Response updateObjectMetadata (String sCxId, String sAPIKey, String sFileKey, UpdateFileMetadataRequest requestBody) {
-		return sendUpdateObjectMetadata(sCxId, sAPIKey, sFileKey, requestBody);
-	}
-
-	public static Response updateObjectMetadata (String sCxId, String sAPIKey, String sFileKey, Map<String, Object> requestBody) {
-		return sendUpdateObjectMetadata(sCxId, sAPIKey, sFileKey, requestBody);
-	}
-
-	private static Response sendUpdateObjectMetadata (String sCxId, String sAPIKey, String sFileKey, Object requestBody) {
 		String body = "";
 
 		try {
