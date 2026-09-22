@@ -1,6 +1,7 @@
 package it.pagopa.pn.cucumber.steps;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.AfterAll;
@@ -32,6 +33,10 @@ import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
@@ -70,6 +75,10 @@ public class SsStepDefinitions {
     private boolean metadataOnly;
     private FileDownloadResponse fileDownloadResponse;
     public static final String TRANSFORMATION_TAG_PREFIX = "Transformation-";
+    private static final ZoneId AVAILABILITY_TIME_ZONE = ZoneId.of("Europe/Rome");
+    private static final LocalTime END_OF_DAY = LocalTime.of(23, 59, 59);
+    private static final String TODAY = "today";
+    private static final String YESTERDAY = "yesterday";
     private final Map<String, String> fileKeysByAlias = new HashMap<>();
     private final Map<String, Map<String, String>> tagValuesByAlias = new HashMap<>();
     private Response searchResponse;
@@ -949,6 +958,129 @@ public class SsStepDefinitions {
         boolean hasErrorTag = taggingResponse.tagSet().stream().anyMatch(tag -> tag.value().equals("ERROR"));
         log.info("Object {} in staging bucket {} has ERROR tag: {}", sKey, stagingBucket, hasErrorTag);
         Assertions.assertTrue(hasErrorTag, "Expected object " + sKey + " to have a tag with value ERROR, but it does not.");
+    }
+
+    @When("{string} authenticated by {string} try to update the document using availableUntil {string}")
+    public void a_file_to_update_with_availability(String sPNClientUp, String sPNClient_AKUp, String availableUntil) {
+        a_file_to_update_with_retention_and_availability(sPNClientUp, sPNClient_AKUp, "", "", availableUntil);
+    }
+
+    @When("{string} authenticated by {string} try to update the document using {string}, retentionUntil {string} and availableUntil {string}")
+    public void a_file_to_update_with_retention_and_availability(String sPNClientUp, String sPNClient_AKUp, String status, String retentionUntil, String availableUntil) {
+
+        this.sPNClientUp = getValueIfTagged(sPNClientUp);
+        this.sPNClient_AKUp = getValueIfTagged(sPNClient_AKUp);
+        this.status = getValueIfTagged(status);
+
+        Map<String, Object> body = new HashMap<>();
+        if (this.status != null && !this.status.isEmpty()) {
+            body.put("status", this.status);
+        }
+        if (retentionUntil != null && !retentionUntil.isEmpty()) {
+            body.put("retentionUntil", middayOf(retentionUntil).toString());
+        }
+        if (availableUntil != null && !availableUntil.isEmpty()) {
+            body.put("availableUntil", middayOf(availableUntil).toString());
+        }
+
+        log.info("Update prepared by client {} on key {} with body {}", this.sPNClientUp, sKey, body);
+        iRC = SafeStorageUtils.updateObjectMetadata(this.sPNClientUp, this.sPNClient_AKUp, sKey, body).getStatusCode();
+    }
+
+    @Then("i check that the document availability is the end of the day of {string}")
+    public void document_availability_is_the_end_of_the_day_of(String day) throws JsonProcessingException {
+        String availableUntil = getInternalDocument().path("availableUntil").asText("");
+        Assertions.assertFalse(availableUntil.isEmpty(), "No availability date on document " + sKey);
+        Assertions.assertEquals(endOfDayOf(day), OffsetDateTime.parse(availableUntil).toInstant());
+    }
+
+    @Then("i check that the document has no availability date")
+    public void document_has_no_availability_date() throws JsonProcessingException {
+        String availableUntil = getInternalDocument().path("availableUntil").asText("");
+        Assertions.assertTrue(availableUntil.isEmpty(), "Unexpected availability date " + availableUntil + " on document " + sKey);
+    }
+
+    @Then("i check that the document retention is the end of the day of {string}")
+    public void document_retention_is_the_end_of_the_day_of(String day) throws JsonProcessingException {
+        Assertions.assertEquals(endOfDayOf(day), getDocumentRetention());
+    }
+
+    @Then("i check that the document retention is still the one of {string}")
+    public void document_retention_is_still_the_one_of(String day) throws JsonProcessingException {
+        Assertions.assertEquals(middayOf(day), getDocumentRetention());
+    }
+
+    @Then("the file metadata response does not expose availableUntil")
+    public void the_file_metadata_response_does_not_expose_availability() throws JsonProcessingException {
+        Response response = SafeStorageUtils.getObjectMetadata(sPNClientUp, sPNClient_AKUp, sKey);
+        Assertions.assertEquals(200, response.getStatusCode());
+        assertAvailabilityIsNotExposed(response);
+    }
+
+    @Then("the file download response does not expose availableUntil")
+    public void the_file_download_response_does_not_expose_availability() throws JsonProcessingException {
+        Response response = SafeStorageUtils.getPresignedURLDownload(sPNClientUp, sPNClient_AKUp, sKey, false);
+        Assertions.assertEquals(200, response.getStatusCode());
+        assertAvailabilityIsNotExposed(response);
+    }
+
+    @Then("the file metadata response reports retentionUntil as the end of the day of {string}")
+    public void the_file_metadata_response_reports_retention_as_the_end_of_the_day_of(String day) throws JsonProcessingException {
+        Response response = SafeStorageUtils.getObjectMetadata(sPNClientUp, sPNClient_AKUp, sKey);
+        Assertions.assertEquals(200, response.getStatusCode());
+        FileDownloadResponse metadata = new ObjectMapper().readValue(response.getBody().asString(), FileDownloadResponse.class);
+        Assertions.assertNotNull(metadata.getRetentionUntil(), "No retention date in the metadata of document " + sKey);
+        Assertions.assertEquals(endOfDayOf(day), metadata.getRetentionUntil().toInstant());
+    }
+
+    @Then("reading the document is denied with {string} and a message about the end of availability")
+    public void reading_the_document_is_denied_for_the_end_of_availability(String sRC) {
+        Response response = SafeStorageUtils.getPresignedURLDownload(sPNClient, sPNClient_AK, sKey, false);
+        String responseBody = response.getBody().asString();
+        Assertions.assertEquals(Integer.parseInt(sRC), response.getStatusCode());
+        Assertions.assertTrue(responseBody.toLowerCase().contains("availab"), "The denial does not mention the end of availability: " + responseBody);
+    }
+
+    private void assertAvailabilityIsNotExposed(Response response) throws JsonProcessingException {
+        JsonNode body = new ObjectMapper().readTree(response.getBody().asString());
+        Assertions.assertFalse(body.has("availableUntil"), "Availability date exposed by a public response: " + body);
+    }
+
+    private Instant getDocumentRetention() throws JsonProcessingException {
+        String retentionUntil = getInternalDocument().path("retentionUntil").asText("");
+        Assertions.assertFalse(retentionUntil.isEmpty(), "No retention date on document " + sKey);
+        return OffsetDateTime.parse(retentionUntil).toInstant();
+    }
+
+    private JsonNode getInternalDocument() throws JsonProcessingException {
+        Response response = SafeStorageUtils.getDocument(sKey);
+        Assertions.assertEquals(200, response.getStatusCode());
+        return new ObjectMapper().readTree(response.getBody().asString()).path("document");
+    }
+
+    private Instant middayOf(String day) {
+        return dayOf(day).atTime(LocalTime.NOON).atZone(AVAILABILITY_TIME_ZONE).toInstant();
+    }
+
+    private Instant endOfDayOf(String day) {
+        return dayOf(day).atTime(END_OF_DAY).atZone(AVAILABILITY_TIME_ZONE).toInstant();
+    }
+
+    private LocalDate dayOf(String day) {
+        LocalDate today = LocalDate.now(AVAILABILITY_TIME_ZONE);
+        if (TODAY.equals(day)) {
+            return today;
+        }
+        if (YESTERDAY.equals(day)) {
+            return today.minusDays(1);
+        }
+        if (day.startsWith(TODAY + "+")) {
+            return today.plusDays(Long.parseLong(day.substring(TODAY.length() + 1)));
+        }
+        if (day.startsWith(TODAY + "-")) {
+            return today.minusDays(Long.parseLong(day.substring(TODAY.length() + 1)));
+        }
+        throw new IllegalArgumentException("Unsupported day expression : " + day);
     }
 
 }
