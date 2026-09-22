@@ -1,6 +1,7 @@
 package it.pagopa.pn.cucumber.steps;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.AfterAll;
@@ -78,6 +79,7 @@ public class SsStepDefinitions {
     private static final LocalTime END_OF_DAY = LocalTime.of(23, 59, 59);
     private static final String TODAY = "today";
     private static final String YESTERDAY = "yesterday";
+    private final ObjectMapper uploadResponseMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     private final Map<String, String> fileKeysByAlias = new HashMap<>();
     private final Map<String, Map<String, String>> tagValuesByAlias = new HashMap<>();
     private Response searchResponse;
@@ -176,10 +178,8 @@ public class SsStepDefinitions {
         oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, fileCreationRequest, sSHA256, sMD5, boHeader, Checksum.SHA256, true);
         iRC = oResp.getStatusCode();
         if (iRC == 200) {
-            sURL = oResp.then().extract().path("uploadUrl");
-            sKey = oResp.then().extract().path("key");
+            readUploadResponse(oResp);
             MDC.put(MDC_CORR_ID_KEY, sKey);
-            sSecret = oResp.then().extract().path("secret");
         }
         log.info("Upload presigned url requested: httpStatus={} fileKey={}", iRC, sKey);
     }
@@ -196,9 +196,7 @@ public class SsStepDefinitions {
         iRC = oResp.getStatusCode();
         Assertions.assertEquals(200, iRC);
         if (iRC == 200) {
-            sURL = oResp.then().extract().path("uploadUrl");
-            sKey = oResp.then().extract().path("key");
-            sSecret = oResp.then().extract().path("secret");
+            readUploadResponse(oResp);
         }
     }
 
@@ -616,9 +614,7 @@ public class SsStepDefinitions {
         oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, fileCreationRequest, sSHA256, sMD5, boHeader, Checksum.SHA256, false);
         iRC = oResp.getStatusCode();
         if (iRC == 200) {
-            sURL = oResp.then().extract().path("uploadUrl");
-            sKey = oResp.then().extract().path("key");
-            sSecret = oResp.then().extract().path("secret");
+            readUploadResponse(oResp);
         }
     }
 
@@ -984,6 +980,17 @@ public class SsStepDefinitions {
         Response response = SafeStorageUtils.getDocument(sKey);
         Assertions.assertEquals(200, response.getStatusCode());
         return new ObjectMapper().readValue(response.getBody().asString(), DocumentResponse.class).getDocument();
+    }
+
+    private void readUploadResponse(Response oResp) {
+        try {
+            FileCreationResponse fileCreationResponse = uploadResponseMapper.readValue(oResp.getBody().asString(), FileCreationResponse.class);
+            sURL = fileCreationResponse.getUploadUrl();
+            sKey = fileCreationResponse.getKey();
+            sSecret = fileCreationResponse.getSecret();
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Cannot read the upload presigned url response: " + oResp.getBody().asString(), e);
+        }
     }
 
     private String fieldOf(Map<String, String> values, String field) {
