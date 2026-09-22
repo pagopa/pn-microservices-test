@@ -57,7 +57,7 @@ Feature: Fine disponibilità dei documenti SafeStorage
   # Lo scenario seguente richiede un documento la cui disponibilità sia già trascorsa, condizione che non
   # è producibile nella run perché una data già trascorsa viene rifiutata: indicare una fileKey preparata.
 
-  @PN-20896
+  @PN-20896 @ignore
   Scenario: Oltre la fine della disponibilità la lettura del documento viene negata
     Given the SafeStorage client "@clientId-delivery" authenticated by "@delivery_api_key"
     And a document with fileKey "<insert fileKey>"
