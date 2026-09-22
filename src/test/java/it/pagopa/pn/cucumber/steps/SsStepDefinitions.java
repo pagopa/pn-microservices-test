@@ -972,32 +972,32 @@ public class SsStepDefinitions {
         this.sPNClient_AKUp = getValueIfTagged(sPNClient_AKUp);
         this.status = getValueIfTagged(status);
 
-        Map<String, Object> body = new HashMap<>();
+        UpdateFileMetadataRequest updateRequest = new UpdateFileMetadataRequest();
         if (this.status != null && !this.status.isEmpty()) {
-            body.put("status", this.status);
+            updateRequest.setStatus(this.status);
         }
         if (retentionUntil != null && !retentionUntil.isEmpty()) {
-            body.put("retentionUntil", middayOf(retentionUntil).toString());
+            updateRequest.setRetentionUntil(Date.from(middayOf(retentionUntil)));
         }
         if (availableUntil != null && !availableUntil.isEmpty()) {
-            body.put("availableUntil", middayOf(availableUntil).toString());
+            updateRequest.setAvailableUntil(Date.from(middayOf(availableUntil)));
         }
 
-        log.info("Update prepared by client {} on key {} with body {}", this.sPNClientUp, sKey, body);
-        iRC = SafeStorageUtils.updateObjectMetadata(this.sPNClientUp, this.sPNClient_AKUp, sKey, body).getStatusCode();
+        log.info("Update prepared by client {} on key {} with body {}", this.sPNClientUp, sKey, updateRequest);
+        iRC = SafeStorageUtils.updateObjectMetadata(this.sPNClientUp, this.sPNClient_AKUp, sKey, updateRequest).getStatusCode();
     }
 
     @Then("i check that the document availability is the end of the day of {string}")
     public void document_availability_is_the_end_of_the_day_of(String day) throws JsonProcessingException {
-        String availableUntil = getInternalDocument().path("availableUntil").asText("");
-        Assertions.assertFalse(availableUntil.isEmpty(), "No availability date on document " + sKey);
+        String availableUntil = getInternalDocument().getAvailableUntil();
+        Assertions.assertNotNull(availableUntil, "No availability date on document " + sKey);
         Assertions.assertEquals(endOfDayOf(day), OffsetDateTime.parse(availableUntil).toInstant());
     }
 
     @Then("i check that the document has no availability date")
     public void document_has_no_availability_date() throws JsonProcessingException {
-        String availableUntil = getInternalDocument().path("availableUntil").asText("");
-        Assertions.assertTrue(availableUntil.isEmpty(), "Unexpected availability date " + availableUntil + " on document " + sKey);
+        String availableUntil = getInternalDocument().getAvailableUntil();
+        Assertions.assertNull(availableUntil, "Unexpected availability date " + availableUntil + " on document " + sKey);
     }
 
     @Then("i check that the document retention is the end of the day of {string}")
@@ -1047,15 +1047,15 @@ public class SsStepDefinitions {
     }
 
     private Instant getDocumentRetention() throws JsonProcessingException {
-        String retentionUntil = getInternalDocument().path("retentionUntil").asText("");
-        Assertions.assertFalse(retentionUntil.isEmpty(), "No retention date on document " + sKey);
+        String retentionUntil = getInternalDocument().getRetentionUntil();
+        Assertions.assertNotNull(retentionUntil, "No retention date on document " + sKey);
         return OffsetDateTime.parse(retentionUntil).toInstant();
     }
 
-    private JsonNode getInternalDocument() throws JsonProcessingException {
+    private DocumentResponseDocument getInternalDocument() throws JsonProcessingException {
         Response response = SafeStorageUtils.getDocument(sKey);
         Assertions.assertEquals(200, response.getStatusCode());
-        return new ObjectMapper().readTree(response.getBody().asString()).path("document");
+        return new ObjectMapper().readValue(response.getBody().asString(), DocumentResponse.class).getDocument();
     }
 
     private Instant middayOf(String day) {
