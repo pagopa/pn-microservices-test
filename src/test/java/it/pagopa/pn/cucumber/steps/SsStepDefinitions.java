@@ -136,63 +136,6 @@ public class SsStepDefinitions {
         sMD5 = Base64.getEncoder().encodeToString(digest);
     }
 
-    @Given("{string} authenticated by {string} try to update the document using {string} and {string} but has invalid or null {string}")
-    public void no_file_to_update(String sPNClientUp, String sPNClient_AKUp, String status, String retentionUntil, String fileKey) {
-
-        sPNClientUp = getValueIfTagged(sPNClientUp);
-        sPNClient_AKUp = getValueIfTagged(sPNClient_AKUp);
-        status = getValueIfTagged(status);
-        retentionUntil = getValueIfTagged(retentionUntil);
-        fileKey = getValueIfTagged(fileKey);
-
-        this.status = status;
-        this.retentionUntil = retentionUntil;
-        this.sPNClientUp = sPNClientUp;
-        this.sPNClient_AKUp = sPNClient_AKUp;
-        if (fileKey != null && !fileKey.isEmpty()) {
-            this.sKey = fileKey;
-            MDC.put(MDC_CORR_ID_KEY, fileKey);
-        } else {
-            this.sKey = "";
-        }
-        Response oResp;
-
-        if (retentionUntil != null && !retentionUntil.isEmpty()) {
-            requestBody.setRetentionUntil(Date.from(Instant.parse(retentionUntil)));
-        }
-        requestBody.setStatus(status);
-
-        oResp = SafeStorageUtils.updateObjectMetadata(sPNClientUp, sPNClient_AKUp, fileKey, requestBody);
-        iRC = oResp.getStatusCode();
-    }
-
-    @When("{string} authenticated by {string} try to update the document using {string} and {string}")
-    public void a_file_to_update(String sPNClientUp, String sPNClient_AKUp, String status, String retentionUntil) {
-
-        sPNClientUp = getValueIfTagged(sPNClientUp);
-        sPNClient_AKUp = getValueIfTagged(sPNClient_AKUp);
-        status = getValueIfTagged(status);
-        retentionUntil = getValueIfTagged(retentionUntil);
-
-
-        this.status = status;
-        this.retentionUntil = retentionUntil;
-        this.sPNClientUp = sPNClientUp;
-        this.sPNClient_AKUp = sPNClient_AKUp;
-
-        log.debug("Update prepared by client {}", sPNClientUp);
-
-        Response oResp;
-
-        if (retentionUntil != null && !retentionUntil.isEmpty()) {
-            requestBody.setRetentionUntil(Date.from(Instant.parse(retentionUntil)));
-        }
-        requestBody.setStatus(status);
-
-        oResp = SafeStorageUtils.updateObjectMetadata(sPNClientUp, sPNClient_AKUp, sKey, requestBody);
-        iRC = oResp.getStatusCode();
-    }
-
     @When("{string} authenticated by {string} try to update the document with:")
     public void a_file_to_update_with_fields(String sPNClientUp, String sPNClient_AKUp, DataTable fields) {
 
