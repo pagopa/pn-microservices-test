@@ -54,17 +54,6 @@ Feature: Fine disponibilità dei documenti SafeStorage
     And i check that the document availability is the end of the day of "today+90"
     And i check that the document retention is the end of the day of "today+90"
 
-  # Lo scenario seguente richiede un documento già presente a sistema e privo di retention, condizione
-  # che non è riproducibile attraverso le API di caricamento. Per questo è escluso dalla run di test globale.
-
-  @PN-20896 @noRetention @ignore
-  Scenario: Su un documento privo di retention la disponibilità diventa anche la retention
-    Given a document with fileKey "<insert fileKey>"
-    When "@clientId-delivery" authenticated by "@delivery_api_key" try to update the document using availableUntil "today+30"
-    Then i get an error "200"
-    And i check that the document availability is the end of the day of "today+30"
-    And i check that the document retention is the end of the day of "today+30"
-
   # Gli scenari seguenti descrivono il comportamento in lettura oltre la fine della disponibilità, non ancora
   # rilasciato da pn-ss. Restano esclusi dalla run di test globale finché la lettura non ne terrà conto.
 
