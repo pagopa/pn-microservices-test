@@ -193,6 +193,39 @@ public class SsStepDefinitions {
         iRC = oResp.getStatusCode();
     }
 
+    @When("{string} authenticated by {string} try to update the document with:")
+    public void a_file_to_update_with_fields(String sPNClientUp, String sPNClient_AKUp, DataTable fields) {
+
+        this.sPNClientUp = getValueIfTagged(sPNClientUp);
+        this.sPNClient_AKUp = getValueIfTagged(sPNClient_AKUp);
+
+        Map<String, String> values = fields.asMap(String.class, String.class);
+        this.status = getValueIfTagged(values.getOrDefault("status", ""));
+        this.retentionUntil = getValueIfTagged(values.getOrDefault("retentionUntil", ""));
+        String availableUntil = getValueIfTagged(values.getOrDefault("availableUntil", ""));
+
+        if (values.containsKey("fileKey")) {
+            this.sKey = getValueIfTagged(values.get("fileKey"));
+            if (!this.sKey.isEmpty()) {
+                MDC.put(MDC_CORR_ID_KEY, this.sKey);
+            }
+        }
+
+        UpdateFileMetadataRequest updateRequest = new UpdateFileMetadataRequest();
+        if (!this.status.isEmpty()) {
+            updateRequest.setStatus(this.status);
+        }
+        if (!this.retentionUntil.isEmpty()) {
+            updateRequest.setRetentionUntil(Date.from(instantOf(this.retentionUntil)));
+        }
+        if (!availableUntil.isEmpty()) {
+            updateRequest.setAvailableUntil(Date.from(instantOf(availableUntil)));
+        }
+
+        log.info("Update prepared by client {} on key {} with body {}", this.sPNClientUp, sKey, updateRequest);
+        iRC = SafeStorageUtils.updateObjectMetadata(this.sPNClientUp, this.sPNClient_AKUp, sKey, updateRequest).getStatusCode();
+    }
+
     @When("request a presigned url to upload the file")
     public void getUploadPresignedURL() throws JsonProcessingException {
         Response oResp;
@@ -958,33 +991,6 @@ public class SsStepDefinitions {
         Assertions.assertTrue(hasErrorTag, "Expected object " + sKey + " to have a tag with value ERROR, but it does not.");
     }
 
-    @When("{string} authenticated by {string} try to update the document using availableUntil {string}")
-    public void a_file_to_update_with_availability(String sPNClientUp, String sPNClient_AKUp, String availableUntil) {
-        a_file_to_update_with_retention_and_availability(sPNClientUp, sPNClient_AKUp, "", "", availableUntil);
-    }
-
-    @When("{string} authenticated by {string} try to update the document using {string}, retentionUntil {string} and availableUntil {string}")
-    public void a_file_to_update_with_retention_and_availability(String sPNClientUp, String sPNClient_AKUp, String status, String retentionUntil, String availableUntil) {
-
-        this.sPNClientUp = getValueIfTagged(sPNClientUp);
-        this.sPNClient_AKUp = getValueIfTagged(sPNClient_AKUp);
-        this.status = getValueIfTagged(status);
-
-        UpdateFileMetadataRequest updateRequest = new UpdateFileMetadataRequest();
-        if (this.status != null && !this.status.isEmpty()) {
-            updateRequest.setStatus(this.status);
-        }
-        if (retentionUntil != null && !retentionUntil.isEmpty()) {
-            updateRequest.setRetentionUntil(Date.from(middayOf(retentionUntil)));
-        }
-        if (availableUntil != null && !availableUntil.isEmpty()) {
-            updateRequest.setAvailableUntil(Date.from(middayOf(availableUntil)));
-        }
-
-        log.info("Update prepared by client {} on key {} with body {}", this.sPNClientUp, sKey, updateRequest);
-        iRC = SafeStorageUtils.updateObjectMetadata(this.sPNClientUp, this.sPNClient_AKUp, sKey, updateRequest).getStatusCode();
-    }
-
     @Then("i check that the document availability is the end of the day of {string}")
     public void document_availability_is_the_end_of_the_day_of(String day) throws JsonProcessingException {
         String availableUntil = getInternalDocument().getAvailableUntil();
@@ -1035,6 +1041,14 @@ public class SsStepDefinitions {
         Response response = SafeStorageUtils.getDocument(sKey);
         Assertions.assertEquals(200, response.getStatusCode());
         return new ObjectMapper().readValue(response.getBody().asString(), DocumentResponse.class).getDocument();
+    }
+
+    private Instant instantOf(String date) {
+        return isDayExpression(date) ? middayOf(date) : Instant.parse(date);
+    }
+
+    private boolean isDayExpression(String date) {
+        return TODAY.equals(date) || YESTERDAY.equals(date) || date.startsWith(TODAY + "+") || date.startsWith(TODAY + "-");
     }
 
     private Instant middayOf(String day) {
