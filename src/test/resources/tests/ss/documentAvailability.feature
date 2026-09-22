@@ -54,17 +54,16 @@ Feature: Fine disponibilità dei documenti SafeStorage
     And i check that the document availability is the end of the day of "today+90"
     And i check that the document retention is the end of the day of "today+90"
 
-  # Lo scenario seguente richiede un documento la cui disponibilità sia già trascorsa, condizione che non
-  # è producibile nella run perché una data già trascorsa viene rifiutata: indicare una fileKey preparata.
-
-  @PN-20896 @ignore
-  Scenario: Oltre la fine della disponibilità la lettura del documento viene negata
-    Given the SafeStorage client "@clientId-delivery" authenticated by "@delivery_api_key"
-    And a document with fileKey "<insert fileKey>"
-    Then reading the document is denied with "410" and a message about the end of availability
-
   @PN-20896
   Scenario: I metadati riportano come retention la data di fine disponibilità
     When "@clientId-delivery" authenticated by "@delivery_api_key" try to update the document using "ATTACHED", retentionUntil "today+60" and availableUntil "today+30"
     Then i get the response status "200"
     And the file metadata response reports retentionUntil as the end of the day of "today+30"
+
+  # Lo scenario seguente richiede un documento la cui disponibilità sia già trascorsa, condizione che non
+  # è producibile nella run perché una data già trascorsa viene rifiutata: indicare una fileKey preparata.
+  @PN-20896 @ignore
+  Scenario: Oltre la fine della disponibilità la lettura del documento viene negata
+    Given the SafeStorage client "@clientId-delivery" authenticated by "@delivery_api_key"
+    And a document with fileKey "<insert fileKey>"
+    Then reading the document is denied with "410" and a message about the end of availability
