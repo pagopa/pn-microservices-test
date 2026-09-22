@@ -6,7 +6,9 @@ Feature: Update metadata
     When request a presigned url to upload the file
     And upload that file
     And it's available_ss
-    And "<clientIdUp>" authenticated by "<APIKeyUp>" try to update the document using "<status>" and "<retentionUntil>"
+    And "<clientIdUp>" authenticated by "<APIKeyUp>" try to update the document with:
+      | status         | <status>         |
+      | retentionUntil | <retentionUntil> |
     Then i check that the document got updated
     And i check availability message "<rc>"
     Examples:
@@ -18,7 +20,10 @@ Feature: Update metadata
 
   @PnSsUpdateMetadata
   Scenario Outline: tentativo di update dei metadata di un file con chiave inesistente
-    Given "<clientIdUp>" authenticated by "<APIKeyUp>" try to update the document using "<status>" and "<retentionUntil>" but has invalid or null "<fileKey>"
+    Given "<clientIdUp>" authenticated by "<APIKeyUp>" try to update the document with:
+      | fileKey        | <fileKey>        |
+      | status         | <status>         |
+      | retentionUntil | <retentionUntil> |
     Then i get the response status "<rc>"
     Examples:
       | clientIdUp     | APIKeyUp     | status   | retentionUntil           | fileKey     | rc  |
@@ -31,7 +36,9 @@ Feature: Update metadata
     When request a presigned url to upload the file
     And upload that file
     And it's available_ss
-    And "<clientIdUp>" authenticated by "<APIKeyUp>" try to update the document using "<status>" and "<retentionUntil>"
+    And "<clientIdUp>" authenticated by "<APIKeyUp>" try to update the document with:
+      | status         | <status>         |
+      | retentionUntil | <retentionUntil> |
     Then i get the response status "<rc>"
     Examples:
       | clientId           | APIKey            | documentType                       | fileName                    | MIMEType        | clientIdUp      | APIKeyUp      | status   | retentionUntil           | rc  |
@@ -44,7 +51,9 @@ Feature: Update metadata
     When request a presigned url to upload the file
     And upload that file
     And it's available_ss
-    And "<clientIdUp>" authenticated by "<APIKeyUp>" try to update the document using "<status>" and "<retentionUntil>"
+    And "<clientIdUp>" authenticated by "<APIKeyUp>" try to update the document with:
+      | status         | <status>         |
+      | retentionUntil | <retentionUntil> |
     Then i get the response status "<rc>"
     Examples:
       | clientId           | APIKey            | documentType                       | fileName                    | MIMEType        | clientIdUp      | APIKeyUp      | status   | retentionUntil           | rc  |
@@ -56,7 +65,9 @@ Feature: Update metadata
   @PnSsUpdateMetadata @updateFile @ignore
   Scenario Outline: update di un file con una fileKey definita e uno stato oppure una retentionUntil
     Given a document with fileKey "<fileKey>"
-    When "<clientId>" authenticated by "<APIKey>" try to update the document using "<status>" and "<retentionUntil>"
+    When "<clientId>" authenticated by "<APIKey>" try to update the document with:
+      | status         | <status>         |
+      | retentionUntil | <retentionUntil> |
     Then i check that the document got updated
     Examples:
       | clientId       | APIKey       | fileKey          | status   | retentionUntil           |
