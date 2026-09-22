@@ -730,11 +730,6 @@ public class SsStepDefinitions {
         Assertions.assertEquals(Integer.parseInt(statusCode), sCode);
     }
 
-    @Then("i get an error {string}")
-    public void i_get_an_error(String sRC) {
-        i_get_the_response_status(sRC);
-    }
-
     @Then("i get the response status {string}")
     public void i_get_the_response_status(String sRC) {
         Assertions.assertEquals(Integer.parseInt(sRC), iRC);
