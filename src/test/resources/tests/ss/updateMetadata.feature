@@ -19,7 +19,7 @@ Feature: Update metadata
   @PnSsUpdateMetadata
   Scenario Outline: tentativo di update dei metadata di un file con chiave inesistente
     Given "<clientIdUp>" authenticated by "<APIKeyUp>" try to update the document using "<status>" and "<retentionUntil>" but has invalid or null "<fileKey>"
-    Then i get an error "<rc>"
+    Then i get the response status "<rc>"
     Examples:
       | clientIdUp     | APIKeyUp     | status   | retentionUntil           | fileKey     | rc  |
       | @clientId-test | @apiKey_test | ATTACHED | 2024-07-11T13:02:25.206Z | NONEXISTENT | 404 |
@@ -32,7 +32,7 @@ Feature: Update metadata
     And upload that file
     And it's available_ss
     And "<clientIdUp>" authenticated by "<APIKeyUp>" try to update the document using "<status>" and "<retentionUntil>"
-    Then i get an error "<rc>"
+    Then i get the response status "<rc>"
     Examples:
       | clientId           | APIKey            | documentType                       | fileName                    | MIMEType        | clientIdUp      | APIKeyUp      | status   | retentionUntil           | rc  |
       | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-test  | @apiKey_test  | SAVED    | 2025-07-11T13:02:25.206Z | 400 |
@@ -45,7 +45,7 @@ Feature: Update metadata
     And upload that file
     And it's available_ss
     And "<clientIdUp>" authenticated by "<APIKeyUp>" try to update the document using "<status>" and "<retentionUntil>"
-    Then i get an error "<rc>"
+    Then i get the response status "<rc>"
     Examples:
       | clientId           | APIKey            | documentType                       | fileName                    | MIMEType        | clientIdUp      | APIKeyUp      | status   | retentionUntil           | rc  |
       | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-pn-cn | @apiKey-pn_cn | ATTACHED | 2025-07-11T13:02:25.206Z | 403 |
