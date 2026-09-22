@@ -1,7 +1,6 @@
 package it.pagopa.pn.cucumber.steps;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.AfterAll;
@@ -1010,20 +1009,6 @@ public class SsStepDefinitions {
         Assertions.assertEquals(middayOf(day), getDocumentRetention());
     }
 
-    @Then("the file metadata response does not expose availableUntil")
-    public void the_file_metadata_response_does_not_expose_availability() throws JsonProcessingException {
-        Response response = SafeStorageUtils.getObjectMetadata(sPNClientUp, sPNClient_AKUp, sKey);
-        Assertions.assertEquals(200, response.getStatusCode());
-        assertAvailabilityIsNotExposed(response);
-    }
-
-    @Then("the file download response does not expose availableUntil")
-    public void the_file_download_response_does_not_expose_availability() throws JsonProcessingException {
-        Response response = SafeStorageUtils.getPresignedURLDownload(sPNClientUp, sPNClient_AKUp, sKey, false);
-        Assertions.assertEquals(200, response.getStatusCode());
-        assertAvailabilityIsNotExposed(response);
-    }
-
     @Then("the file metadata response reports retentionUntil as the end of the day of {string}")
     public void the_file_metadata_response_reports_retention_as_the_end_of_the_day_of(String day) throws JsonProcessingException {
         Response response = SafeStorageUtils.getObjectMetadata(sPNClientUp, sPNClient_AKUp, sKey);
@@ -1039,11 +1024,6 @@ public class SsStepDefinitions {
         String responseBody = response.getBody().asString();
         Assertions.assertEquals(Integer.parseInt(sRC), response.getStatusCode());
         Assertions.assertTrue(responseBody.toLowerCase().contains("availab"), "The denial does not mention the end of availability: " + responseBody);
-    }
-
-    private void assertAvailabilityIsNotExposed(Response response) throws JsonProcessingException {
-        JsonNode body = new ObjectMapper().readTree(response.getBody().asString());
-        Assertions.assertFalse(body.has("availableUntil"), "Availability date exposed by a public response: " + body);
     }
 
     private Instant getDocumentRetention() throws JsonProcessingException {

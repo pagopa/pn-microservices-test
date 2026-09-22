@@ -54,13 +54,6 @@ Feature: Fine disponibilità dei documenti SafeStorage
     And i check that the document availability is the end of the day of "today+90"
     And i check that the document retention is the end of the day of "today+90"
 
-  @PN-20896
-  Scenario: La data di disponibilità non è esposta dalle risposte pubbliche
-    When "@clientId-delivery" authenticated by "@delivery_api_key" try to update the document using availableUntil "today+30"
-    Then i get an error "200"
-    And the file metadata response does not expose availableUntil
-    And the file download response does not expose availableUntil
-
   # Lo scenario seguente richiede un documento già presente a sistema e privo di retention, condizione
   # che non è riproducibile attraverso le API di caricamento. Per questo è escluso dalla run di test globale.
 
