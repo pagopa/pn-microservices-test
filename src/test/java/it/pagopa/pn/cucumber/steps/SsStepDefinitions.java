@@ -143,12 +143,12 @@ public class SsStepDefinitions {
         this.sPNClient_AKUp = getValueIfTagged(sPNClient_AKUp);
 
         Map<String, String> values = fields.asMap(String.class, String.class);
-        this.status = getValueIfTagged(values.getOrDefault("status", ""));
-        this.retentionUntil = getValueIfTagged(values.getOrDefault("retentionUntil", ""));
-        String availableUntil = getValueIfTagged(values.getOrDefault("availableUntil", ""));
+        this.status = fieldOf(values, "status");
+        this.retentionUntil = fieldOf(values, "retentionUntil");
+        String availableUntil = fieldOf(values, "availableUntil");
 
         if (values.containsKey("fileKey")) {
-            this.sKey = getValueIfTagged(values.get("fileKey"));
+            this.sKey = fieldOf(values, "fileKey");
             if (!this.sKey.isEmpty()) {
                 MDC.put(MDC_CORR_ID_KEY, this.sKey);
             }
@@ -984,6 +984,11 @@ public class SsStepDefinitions {
         Response response = SafeStorageUtils.getDocument(sKey);
         Assertions.assertEquals(200, response.getStatusCode());
         return new ObjectMapper().readValue(response.getBody().asString(), DocumentResponse.class).getDocument();
+    }
+
+    private String fieldOf(Map<String, String> values, String field) {
+        String value = values.get(field);
+        return value == null ? "" : getValueIfTagged(value);
     }
 
     private Instant instantOf(String date) {
