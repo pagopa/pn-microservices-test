@@ -46,6 +46,7 @@ Feature: Fine disponibilità dei documenti SafeStorage
     Then i get the response status "200"
     And i check that the document availability is the end of the day of "today+60"
     And i check that the document retention is the end of the day of "today+60"
+    And i check that the expiration registry matches the document retention
 
   @PN-20896
   Scenario: Una disponibilità entro la retention della richiesta lascia la retention invariata
@@ -56,6 +57,7 @@ Feature: Fine disponibilità dei documenti SafeStorage
     Then i get the response status "200"
     And i check that the document availability is the end of the day of "today+30"
     And i check that the document retention is still the one of "today+60"
+    And i check that the expiration registry matches the document retention
 
   @PN-20896
   Scenario: Tra più aggiornamenti prevale l'ultima data di disponibilità ricevuta
@@ -68,6 +70,7 @@ Feature: Fine disponibilità dei documenti SafeStorage
     Then i get the response status "200"
     And i check that the document availability is the end of the day of "today+90"
     And i check that the document retention is the end of the day of "today+90"
+    And i check that the expiration registry matches the document retention
 
   @PN-20896
   Scenario: I metadati riportano come retention la data di fine disponibilità

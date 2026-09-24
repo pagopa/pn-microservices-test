@@ -18,7 +18,9 @@ import it.pagopa.pn.cucumber.utils.S3Utils;
 import it.pagopa.pn.cucumber.utils.SafeStorageUtils;
 import it.pagopa.pn.cucumber.poller.PnSsQueuePoller;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.*;
+import it.pagopa.pn.service.DynamoDbService;
 import it.pagopa.pn.service.S3Service;
+import it.pagopa.pn.service.impl.DynamoDbServiceImpl;
 import it.pagopa.pn.service.impl.S3ServiceImpl;
 import it.pagopa.pn.service.impl.SqsServiceImpl;
 import jakarta.jms.JMSException;
@@ -26,6 +28,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.MDC;
 import software.amazon.awssdk.eventnotifications.s3.model.S3EventNotification;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectTaggingResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse;
 
@@ -67,6 +71,7 @@ public class SsStepDefinitions {
     private String status = null;
     private String retentionUntil = "";
     private Date retentionDate = null;
+    private final DynamoDbService dynamoDbService = new DynamoDbServiceImpl();
     private static String nomeCoda;
     private static PnSsQueuePoller queuePoller;
     private final SqsServiceImpl sqsService = new SqsServiceImpl();
@@ -725,7 +730,7 @@ public class SsStepDefinitions {
                 boolean condition = false;
 
                 if (retentionUntil != null && !retentionUntil.isEmpty()) {
-                    retentionDate = Date.from(Instant.parse(retentionUntil));
+                    retentionDate = Date.from(instantOf(retentionUntil));
                     if (oFDR.getRetentionUntil().toInstant().truncatedTo(ChronoUnit.SECONDS).equals(retentionDate.toInstant().truncatedTo(ChronoUnit.SECONDS))) {
                         condition = true;
                     }
@@ -968,6 +973,31 @@ public class SsStepDefinitions {
         String responseBody = response.getBody().asString();
         Assertions.assertEquals(Integer.parseInt(sRC), response.getStatusCode());
         Assertions.assertTrue(responseBody.toLowerCase().contains("availab"), "The denial does not mention the end of availability: " + responseBody);
+    }
+
+    @Then("i check that the expiration registry matches the document retention")
+    public void expiration_registry_matches_document_retention() throws JsonProcessingException {
+        Assertions.assertEquals(getDocumentRetention().truncatedTo(ChronoUnit.SECONDS), getRegisteredRetention());
+    }
+
+    @Then("i check that the expiration registry reports {string}")
+    public void expiration_registry_reports(String retention) {
+        if (retention.isEmpty()) {
+            Assertions.assertNull(getExpirationRecord(), "Unexpected expiration record for document " + sKey);
+            return;
+        }
+        Assertions.assertEquals(instantOf(retention).truncatedTo(ChronoUnit.SECONDS), getRegisteredRetention());
+    }
+
+    private Instant getRegisteredRetention() {
+        Map<String, AttributeValue> record = getExpirationRecord();
+        Assertions.assertNotNull(record, "No expiration record for document " + sKey);
+        return Instant.ofEpochSecond(Long.parseLong(record.get("retentionUntil").n()));
+    }
+
+    private Map<String, AttributeValue> getExpirationRecord() {
+        GetItemResponse response = dynamoDbService.getItemByKey(System.getProperty("pn.ss.scadenza-documenti.table.name"), "documentKey", sKey);
+        return response.hasItem() ? response.item() : null;
     }
 
     private Instant getDocumentRetention() throws JsonProcessingException {
