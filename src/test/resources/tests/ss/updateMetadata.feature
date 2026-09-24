@@ -38,13 +38,12 @@ Feature: Update metadata
     And upload that file
     And it's available_ss
     And "<clientIdUp>" authenticated by "<APIKeyUp>" try to update the document with:
-      | status         | <status>         |
-      | retentionUntil | <retentionUntil> |
+      | status | <status> |
     Then i get the response status "<rc>"
     Examples:
-      | clientId           | APIKey            | documentType                       | fileName                    | MIMEType        | clientIdUp      | APIKeyUp      | status   | retentionUntil           | rc  |
-      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-test  | @apiKey_test  | SAVED    | today+30                 | 400 |
-      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-test  | @apiKey_test  | NONEXIST | today+30                 | 400 |
+      | clientId           | APIKey            | documentType                       | fileName                    | MIMEType        | clientIdUp      | APIKeyUp      | status   | rc  |
+      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-test  | @apiKey_test  | SAVED    | 400 |
+      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-test  | @apiKey_test  | NONEXIST | 400 |
 
   # TODO Lo scenario seguente e' escluso dalla run a causa di un bug. Il difetto e' tracciato da PN-21599: alla sua risoluzione il tag @ignore va rimosso.
   @PnSsUpdateMetadata @ignore
