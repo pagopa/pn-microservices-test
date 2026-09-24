@@ -46,6 +46,18 @@ Feature: Update metadata
       | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-test  | @apiKey_test  | SAVED    | today+30                 | 400 |
       | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-test  | @apiKey_test  | NONEXIST | today+30                 | 400 |
 
+  # TODO Lo scenario seguente e' escluso dalla run a causa di un bug. Il difetto e' tracciato da PN-21599: alla sua risoluzione il tag @ignore va rimosso.
+  @PnSsUpdateMetadata @ignore
+  Scenario: tentativo di update dei metadata di un file con una retention gia' trascorsa
+    Given "@clientId-delivery" authenticated by "@delivery_api_key" try to upload a document of type "@doc_type_notification_attachments" with content type "application/pdf" using "src/main/resources/test.pdf"
+    When request a presigned url to upload the file
+    And upload that file
+    And it's available_ss
+    And "@clientId-delivery" authenticated by "@delivery_api_key" try to update the document with:
+      | retentionUntil | today-1 |
+    Then i get the response status "400"
+    And i check that the expiration registry reports ""
+
   @PnSsUpdateMetadata
   Scenario Outline: tentativo di update dei metadata di un file con client non autorizzato
     Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
