@@ -20,15 +20,12 @@ Feature: Update metadata
 
 
   @PnSsUpdateMetadata
-  Scenario Outline: tentativo di update dei metadata di un file con chiave inesistente
-    Given "<clientIdUp>" authenticated by "<APIKeyUp>" try to update the document with:
-      | fileKey        | <fileKey>        |
-      | status         | <status>         |
-      | retentionUntil | <retentionUntil> |
-    Then i get the response status "<rc>"
-    Examples:
-      | clientIdUp     | APIKeyUp     | status   | retentionUntil           | fileKey     | rc  |
-      | @clientId-test | @apiKey_test | ATTACHED | today+30                 | NONEXISTENT | 404 |
+  Scenario: tentativo di update dei metadata di un file con chiave inesistente
+    Given "@clientId-test" authenticated by "@apiKey_test" try to update the document with:
+      | fileKey        | NONEXISTENT |
+      | status         | ATTACHED    |
+      | retentionUntil | today+30    |
+    Then i get the response status "404"
 
 
   @PnSsUpdateMetadata
@@ -58,29 +55,23 @@ Feature: Update metadata
     And i check that the expiration registry reports ""
 
   @PnSsUpdateMetadata
-  Scenario Outline: tentativo di update dei metadata di un file con client non autorizzato
-    Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
+  Scenario: tentativo di update dei metadata di un file con client non autorizzato
+    Given "@clientId-delivery" authenticated by "@delivery_api_key" try to upload a document of type "@doc_type_notification_attachments" with content type "application/pdf" using "src/main/resources/test.pdf"
     When request a presigned url to upload the file
     And upload that file
     And it's available_ss
-    And "<clientIdUp>" authenticated by "<APIKeyUp>" try to update the document with:
-      | status         | <status>         |
-      | retentionUntil | <retentionUntil> |
-    Then i get the response status "<rc>"
-    Examples:
-      | clientId           | APIKey            | documentType                       | fileName                    | MIMEType        | clientIdUp      | APIKeyUp      | status   | retentionUntil           | rc  |
-      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-pn-cn | @apiKey-pn_cn | ATTACHED | today+30                 | 403 |
+    And "@clientId-pn-cn" authenticated by "@apiKey-pn_cn" try to update the document with:
+      | status         | ATTACHED |
+      | retentionUntil | today+30 |
+    Then i get the response status "403"
 
 
   # I test seguenti sono specifici su risorse già esistenti a sistema. Per questo sono esclusi dalla run di test globale.
 
   @PnSsUpdateMetadata @updateFile @ignore
-  Scenario Outline: update di un file con una fileKey definita e uno stato oppure una retentionUntil
-    Given a document with fileKey "<fileKey>"
-    When "<clientId>" authenticated by "<APIKey>" try to update the document with:
-      | status         | <status>         |
-      | retentionUntil | <retentionUntil> |
+  Scenario: update di un file con una fileKey definita e uno stato oppure una retentionUntil
+    Given a document with fileKey "<insert fileKey>"
+    When "@clientId-test" authenticated by "@apiKey_test" try to update the document with:
+      | status         | ATTACHED |
+      | retentionUntil | today+30 |
     Then i check that the document got updated
-    Examples:
-      | clientId       | APIKey       | fileKey          | status   | retentionUntil           |
-      | @clientId-test | @apiKey_test | <insert fileKey> | ATTACHED | today+30                 |
