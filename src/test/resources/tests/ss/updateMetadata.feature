@@ -10,12 +10,13 @@ Feature: Update metadata
       | status         | <status>         |
       | retentionUntil | <retentionUntil> |
     Then i check that the document got updated
+    And i check that the expiration registry reports "<retentionUntil>"
     And i check availability message "<rc>"
     Examples:
       | clientId           | APIKey            | documentType                       | fileName                    | MIMEType        | clientIdUp         | APIKeyUp          | status   | retentionUntil           | rc  |
       | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-delivery | @delivery_api_key | ATTACHED |                          | 200 |
-      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-delivery | @delivery_api_key | ATTACHED | 2026-12-31T16:15:00.000Z | 200 |
-      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-delivery | @delivery_api_key |          | 2026-12-31T13:02:25.206Z | 200 |
+      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-delivery | @delivery_api_key | ATTACHED | today+30                 | 200 |
+      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-delivery | @delivery_api_key |          | today+30                 | 200 |
 
 
   @PnSsUpdateMetadata
@@ -27,7 +28,7 @@ Feature: Update metadata
     Then i get the response status "<rc>"
     Examples:
       | clientIdUp     | APIKeyUp     | status   | retentionUntil           | fileKey     | rc  |
-      | @clientId-test | @apiKey_test | ATTACHED | 2024-07-11T13:02:25.206Z | NONEXISTENT | 404 |
+      | @clientId-test | @apiKey_test | ATTACHED | today+30                 | NONEXISTENT | 404 |
 
 
   @PnSsUpdateMetadata
@@ -42,8 +43,8 @@ Feature: Update metadata
     Then i get the response status "<rc>"
     Examples:
       | clientId           | APIKey            | documentType                       | fileName                    | MIMEType        | clientIdUp      | APIKeyUp      | status   | retentionUntil           | rc  |
-      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-test  | @apiKey_test  | SAVED    | 2025-07-11T13:02:25.206Z | 400 |
-      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-test  | @apiKey_test  | NONEXIST | 2025-07-11T13:02:25.206Z | 400 |
+      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-test  | @apiKey_test  | SAVED    | today+30                 | 400 |
+      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-test  | @apiKey_test  | NONEXIST | today+30                 | 400 |
 
   @PnSsUpdateMetadata
   Scenario Outline: tentativo di update dei metadata di un file con client non autorizzato
@@ -57,7 +58,7 @@ Feature: Update metadata
     Then i get the response status "<rc>"
     Examples:
       | clientId           | APIKey            | documentType                       | fileName                    | MIMEType        | clientIdUp      | APIKeyUp      | status   | retentionUntil           | rc  |
-      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-pn-cn | @apiKey-pn_cn | ATTACHED | 2025-07-11T13:02:25.206Z | 403 |
+      | @clientId-delivery | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @clientId-pn-cn | @apiKey-pn_cn | ATTACHED | today+30                 | 403 |
 
 
   # I test seguenti sono specifici su risorse già esistenti a sistema. Per questo sono esclusi dalla run di test globale.
@@ -71,4 +72,4 @@ Feature: Update metadata
     Then i check that the document got updated
     Examples:
       | clientId       | APIKey       | fileKey          | status   | retentionUntil           |
-      | @clientId-test | @apiKey_test | <insert fileKey> | ATTACHED | 2025-07-11T13:02:25.206Z |
+      | @clientId-test | @apiKey_test | <insert fileKey> | ATTACHED | today+30                 |
