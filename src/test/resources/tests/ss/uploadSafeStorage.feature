@@ -4,7 +4,7 @@ Feature: Upload SafeStorage
   Scenario Outline: Upload di un file non sottoposto a trasformazione con un clientId non riconosciuto
     Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
     When request a presigned url to upload the file
-    Then i get an error "<rc>"
+    Then i get the response status "<rc>"
     Examples:
       | clientId          | APIKey            | documentType                       | fileName                    | MIMEType        | rc  |
       | @clientId-unknown | @delivery_api_key | @doc_type_notification_attachments | src/main/resources/test.zip | application/zip | 403 |
@@ -25,7 +25,7 @@ Feature: Upload SafeStorage
   Scenario Outline: Upload di un file non sottoposto a trasformazione con client non autorizzato sul documentType
     Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
     When request a presigned url to upload the file
-    Then i get an error "<rc>"
+    Then i get the response status "<rc>"
     Examples:
       | clientId           | APIKey            | documentType   | fileName                    | MIMEType        | rc  |
       | @clientId-delivery | @delivery_api_key | PN_LEGAL_FACTS | src/main/resources/test.zip | application/zip | 403 |
@@ -108,7 +108,7 @@ Feature: Upload SafeStorage
   Scenario Outline: Upload di un file con tag inesistente e verifica dell'errore di validazione
     Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
     When request a presigned url to upload the file with tag "<tag>" expecting failure
-    Then i get an error "<rc>"
+    Then i get the response status "<rc>"
     Examples:
       | clientId       | APIKey       | documentType                       | fileName                    | MIMEType        | tag                      | rc  |
       | @clientId-test | @apiKey_test | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | NON_EXISTENT_TAG_PN20716 | 400 |
@@ -134,7 +134,7 @@ Feature: Upload SafeStorage
   Scenario Outline: Upload di un file con tag single-value e più valori e verifica dell'errore di validazione
     Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
     When request a presigned url to upload the file with multi-value tag "<tag>" expecting failure
-    Then i get an error "<rc>"
+    Then i get the response status "<rc>"
     Examples:
       | clientId       | APIKey       | documentType                       | fileName                    | MIMEType        | tag       | rc  |
       | @clientId-test | @apiKey_test | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @localTag | 400 |
@@ -143,7 +143,7 @@ Feature: Upload SafeStorage
   Scenario Outline: Upload di un file con numero di tag oltre il limite MaxTagsPerRequest e verifica dell'errore di validazione
     Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
     When request a presigned url to upload the file with <numTags> tags expecting failure
-    Then i get an error "<rc>"
+    Then i get the response status "<rc>"
     Examples:
       | clientId       | APIKey       | documentType                       | fileName                    | MIMEType        | numTags | rc  |
       | @clientId-test | @apiKey_test | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | 51      | 400 |
@@ -152,7 +152,7 @@ Feature: Upload SafeStorage
   Scenario Outline: Upload di un file con numero di valori per tag oltre il limite MaxValuesPerTagPerRequest e verifica dell'errore di validazione
     Given "<clientId>" authenticated by "<APIKey>" try to upload a document of type "<documentType>" with content type "<MIMEType>" using "<fileName>"
     When request a presigned url to upload the file with tag "<tag>" having <numValues> values expecting failure
-    Then i get an error "<rc>"
+    Then i get the response status "<rc>"
     Examples:
       | clientId       | APIKey       | documentType                       | fileName                    | MIMEType        | tag            | numValues | rc  |
       | @clientId-test | @apiKey_test | @doc_type_notification_attachments | src/main/resources/test.pdf | application/pdf | @multiValueTag | 101       | 400 |

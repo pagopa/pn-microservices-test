@@ -1,6 +1,7 @@
 package it.pagopa.pn.cucumber.steps;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.AfterAll;
@@ -17,7 +18,9 @@ import it.pagopa.pn.cucumber.utils.S3Utils;
 import it.pagopa.pn.cucumber.utils.SafeStorageUtils;
 import it.pagopa.pn.cucumber.poller.PnSsQueuePoller;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.*;
+import it.pagopa.pn.service.DynamoDbService;
 import it.pagopa.pn.service.S3Service;
+import it.pagopa.pn.service.impl.DynamoDbServiceImpl;
 import it.pagopa.pn.service.impl.S3ServiceImpl;
 import it.pagopa.pn.service.impl.SqsServiceImpl;
 import jakarta.jms.JMSException;
@@ -25,6 +28,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.MDC;
 import software.amazon.awssdk.eventnotifications.s3.model.S3EventNotification;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectTaggingResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse;
 
@@ -32,6 +37,10 @@ import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
@@ -62,6 +71,7 @@ public class SsStepDefinitions {
     private String status = null;
     private String retentionUntil = "";
     private Date retentionDate = null;
+    private final DynamoDbService dynamoDbService = new DynamoDbServiceImpl();
     private static String nomeCoda;
     private static PnSsQueuePoller queuePoller;
     private final SqsServiceImpl sqsService = new SqsServiceImpl();
@@ -70,6 +80,11 @@ public class SsStepDefinitions {
     private boolean metadataOnly;
     private FileDownloadResponse fileDownloadResponse;
     public static final String TRANSFORMATION_TAG_PREFIX = "Transformation-";
+    private static final ZoneId AVAILABILITY_TIME_ZONE = ZoneId.of("Europe/Rome");
+    private static final LocalTime END_OF_DAY = LocalTime.of(23, 59, 59);
+    private static final String TODAY = "today";
+    private static final String YESTERDAY = "yesterday";
+    private final ObjectMapper uploadResponseMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     private final Map<String, String> fileKeysByAlias = new HashMap<>();
     private final Map<String, Map<String, String>> tagValuesByAlias = new HashMap<>();
     private Response searchResponse;
@@ -128,61 +143,37 @@ public class SsStepDefinitions {
         sMD5 = Base64.getEncoder().encodeToString(digest);
     }
 
-    @Given("{string} authenticated by {string} try to update the document using {string} and {string} but has invalid or null {string}")
-    public void no_file_to_update(String sPNClientUp, String sPNClient_AKUp, String status, String retentionUntil, String fileKey) {
+    @When("{string} authenticated by {string} try to update the document with:")
+    public void a_file_to_update_with_fields(String sPNClientUp, String sPNClient_AKUp, DataTable fields) {
 
-        sPNClientUp = getValueIfTagged(sPNClientUp);
-        sPNClient_AKUp = getValueIfTagged(sPNClient_AKUp);
-        status = getValueIfTagged(status);
-        retentionUntil = getValueIfTagged(retentionUntil);
-        fileKey = getValueIfTagged(fileKey);
+        this.sPNClientUp = getValueIfTagged(sPNClientUp);
+        this.sPNClient_AKUp = getValueIfTagged(sPNClient_AKUp);
 
-        this.status = status;
-        this.retentionUntil = retentionUntil;
-        this.sPNClientUp = sPNClientUp;
-        this.sPNClient_AKUp = sPNClient_AKUp;
-        if (fileKey != null && !fileKey.isEmpty()) {
-            this.sKey = fileKey;
-            MDC.put(MDC_CORR_ID_KEY, fileKey);
-        } else {
-            this.sKey = "";
+        Map<String, String> values = fields.asMap(String.class, String.class);
+        this.status = fieldOf(values, "status");
+        this.retentionUntil = fieldOf(values, "retentionUntil");
+        String availableUntil = fieldOf(values, "availableUntil");
+
+        if (values.containsKey("fileKey")) {
+            this.sKey = fieldOf(values, "fileKey");
+            if (!this.sKey.isEmpty()) {
+                MDC.put(MDC_CORR_ID_KEY, this.sKey);
+            }
         }
-        Response oResp;
 
-        if (retentionUntil != null && !retentionUntil.isEmpty()) {
-            requestBody.setRetentionUntil(Date.from(Instant.parse(retentionUntil)));
+        UpdateFileMetadataRequest updateRequest = new UpdateFileMetadataRequest();
+        if (!this.status.isEmpty()) {
+            updateRequest.setStatus(this.status);
         }
-        requestBody.setStatus(status);
-
-        oResp = SafeStorageUtils.updateObjectMetadata(sPNClientUp, sPNClient_AKUp, fileKey, requestBody);
-        iRC = oResp.getStatusCode();
-    }
-
-    @When("{string} authenticated by {string} try to update the document using {string} and {string}")
-    public void a_file_to_update(String sPNClientUp, String sPNClient_AKUp, String status, String retentionUntil) {
-
-        sPNClientUp = getValueIfTagged(sPNClientUp);
-        sPNClient_AKUp = getValueIfTagged(sPNClient_AKUp);
-        status = getValueIfTagged(status);
-        retentionUntil = getValueIfTagged(retentionUntil);
-
-
-        this.status = status;
-        this.retentionUntil = retentionUntil;
-        this.sPNClientUp = sPNClientUp;
-        this.sPNClient_AKUp = sPNClient_AKUp;
-
-        log.debug("Update prepared by client {}", sPNClientUp);
-
-        Response oResp;
-
-        if (retentionUntil != null && !retentionUntil.isEmpty()) {
-            requestBody.setRetentionUntil(Date.from(Instant.parse(retentionUntil)));
+        if (!this.retentionUntil.isEmpty()) {
+            updateRequest.setRetentionUntil(Date.from(instantOf(this.retentionUntil)));
         }
-        requestBody.setStatus(status);
+        if (!availableUntil.isEmpty()) {
+            updateRequest.setAvailableUntil(Date.from(instantOf(availableUntil)));
+        }
 
-        oResp = SafeStorageUtils.updateObjectMetadata(sPNClientUp, sPNClient_AKUp, sKey, requestBody);
-        iRC = oResp.getStatusCode();
+        log.info("Update prepared by client {} on key {} with body {}", this.sPNClientUp, sKey, updateRequest);
+        iRC = SafeStorageUtils.updateObjectMetadata(this.sPNClientUp, this.sPNClient_AKUp, sKey, updateRequest).getStatusCode();
     }
 
     @When("request a presigned url to upload the file")
@@ -192,10 +183,8 @@ public class SsStepDefinitions {
         oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, fileCreationRequest, sSHA256, sMD5, boHeader, Checksum.SHA256, true);
         iRC = oResp.getStatusCode();
         if (iRC == 200) {
-            sURL = oResp.then().extract().path("uploadUrl");
-            sKey = oResp.then().extract().path("key");
+            readUploadResponse(oResp);
             MDC.put(MDC_CORR_ID_KEY, sKey);
-            sSecret = oResp.then().extract().path("secret");
         }
         log.info("Upload presigned url requested: httpStatus={} fileKey={}", iRC, sKey);
     }
@@ -212,9 +201,7 @@ public class SsStepDefinitions {
         iRC = oResp.getStatusCode();
         Assertions.assertEquals(200, iRC);
         if (iRC == 200) {
-            sURL = oResp.then().extract().path("uploadUrl");
-            sKey = oResp.then().extract().path("key");
-            sSecret = oResp.then().extract().path("secret");
+            readUploadResponse(oResp);
         }
     }
 
@@ -632,9 +619,7 @@ public class SsStepDefinitions {
         oResp = SafeStorageUtils.getPresignedURLUpload(sPNClient, sPNClient_AK, fileCreationRequest, sSHA256, sMD5, boHeader, Checksum.SHA256, false);
         iRC = oResp.getStatusCode();
         if (iRC == 200) {
-            sURL = oResp.then().extract().path("uploadUrl");
-            sKey = oResp.then().extract().path("key");
-            sSecret = oResp.then().extract().path("secret");
+            readUploadResponse(oResp);
         }
     }
 
@@ -722,10 +707,9 @@ public class SsStepDefinitions {
         Assertions.assertEquals(Integer.parseInt(statusCode), sCode);
     }
 
-    @Then("i get an error {string}")
-    public void i_get_an_error(String sRC) {
+    @Then("i get the response status {string}")
+    public void i_get_the_response_status(String sRC) {
         Assertions.assertEquals(Integer.parseInt(sRC), iRC);
-
     }
 
 
@@ -746,7 +730,7 @@ public class SsStepDefinitions {
                 boolean condition = false;
 
                 if (retentionUntil != null && !retentionUntil.isEmpty()) {
-                    retentionDate = Date.from(Instant.parse(retentionUntil));
+                    retentionDate = Date.from(instantOf(retentionUntil));
                     if (oFDR.getRetentionUntil().toInstant().truncatedTo(ChronoUnit.SECONDS).equals(retentionDate.toInstant().truncatedTo(ChronoUnit.SECONDS))) {
                         condition = true;
                     }
@@ -949,6 +933,132 @@ public class SsStepDefinitions {
         boolean hasErrorTag = taggingResponse.tagSet().stream().anyMatch(tag -> tag.value().equals("ERROR"));
         log.info("Object {} in staging bucket {} has ERROR tag: {}", sKey, stagingBucket, hasErrorTag);
         Assertions.assertTrue(hasErrorTag, "Expected object " + sKey + " to have a tag with value ERROR, but it does not.");
+    }
+
+    @Then("i check that the document availability is the end of the day of {string}")
+    public void document_availability_is_the_end_of_the_day_of(String day) throws JsonProcessingException {
+        String availableUntil = getInternalDocument().getAvailableUntil();
+        Assertions.assertNotNull(availableUntil, "No availability date on document " + sKey);
+        Assertions.assertEquals(endOfDayOf(day), OffsetDateTime.parse(availableUntil).toInstant());
+    }
+
+    @Then("i check that the document has no availability date")
+    public void document_has_no_availability_date() throws JsonProcessingException {
+        String availableUntil = getInternalDocument().getAvailableUntil();
+        Assertions.assertNull(availableUntil, "Unexpected availability date " + availableUntil + " on document " + sKey);
+    }
+
+    @Then("i check that the document retention is the end of the day of {string}")
+    public void document_retention_is_the_end_of_the_day_of(String day) throws JsonProcessingException {
+        Assertions.assertEquals(endOfDayOf(day), getDocumentRetention());
+    }
+
+    @Then("i check that the document retention is still the one of {string}")
+    public void document_retention_is_still_the_one_of(String day) throws JsonProcessingException {
+        Assertions.assertEquals(middayOf(day), getDocumentRetention());
+    }
+
+    @Then("the file metadata response reports retentionUntil as the end of the day of {string}")
+    public void the_file_metadata_response_reports_retention_as_the_end_of_the_day_of(String day) throws JsonProcessingException {
+        Response response = SafeStorageUtils.getObjectMetadata(sPNClientUp, sPNClient_AKUp, sKey);
+        Assertions.assertEquals(200, response.getStatusCode());
+        FileDownloadResponse metadata = new ObjectMapper().readValue(response.getBody().asString(), FileDownloadResponse.class);
+        Assertions.assertNotNull(metadata.getRetentionUntil(), "No retention date in the metadata of document " + sKey);
+        Assertions.assertEquals(endOfDayOf(day), metadata.getRetentionUntil().toInstant());
+    }
+
+    @Then("reading the document is denied with {string} and a message about the end of availability")
+    public void reading_the_document_is_denied_for_the_end_of_availability(String sRC) {
+        Response response = SafeStorageUtils.getPresignedURLDownload(sPNClient, sPNClient_AK, sKey, false);
+        String responseBody = response.getBody().asString();
+        Assertions.assertEquals(Integer.parseInt(sRC), response.getStatusCode());
+        Assertions.assertTrue(responseBody.toLowerCase().contains("availab"), "The denial does not mention the end of availability: " + responseBody);
+    }
+
+    @Then("i check that the expiration registry matches the document retention")
+    public void expiration_registry_matches_document_retention() throws JsonProcessingException {
+        Assertions.assertEquals(getDocumentRetention().truncatedTo(ChronoUnit.SECONDS), getRegisteredRetention());
+    }
+
+    @Then("i check that the expiration registry reports {string}")
+    public void expiration_registry_reports(String retention) {
+        if (retention.isEmpty()) {
+            Assertions.assertNull(getExpirationRecord(), "Unexpected expiration record for document " + sKey);
+            return;
+        }
+        Assertions.assertEquals(instantOf(retention).truncatedTo(ChronoUnit.SECONDS), getRegisteredRetention());
+    }
+
+    private Instant getRegisteredRetention() {
+        Map<String, AttributeValue> record = getExpirationRecord();
+        Assertions.assertNotNull(record, "No expiration record for document " + sKey);
+        return Instant.ofEpochSecond(Long.parseLong(record.get("retentionUntil").n()));
+    }
+
+    private Map<String, AttributeValue> getExpirationRecord() {
+        GetItemResponse response = dynamoDbService.getItemByKey(System.getProperty("pn.ss.scadenza-documenti.table.name"), "documentKey", sKey);
+        return response.hasItem() ? response.item() : null;
+    }
+
+    private Instant getDocumentRetention() throws JsonProcessingException {
+        String retentionUntil = getInternalDocument().getRetentionUntil();
+        Assertions.assertNotNull(retentionUntil, "No retention date on document " + sKey);
+        return OffsetDateTime.parse(retentionUntil).toInstant();
+    }
+
+    private DocumentResponseDocument getInternalDocument() throws JsonProcessingException {
+        Response response = SafeStorageUtils.getDocument(sKey);
+        Assertions.assertEquals(200, response.getStatusCode());
+        return new ObjectMapper().readValue(response.getBody().asString(), DocumentResponse.class).getDocument();
+    }
+
+    private void readUploadResponse(Response oResp) {
+        try {
+            FileCreationResponse fileCreationResponse = uploadResponseMapper.readValue(oResp.getBody().asString(), FileCreationResponse.class);
+            sURL = fileCreationResponse.getUploadUrl();
+            sKey = fileCreationResponse.getKey();
+            sSecret = fileCreationResponse.getSecret();
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Cannot read the upload presigned url response: " + oResp.getBody().asString(), e);
+        }
+    }
+
+    private String fieldOf(Map<String, String> values, String field) {
+        String value = values.get(field);
+        return value == null ? "" : getValueIfTagged(value);
+    }
+
+    private Instant instantOf(String date) {
+        return isDayExpression(date) ? middayOf(date) : Instant.parse(date);
+    }
+
+    private boolean isDayExpression(String date) {
+        return TODAY.equals(date) || YESTERDAY.equals(date) || date.startsWith(TODAY + "+") || date.startsWith(TODAY + "-");
+    }
+
+    private Instant middayOf(String day) {
+        return dayOf(day).atTime(LocalTime.NOON).atZone(AVAILABILITY_TIME_ZONE).toInstant();
+    }
+
+    private Instant endOfDayOf(String day) {
+        return dayOf(day).atTime(END_OF_DAY).atZone(AVAILABILITY_TIME_ZONE).toInstant();
+    }
+
+    private LocalDate dayOf(String day) {
+        LocalDate today = LocalDate.now(AVAILABILITY_TIME_ZONE);
+        if (TODAY.equals(day)) {
+            return today;
+        }
+        if (YESTERDAY.equals(day)) {
+            return today.minusDays(1);
+        }
+        if (day.startsWith(TODAY + "+")) {
+            return today.plusDays(Long.parseLong(day.substring(TODAY.length() + 1)));
+        }
+        if (day.startsWith(TODAY + "-")) {
+            return today.minusDays(Long.parseLong(day.substring(TODAY.length() + 1)));
+        }
+        throw new IllegalArgumentException("Unsupported day expression : " + day);
     }
 
 }
