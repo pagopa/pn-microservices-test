@@ -240,6 +240,7 @@ Feature: Send Digital Message Ec
     Examples:
       | clientId           | channel      | receiver                 | rc   |
       | @clientId-delivery | @channel_pec | .mario.rossi@arubapec.it | C011 |
+      | @clientId-delivery | @channel_pec | -mario.rossi@arubapec.it | C011 |
 
   @PnEcSendMessage @invioPEC @complete_pec_ko
   Scenario Outline: Invio digitale ad un indirizzo non PEC
