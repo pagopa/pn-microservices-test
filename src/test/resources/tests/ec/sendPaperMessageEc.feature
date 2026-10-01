@@ -98,14 +98,14 @@ Feature: Send Paper Message Ec
     When "@clientId-delivery" authenticated by "@delivery_api_key" uploads the following attachments:
       | documentType        | fileName                     | mimeType        |
       | @doc_type_to_raster | src/main/resources/wrong.pdf | application/pdf |
-    And try to send a paper message to "<receiver>" with "<transformationDocumentType>" as documentType
+    And try to send a paper message to "<receiver>" with "<transformationDocumentType>" as documentType and "<paId>" as PaId
     # Attesa della schedulazione
     * waiting for scheduling
     Then wait for the request to have status "<status>"
     Examples:
-      | clientId           | channel        | receiver                        | transformationDocumentType       | status |
-      | @clientId-cons     | @channel_paper | @paper.receiver.digital.address | @doc_type_paper_attachment       | P013   |
-      | @clientId-cons     | @channel_paper | @paper.receiver.digital.address | @doc_type_clean_paper_attachment | P013   |
+      | clientId           | channel        | receiver                        | transformationDocumentType       | paId                       | status |
+      | @clientId-cons     | @channel_paper | @paper.receiver.digital.address | @doc_type_paper_attachment       | @paid_none_transformations | P013   |
+      | @clientId-cons     | @channel_paper | @paper.receiver.digital.address | @doc_type_clean_paper_attachment | @paid_none_transformations | P013   |
 
 
   @PnEcSendMessage @PAPER @invioCartaceo @raster @testOk @TransformationDocumentType @TransformationError @P000
@@ -114,15 +114,15 @@ Feature: Send Paper Message Ec
     When "@clientId-delivery" authenticated by "@delivery_api_key" uploads the following attachments:
       | documentType        | fileName                     | mimeType        |
       | @doc_type_to_raster | src/test/resources/test.pdf | application/pdf |
-    And try to send a paper message to "<receiver>" with "<transformationDocumentType>" as documentType
+    And try to send a paper message to "<receiver>" with "<transformationDocumentType>" as documentType and "<paId>" as PaId
     # Attesa della schedulazione
     * waiting for scheduling
     * waiting for scheduling
     Then wait for the request to have status "<status>"
     Examples:
-      | clientId           | channel        | receiver                        | transformationDocumentType       | status |
-      | @clientId-cons     | @channel_paper | @paper.receiver.digital.address | @doc_type_paper_attachment       | P000   |
-      | @clientId-cons     | @channel_paper | @paper.receiver.digital.address | @doc_type_clean_paper_attachment | P000   |
+      | clientId           | channel        | receiver                        | transformationDocumentType       | paId                       | status |
+      | @clientId-cons     | @channel_paper | @paper.receiver.digital.address | @doc_type_paper_attachment       | @paid_none_transformations | P000   |
+      | @clientId-cons     | @channel_paper | @paper.receiver.digital.address | @doc_type_clean_paper_attachment | @paid_none_transformations | P000   |
 
 
   @PnEcSendMessage @PAPER @invioCartaceo @raster @testOk @TransformationDocumentType @TransformationError @P000
