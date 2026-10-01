@@ -191,6 +191,7 @@ public class EcStepDefinitions {
             default -> throw new IllegalArgumentException();
         };
         log.info("Result requested on channel {} for requestId {}: httpStatus={}", channel, requestId, response.getStatusCode());
+        this.response = response;
         this.sRC = String.valueOf(response.getStatusCode());
     }
 
@@ -276,7 +277,9 @@ public class EcStepDefinitions {
                     .documentType(map.get("attachmentDocumentType"))
                     .id("id")
                     .date(OffsetDateTime.now())
-                    .documentId("documentId");
+                    .documentId("documentId")
+                    .sourceType(blankToNull(getValueOrDefault(map, "sourceType", null)))
+                    .originType(blankToNull(getValueOrDefault(map, "originType", null)));
             this.paperProgressStatusEventAttachments.add(attachment);
         });
     }
@@ -344,7 +347,9 @@ public class EcStepDefinitions {
                     .documentType(map.get("attachmentDocumentType"))
                     .id("id")
                     .date(OffsetDateTime.now())
-                    .documentId("documentId");
+                    .documentId("documentId")
+                    .sourceType(blankToNull(getValueOrDefault(map, "sourceType", null)))
+                    .originType(blankToNull(getValueOrDefault(map, "originType", null)));
             this.paperProgressStatusEventAttachments.add(attachment);
         });
     }
@@ -501,8 +506,24 @@ public class EcStepDefinitions {
                         now;
                 event.setClientRequestTimeStamp(clientRequestTimestamp);
 
-                if (!this.paperProgressStatusEventAttachments.isEmpty())
-                    event.setAttachments(this.paperProgressStatusEventAttachments);
+                if (!this.paperProgressStatusEventAttachments.isEmpty()) {
+                    String sourceType = blankToNull(getValueOrDefault(map, "sourceType", null));
+                    String originType = blankToNull(getValueOrDefault(map, "originType", null));
+                    // copia per evento: piu' righe nella stessa tabella non devono condividere gli allegati
+                    List<ConsolidatoreIngressPaperProgressStatusEventAttachmentsInner> eventAttachments =
+                            this.paperProgressStatusEventAttachments.stream()
+                                    .map(a -> new ConsolidatoreIngressPaperProgressStatusEventAttachmentsInner()
+                                            .id(a.getId())
+                                            .documentId(a.getDocumentId())
+                                            .documentType(a.getDocumentType())
+                                            .uri(a.getUri())
+                                            .sha256(a.getSha256())
+                                            .date(a.getDate())
+                                            .sourceType(sourceType)
+                                            .originType(originType))
+                                    .toList();
+                    event.setAttachments(eventAttachments);
+                }
                 //event.setCourier("recapitista");
                 String courier = getValueOrDefault(map, "courier", null);
                 event.setCourier(courier);
@@ -560,6 +581,54 @@ public class EcStepDefinitions {
                 .findFirst();
 
         Assertions.assertTrue(matchingItem.isPresent());
+    }
+
+    @Then("the {string} event attachments have {string} sourceType and {string} originType")
+    public void checkEventAttachmentSourceAndOriginType(String statusCode, String sourceType, String originType) {
+        String expectedStatusCode = getValueIfTagged(statusCode);
+        String expectedSourceType = blankToNull(getValueIfTagged(sourceType));
+        String expectedOriginType = blankToNull(getValueIfTagged(originType));
+        log.info("Expecting attachments of event {} with sourceType {} and originType {}", expectedStatusCode, expectedSourceType, expectedOriginType);
+
+        // La status pull non e' utilizzabile per questa verifica: restituisce solo l'ultimo evento
+        // della lista, e l'ambiente ne accoda altri (es. CON020 con allegati PN_EXTERNAL_LEGAL_FACTS)
+        // dopo i nostri. Si legge quindi direttamente l'evento con lo statusCode atteso.
+        String concatRequestId = ExternalChannelUtils.concatRequestId(this.clientId, this.requestId);
+        QueryResponse queryResponse = dynamoDbService.queryByRequestId(System.getProperty("pn.ec.richieste-metadati.table.name"), concatRequestId);
+        Map<String, AttributeValue> record = queryResponse.items().stream()
+                .filter(item -> item.get("requestId").s().equals(concatRequestId))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Nessun record in pn-EcRichiesteMetadati per " + concatRequestId));
+
+        List<Map<String, AttributeValue>> matchingEvents = record.get("eventsList").l().stream()
+                .map(AttributeValue::m)
+                .filter(event -> event.containsKey("paperProgrStatus"))
+                .map(event -> event.get("paperProgrStatus").m())
+                .filter(paperProgrStatus -> paperProgrStatus.containsKey("statusCode")
+                        && expectedStatusCode.equals(paperProgrStatus.get("statusCode").s()))
+                .toList();
+
+        Assertions.assertFalse(matchingEvents.isEmpty(),
+                String.format("Nessun evento con statusCode %s per %s", expectedStatusCode, concatRequestId));
+
+        matchingEvents.forEach(paperProgrStatus -> {
+            List<AttributeValue> attachments = paperProgrStatus.containsKey("attachments")
+                    ? paperProgrStatus.get("attachments").l()
+                    : List.of();
+            Assertions.assertFalse(attachments.isEmpty(),
+                    String.format("L'evento %s non ha allegati: %s", expectedStatusCode, paperProgrStatus));
+            attachments.stream().map(AttributeValue::m).forEach(attachment -> {
+                Assertions.assertEquals(expectedSourceType, readString(attachment, "sourceType"),
+                        String.format("sourceType inatteso sull'allegato %s", attachment));
+                Assertions.assertEquals(expectedOriginType, readString(attachment, "originType"),
+                        String.format("originType inatteso sull'allegato %s", attachment));
+            });
+        });
+    }
+
+    private static String readString(Map<String, AttributeValue> item, String key) {
+        AttributeValue value = item.get(key);
+        return (value == null || Boolean.TRUE.equals(value.nul())) ? null : value.s();
     }
 
     @Then("I get {string} courier and I get {string} statusCode:")
