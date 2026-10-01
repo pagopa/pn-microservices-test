@@ -104,7 +104,7 @@ Feature: Send Paper Message Ec
     Then wait for the request to have status "<status>"
     Examples:
       | clientId           | channel        | receiver                        | transformationDocumentType       | status |
-      | @clientId-delivery | @channel_paper | @paper.receiver.digital.address | @doc_type_paper_attachment       | P013   |
+      | @clientId-cons     | @channel_paper | @paper.receiver.digital.address | @doc_type_paper_attachment       | P013   |
       | @clientId-cons     | @channel_paper | @paper.receiver.digital.address | @doc_type_clean_paper_attachment | P013   |
 
 
@@ -121,7 +121,7 @@ Feature: Send Paper Message Ec
     Then wait for the request to have status "<status>"
     Examples:
       | clientId           | channel        | receiver                        | transformationDocumentType       | status |
-      | @clientId-delivery | @channel_paper | @paper.receiver.digital.address | @doc_type_paper_attachment       | P000   |
+      | @clientId-cons     | @channel_paper | @paper.receiver.digital.address | @doc_type_paper_attachment       | P000   |
       | @clientId-cons     | @channel_paper | @paper.receiver.digital.address | @doc_type_clean_paper_attachment | P000   |
 
 
