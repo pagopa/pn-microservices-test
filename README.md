@@ -41,6 +41,30 @@ Given invio una richiesta POST con body @requestBody
 
 In questo caso, il valore effettivo di `requestBody` sarà cercato tra le system properties o quelle definite nei file `.properties`.
 
+### Chiave API del consolidatore nell'ambiente TEST
+
+Nel profilo `test` la chiave API del client consolidatore `pn-cons-000` (`apiKey-cons`) non è scritta
+nel file di properties: è un dato sensibile e va fornita dall'esterno tramite la variabile d'ambiente
+`APIKEY_CONS_TEST`.
+
+```properties
+apiKey-cons=${APIKEY_CONS_TEST}
+```
+
+- La variabile va impostata **solo** per l'esecuzione con il profilo `test`. Con il profilo `dev` la
+  chiave è definita in `application-dev.properties` e la variabile non viene letta.
+- Con il profilo `test`, se la variabile non è impostata o è vuota, il caricamento della configurazione
+  fallisce e gli scenari terminano con l'errore
+  `La property apiKey-cons richiede la variabile d'ambiente APIKEY_CONS_TEST, che non è impostata`.
+
+```bash
+export APIKEY_CONS_TEST='<chiave API di pn-cons-000 in TEST>'
+./mvnw test -Dspring.profiles.active=test
+```
+
+In generale, ogni property valorizzata nella forma `${NOME_VARIABILE}` viene letta dalla variabile
+d'ambiente indicata, e la sua assenza blocca l'esecuzione.
+
 ## Modalità di esecuzione
 
 Per eseguire i test sull'ambiente reale, è necessario avere un tunnel SSM attivo verso l'infrastruttura di destinazione.

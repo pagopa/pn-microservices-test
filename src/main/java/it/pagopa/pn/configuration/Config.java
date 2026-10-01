@@ -8,6 +8,8 @@ import lombok.Getter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Getter
 @CustomLog
@@ -20,6 +22,7 @@ public class Config {
     private static final String SPRING_PROFILE = "spring.profiles.active";
     private static final String PROFILE_PROPERTIES_FILE_PREFIX = "application-";
     private static final String PROFILE_PROPERTIES_FILE_SUFFIX = ".properties";
+    private static final Pattern ENV_VARIABLE_PLACEHOLDER = Pattern.compile("^\\$\\{([A-Za-z0-9_]+)}$");
 
     private Config() {}
 
@@ -39,11 +42,25 @@ public class Config {
                 System.exit(1);
             }
             prop.load(fileStream);
-            prop.forEach((key, value) -> System.setProperty((String) key, (String) value));
+            prop.forEach((key, value) -> System.setProperty((String) key, resolveValue((String) key, (String) value)));
         } catch (IOException ex) {
             log.error("Errore nel caricamento del file properties {}", propertyFileName, ex);
             System.exit(1);
         }
+    }
+
+    private String resolveValue(String key, String value) {
+        Matcher matcher = ENV_VARIABLE_PLACEHOLDER.matcher(value.trim());
+        if (!matcher.matches()) {
+            return value;
+        }
+        String variableName = matcher.group(1);
+        String variableValue = System.getenv(variableName);
+        if (variableValue == null || variableValue.isBlank()) {
+            throw new IllegalStateException(String.format(
+                    "La property %s richiede la variabile d'ambiente %s, che non è impostata", key, variableName));
+        }
+        return variableValue;
     }
 
     public static Config getInstance() {
