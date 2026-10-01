@@ -67,7 +67,7 @@ Feature: Send Digital Message Ec
       | clientId           | apiKey            | channel        | receiver                        |
       | @clientId-delivery | @delivery_api_key | @channel_email | @email.receiver.digital.address |
 
-  @PnEcSendMessage @invioEMAIL @complete_ses_events
+  @PnEcSendMessage @invioEMAIL @complete_ses_events @requiresSesEvents
   Scenario Outline: invio email e verifica evento SES
     Given a "<clientId>" and "<channel>" to send on
     And "<clientId>" authenticated by "<apiKey>" uploads the following attachments:
@@ -86,7 +86,7 @@ Feature: Send Digital Message Ec
       | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.hard.bounce     | M005          |
       | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.complaint       | M006          |
 
-  @PnEcSendMessage @invioEMAIL @email_ses_filtered
+  @PnEcSendMessage @invioEMAIL @email_ses_filtered @requiresSesEvents
   Scenario Outline: invio email e verifica che un evento SES non abilitato non venga inoltrato
     Given a "<clientId>" and "<channel>" to send on
     And "<clientId>" authenticated by "<apiKey>" uploads the following attachments:
@@ -100,7 +100,7 @@ Feature: Send Digital Message Ec
       | clientId            | apiKey            | channel        | receiver                                        | notExpectedEvent |
       | @clientId-delivery  | @delivery_api_key | @channel_email | @email.receiver.digital.address                 | M005             |
 
-  @PnEcSendMessage @invioEMAIL @email_rejected_ses
+  @PnEcSendMessage @invioEMAIL @email_rejected_ses @requiresSesEvents
   Scenario Outline: invio email con allegato infetto e verifica reject SES
     Given a "<clientId>" and "<channel>" to send on
     And "<clientId>" authenticated by "<apiKey>" uploads the following attachments to reject:
