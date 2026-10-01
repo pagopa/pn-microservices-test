@@ -4,8 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.AfterAll;
+import io.cucumber.java.Before;
 import io.cucumber.java.BeforeAll;
 import io.cucumber.java.ParameterType;
+import io.cucumber.java.Scenario;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -27,6 +29,7 @@ import jakarta.jms.JMSException;
 import lombok.CustomLog;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.slf4j.MDC;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
@@ -42,6 +45,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static it.pagopa.pn.configuration.TestVariablesConfiguration.getValueIfTagged;
 import static it.pagopa.pn.cucumber.utils.CommonUtils.*;
@@ -54,6 +58,10 @@ public class EcStepDefinitions {
 
     public static final String NOW_PARAMETER = "@now";
     public static final String NOT_EXISTING_MESSAGE_ID_PARAMETER = "@notExistingMessageId";
+    private static final String SPRING_PROFILE = "spring.profiles.active";
+    private static final String LOCAL_PROFILE = "local";
+    private static final String SES_EVENTS_NOT_AVAILABLE = "SES events are not available with the local profile";
+    private static final Queue<String> SKIPPED_SES_SCENARIOS = new ConcurrentLinkedQueue<>();
     private String clientId;
     private String apiKey;
     private String requestId;
@@ -92,6 +100,15 @@ public class EcStepDefinitions {
         } catch (JMSException e) {
             throw new RuntimeException("Error initializing queue poller", e);
         }
+    }
+
+    @Before("@requiresSesEvents")
+    public void skipWhenSesEventsAreNotAvailable(Scenario scenario) {
+        boolean localProfile = LOCAL_PROFILE.equals(System.getProperty(SPRING_PROFILE));
+        if (localProfile) {
+            SKIPPED_SES_SCENARIOS.add(scenario.getName() + " (" + scenario.getUri() + ":" + scenario.getLine() + ")");
+        }
+        Assumptions.assumeFalse(localProfile, SES_EVENTS_NOT_AVAILABLE);
     }
 
     //GIVEN
@@ -677,6 +694,10 @@ public class EcStepDefinitions {
 
     @AfterAll
     public static void doFinally() throws JMSException {
+        if (!SKIPPED_SES_SCENARIOS.isEmpty()) {
+            log.warn("{} scenarios skipped: {}", SKIPPED_SES_SCENARIOS.size(), SES_EVENTS_NOT_AVAILABLE);
+            SKIPPED_SES_SCENARIOS.forEach(skipped -> log.warn("  skipped: {}", skipped));
+        }
         if (queuePoller != null)
             queuePoller.close();
     }
