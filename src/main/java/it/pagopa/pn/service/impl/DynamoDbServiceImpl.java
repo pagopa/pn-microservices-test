@@ -41,4 +41,13 @@ public class DynamoDbServiceImpl implements DynamoDbService {
         return dynamoDbClient.query(queryRequest);
     }
 
+    public GetItemResponse getItemByKey(String tableName, String keyName, String keyValue) {
+        GetItemRequest getItemRequest = GetItemRequest.builder()
+                .tableName(tableName)
+                .key(Map.of(keyName, AttributeValue.builder().s(keyValue).build()))
+                .build();
+
+        return dynamoDbClient.getItem(getItemRequest);
+    }
+
 }
