@@ -54,6 +54,7 @@ public class EcStepDefinitions {
 
     public static final String NOW_PARAMETER = "@now";
     public static final String NOT_EXISTING_MESSAGE_ID_PARAMETER = "@notExistingMessageId";
+    private static final String TEST_STATUS_DESCRIPTION = "Test description";
     private String clientId;
     private String apiKey;
     private String requestId;
@@ -489,7 +490,7 @@ public class EcStepDefinitions {
                 String iun = getValueOrDefault(map, "iun", null);
                 event.setIun(iun != null && iun.equals("@requestId") ? this.requestId : iun);
 
-                event.setStatusDescription("Test description");
+                event.setStatusDescription(TEST_STATUS_DESCRIPTION);
                 event.setProductType(getValueOrDefault(map, "productType", "AR"));
                 event.setDeliveryFailureCause(getValueOrDefault(map, "deliveryFailureCause", null));
 
@@ -606,6 +607,7 @@ public class EcStepDefinitions {
                 .map(event -> event.get("paperProgrStatus").m())
                 .filter(paperProgrStatus -> paperProgrStatus.containsKey("statusCode")
                         && expectedStatusCode.equals(paperProgrStatus.get("statusCode").s()))
+                .filter(paperProgrStatus -> TEST_STATUS_DESCRIPTION.equals(readString(paperProgrStatus, "statusDescription")))
                 .toList();
 
         Assertions.assertFalse(matchingEvents.isEmpty(),
