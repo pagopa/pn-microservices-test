@@ -95,34 +95,34 @@ Feature: Send Paper Message Ec
   @PnEcSendMessage @PAPER @invioCartaceo @raster @testOk @TransformationDocumentType @TransformationError
   Scenario Outline: Invio di un messaggio cartaceo con allegato non valido e verifica dello stato di avanzamento
     Given a "<clientId>" and "<channel>" to send on
-    When "<clientId>" authenticated by "<apiKey>" uploads the following attachments:
+    When "@clientId-delivery" authenticated by "@delivery_api_key" uploads the following attachments:
       | documentType        | fileName                     | mimeType        |
       | @doc_type_to_raster | src/main/resources/wrong.pdf | application/pdf |
-    And try to send a paper message to "<receiver>" with "<transformationDocumentType>" as documentType
+    And try to send a paper message to "<receiver>" with "<transformationDocumentType>" as documentType and "<paId>" as PaId
     # Attesa della schedulazione
     * waiting for scheduling
     Then wait for the request to have status "<status>"
     Examples:
-      | clientId           | apiKey            | channel        | receiver                        | transformationDocumentType       | status |
-      | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | @doc_type_paper_attachment       | P013   |
-      | @clientId-cons     | @apiKey-cons      | @channel_paper | @paper.receiver.digital.address | @doc_type_clean_paper_attachment | P013   |
+      | clientId           | channel        | receiver                        | transformationDocumentType       | paId                       | status |
+      | @clientId-cons     | @channel_paper | @paper.receiver.digital.address | @doc_type_paper_attachment       | @paid_none_transformations | P013   |
+      | @clientId-cons     | @channel_paper | @paper.receiver.digital.address | @doc_type_clean_paper_attachment | @paid_none_transformations | P013   |
 
 
   @PnEcSendMessage @PAPER @invioCartaceo @raster @testOk @TransformationDocumentType @TransformationError @P000
   Scenario Outline: Invio di un messaggio cartaceo con allegato valido e verifica dello stato di avanzamento
     Given a "<clientId>" and "<channel>" to send on
-    When "<clientId>" authenticated by "<apiKey>" uploads the following attachments:
+    When "@clientId-delivery" authenticated by "@delivery_api_key" uploads the following attachments:
       | documentType        | fileName                     | mimeType        |
       | @doc_type_to_raster | src/test/resources/test.pdf | application/pdf |
-    And try to send a paper message to "<receiver>" with "<transformationDocumentType>" as documentType
+    And try to send a paper message to "<receiver>" with "<transformationDocumentType>" as documentType and "<paId>" as PaId
     # Attesa della schedulazione
     * waiting for scheduling
     * waiting for scheduling
     Then wait for the request to have status "<status>"
     Examples:
-      | clientId           | apiKey            | channel        | receiver                        | transformationDocumentType       | status |
-      | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address | @doc_type_paper_attachment       | P000   |
-      | @clientId-cons     | @apiKey-cons      | @channel_paper | @paper.receiver.digital.address | @doc_type_clean_paper_attachment | P000   |
+      | clientId           | channel        | receiver                        | transformationDocumentType       | paId                       | status |
+      | @clientId-cons     | @channel_paper | @paper.receiver.digital.address | @doc_type_paper_attachment       | @paid_none_transformations | P000   |
+      | @clientId-cons     | @channel_paper | @paper.receiver.digital.address | @doc_type_clean_paper_attachment | @paid_none_transformations | P000   |
 
 
   @PnEcSendMessage @PAPER @invioCartaceo @raster @testOk @TransformationDocumentType @TransformationError @P000
