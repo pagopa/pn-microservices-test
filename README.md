@@ -149,6 +149,16 @@ Per escludere scenari:
 mvn test -Dcucumber.filter.tags="not @invioSMS"
 ```
 
+### 5. Parallelismo dell'esecuzione
+
+Gli scenari vengono eseguiti in parallelo. Il numero di thread dipende dal profilo attivo (`spring.profiles.active`) ed è definito dalla property `test.cucumber.parallelism` nel relativo file `application-<profile>.properties` (ad esempio 8 in `application-local.properties` e 30 in `application-dev.properties`). Se la property non è presente viene usato il valore 30.
+
+Il valore può essere sovrascritto da linea di comando per una singola esecuzione:
+
+```bash
+mvn test -Dcucumber.execution.parallel.config.fixed.parallelism=16
+```
+
 ### Report dei test
 
 Dopo ogni esecuzione, viene generato uno o più report HTML nella cartella:
