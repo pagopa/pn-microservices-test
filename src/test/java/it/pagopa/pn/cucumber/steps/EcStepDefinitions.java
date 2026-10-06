@@ -528,6 +528,8 @@ public class EcStepDefinitions {
                 //event.setCourier("recapitista");
                 String courier = getValueOrDefault(map, "courier", null);
                 event.setCourier(courier);
+                event.setPrinter(blankToNull(getValueOrDefault(map, "printer", null)));
+                event.setDu(blankToNull(getValueOrDefault(map, "du", null)));
 
                 events.add(event);
             });
@@ -626,6 +628,90 @@ public class EcStepDefinitions {
                         String.format("originType inatteso sull'allegato %s", attachment));
             });
         });
+    }
+
+    @Then("the {string} event has {string} printer and {string} du")
+    public void checkEventPrinterAndDu(String statusCode, String printer, String du) {
+        String expectedStatusCode = getValueIfTagged(statusCode);
+        String expectedPrinter = blankToNull(getValueIfTagged(printer));
+        String expectedDu = blankToNull(getValueIfTagged(du));
+        log.info("Expecting event {} with printer {} and du {}", expectedStatusCode, expectedPrinter, expectedDu);
+
+        String concatRequestId = ExternalChannelUtils.concatRequestId(this.clientId, this.requestId);
+        QueryResponse queryResponse = dynamoDbService.queryByRequestId(System.getProperty("pn.ec.richieste-metadati.table.name"), concatRequestId);
+        Map<String, AttributeValue> record = queryResponse.items().stream()
+                .filter(item -> item.get("requestId").s().equals(concatRequestId))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Nessun record in pn-EcRichiesteMetadati per " + concatRequestId));
+
+        List<Map<String, AttributeValue>> matchingEvents = record.get("eventsList").l().stream()
+                .map(AttributeValue::m)
+                .filter(event -> event.containsKey("paperProgrStatus"))
+                .map(event -> event.get("paperProgrStatus").m())
+                .filter(paperProgrStatus -> paperProgrStatus.containsKey("statusCode")
+                        && expectedStatusCode.equals(paperProgrStatus.get("statusCode").s()))
+                // solo l'evento inviato dal test: il mock del consolidatore accoda un proprio CON080 con printer/du valorizzati
+                .filter(paperProgrStatus -> TEST_STATUS_DESCRIPTION.equals(readString(paperProgrStatus, "statusDescription")))
+                .toList();
+
+        Assertions.assertFalse(matchingEvents.isEmpty(),
+                String.format("Nessun evento con statusCode %s per %s", expectedStatusCode, concatRequestId));
+
+        matchingEvents.forEach(paperProgrStatus -> {
+            Assertions.assertEquals(expectedPrinter, readString(paperProgrStatus, "printer"),
+                    String.format("printer inatteso sull'evento %s", paperProgrStatus));
+            Assertions.assertEquals(expectedDu, readString(paperProgrStatus, "du"),
+                    String.format("du inatteso sull'evento %s", paperProgrStatus));
+        });
+    }
+
+    @Then("the paper status pull is consistent with the last stored event")
+    public void checkStatusPullConsistentWithLastStoredEvent() throws InterruptedException {
+        String concatRequestId = ExternalChannelUtils.concatRequestId(this.clientId, this.requestId);
+        for (int attempt = 1; attempt <= 5; attempt++) {
+            List<AttributeValue> eventsBefore = readEventsList(concatRequestId);
+            Response pullResponse = ExternalChannelUtils.getPaperByRequestId(this.clientId, this.requestId);
+            List<AttributeValue> eventsAfter = readEventsList(concatRequestId);
+            Assertions.assertEquals(200, pullResponse.getStatusCode(), "status pull fallita: " + pullResponse.asString());
+
+            if (eventsBefore.size() != eventsAfter.size()) {
+                log.info("Nuovo evento ricevuto durante la status pull per {}, tentativo {}", concatRequestId, attempt);
+                Thread.sleep(2000);
+                continue;
+            }
+
+            Map<String, AttributeValue> lastStored = eventsAfter.get(eventsAfter.size() - 1).m().get("paperProgrStatus").m();
+            var pull = pullResponse.jsonPath();
+            log.info("Comparing status pull {} with last stored event {}", pullResponse.asString(), lastStored);
+
+            Assertions.assertEquals(readString(lastStored, "statusCode"), pull.getString("statusCode"), "statusCode della status pull");
+            Assertions.assertEquals(readString(lastStored, "printer"), pull.getString("printer"), "printer della status pull");
+            Assertions.assertEquals(readString(lastStored, "du"), pull.getString("du"), "du della status pull");
+
+            List<AttributeValue> storedAttachments = lastStored.containsKey("attachments") ? lastStored.get("attachments").l() : List.of();
+            List<String> expectedAttachmentTypes = storedAttachments.stream()
+                    .map(AttributeValue::m)
+                    .map(attachment -> readString(attachment, "sourceType") + "|" + readString(attachment, "originType"))
+                    .sorted()
+                    .toList();
+            List<Map<String, Object>> pulledAttachments = Optional.ofNullable(pull.<Map<String, Object>>getList("attachments")).orElse(List.of());
+            List<String> actualAttachmentTypes = pulledAttachments.stream()
+                    .map(attachment -> attachment.get("sourceType") + "|" + attachment.get("originType"))
+                    .sorted()
+                    .toList();
+            Assertions.assertEquals(expectedAttachmentTypes, actualAttachmentTypes, "sourceType|originType degli allegati della status pull");
+            return;
+        }
+        Assertions.fail("La status pull non si e' stabilizzata sull'ultimo evento salvato per " + concatRequestId);
+    }
+
+    private List<AttributeValue> readEventsList(String concatRequestId) {
+        QueryResponse queryResponse = dynamoDbService.queryByRequestId(System.getProperty("pn.ec.richieste-metadati.table.name"), concatRequestId);
+        return queryResponse.items().stream()
+                .filter(item -> item.get("requestId").s().equals(concatRequestId))
+                .findFirst()
+                .map(item -> item.get("eventsList").l())
+                .orElseThrow(() -> new AssertionError("Nessun record in pn-EcRichiesteMetadati per " + concatRequestId));
     }
 
     private static String readString(Map<String, AttributeValue> item, String key) {
