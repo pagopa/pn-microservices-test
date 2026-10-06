@@ -291,8 +291,8 @@
 						</goals>
 						<phase>process-sources</phase>
 						<configuration>
-							<!-- PN-21312: pin temporaneo al branch feature/PN-21312. Ripristinare 'develop' dopo il merge. -->
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/ea0a64df28319af648d870188218414ae62c2402/docs/openapi/external/api-consolidatore-ingress-v1.yaml</inputSpec>
+							<!-- PN-21120: pin al merge della Gara Consolidatore FASE2 (sourceType/originType, printer/du) -->
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ec/dafbab503b28c1af41e6e7d85e2f71bad0a32593/docs/openapi/external/api-consolidatore-ingress-v1.yaml</inputSpec>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
 							<generateApiTests>false</generateApiTests>
