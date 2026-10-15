@@ -41,25 +41,34 @@ Given invio una richiesta POST con body @requestBody
 
 In questo caso, il valore effettivo di `requestBody` sarà cercato tra le system properties o quelle definite nei file `.properties`.
 
-### Chiave API del consolidatore nell'ambiente TEST
+### Chiave API del consolidatore negli ambienti TEST e UAT
 
-Nel profilo `test` la chiave API del client consolidatore `pn-cons-000` (`apiKey-cons`) non è scritta
-nel file di properties: è un dato sensibile e va fornita dall'esterno tramite la variabile d'ambiente
-`APIKEY_CONS_TEST`.
+Nei profili `test` e `uat` la chiave API del client consolidatore `pn-cons-000` (`apiKey-cons`) non è
+scritta nel file di properties: è un dato sensibile e va fornita dall'esterno tramite una variabile
+d'ambiente dedicata all'ambiente.
+
+| Profilo | Variabile d'ambiente |
+|---|---|
+| `test` | `APIKEY_CONS_TEST` |
+| `uat` | `APIKEY_CONS_UAT` |
 
 ```properties
 apiKey-cons=${APIKEY_CONS_TEST}
 ```
 
-- La variabile va impostata **solo** per l'esecuzione con il profilo `test`. Con il profilo `dev` la
-  chiave è definita in `application-dev.properties` e la variabile non viene letta.
-- Con il profilo `test`, se la variabile non è impostata o è vuota, il caricamento della configurazione
+- La variabile va impostata **solo** per l'esecuzione con il profilo corrispondente. Con il profilo `dev`
+  la chiave è definita in `application-dev.properties` e nessuna variabile viene letta.
+- Se la variabile del profilo attivo non è impostata o è vuota, il caricamento della configurazione
   fallisce e gli scenari terminano con l'errore
-  `La property apiKey-cons richiede la variabile d'ambiente APIKEY_CONS_TEST, che non è impostata`.
+  `La property apiKey-cons richiede la variabile d'ambiente APIKEY_CONS_TEST, che non è impostata`
+  (o `APIKEY_CONS_UAT` con il profilo `uat`).
 
 ```bash
 export APIKEY_CONS_TEST='<chiave API di pn-cons-000 in TEST>'
 ./mvnw test -Dspring.profiles.active=test
+
+export APIKEY_CONS_UAT='<chiave API di pn-cons-000 in UAT>'
+./mvnw test -Dspring.profiles.active=uat
 ```
 
 In generale, ogni property valorizzata nella forma `${NOME_VARIABILE}` viene letta dalla variabile
