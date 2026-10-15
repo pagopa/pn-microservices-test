@@ -4,7 +4,7 @@ Feature: Search SafeStorage tags
   @PN-20716
   Scenario: Ricerca di un singolo tag globale trova la fileKey indicizzata
     Given "@clientId-test" authenticated by "@apiKey_test" upload and index a document of type "@doc_type_notification_attachments" with tag "@tag" value "search-single-value-" as "docSingleTag"
-    Given the SafeStorage client "@clientId-read-only" authenticated by "@apiKey-read-only"
+    Given the SafeStorage client "@clientId-tags-read-only" authenticated by "@apiKey-tags-read-only"
     When search files using tag "@tag" value from "docSingleTag"
     Then i get the response status "200"
     And the search response contains fileKey alias "docSingleTag"
@@ -23,7 +23,7 @@ Feature: Search SafeStorage tags
   @PN-20716
   Scenario: Ricerca AND di default con un tag non corrispondente restituisce un risultato vuoto
     Given "@clientId-test" authenticated by "@apiKey_test" upload and index a document of type "@doc_type_notification_attachments" with tag "@tag" value "search-and-nomatch-" as "docAndNoMatch"
-    Given the SafeStorage client "@clientId-read-only" authenticated by "@apiKey-read-only"
+    Given the SafeStorage client "@clientId-tags-read-only" authenticated by "@apiKey-tags-read-only"
     When search files using tag "@tag" value from "docAndNoMatch" and non matching tag "searchNoMatchTag"
     Then i get the response status "200"
     And the search response is empty
@@ -31,7 +31,7 @@ Feature: Search SafeStorage tags
   @PN-20716
   Scenario: Ricerca OR con due tag di cui uno corrispondente trova la fileKey
     Given "@clientId-test" authenticated by "@apiKey_test" upload and index a document of type "@doc_type_notification_attachments" with tag "@tag" value "search-or-value-" as "docOrTag"
-    Given the SafeStorage client "@clientId-read-only" authenticated by "@apiKey-read-only"
+    Given the SafeStorage client "@clientId-tags-read-only" authenticated by "@apiKey-tags-read-only"
     When search files using tag "@tag" value from "docOrTag" and non matching tag "searchOrNoMatchTag" with logic "or"
     Then i get the response status "200"
     And the search response contains fileKey alias "docOrTag"
@@ -54,13 +54,13 @@ Feature: Search SafeStorage tags
 
   @PN-20716
   Scenario: Ricerca con numero di tag param oltre il limite MaxMapValuesForSearch restituisce un errore di validazione
-    Given the SafeStorage client "@clientId-read-only" authenticated by "@apiKey-read-only"
+    Given the SafeStorage client "@clientId-tags-read-only" authenticated by "@apiKey-tags-read-only"
     When search files with 11 tag params
     Then i get the response status "400"
 
   @PN-20716
   Scenario: Ricerca senza alcun parametro tag restituisce un errore di validazione
-    Given the SafeStorage client "@clientId-read-only" authenticated by "@apiKey-read-only"
+    Given the SafeStorage client "@clientId-tags-read-only" authenticated by "@apiKey-tags-read-only"
     When search files with no tag params
     Then i get the response status "400"
 
