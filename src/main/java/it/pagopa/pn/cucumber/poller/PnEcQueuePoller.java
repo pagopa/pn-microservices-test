@@ -13,6 +13,8 @@ import lombok.CustomLog;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static it.pagopa.pn.cucumber.utils.SqsUtils.isEcMessage;
 import static it.pagopa.pn.cucumber.utils.SqsUtils.parseMessageBody;
@@ -21,6 +23,7 @@ import static it.pagopa.pn.cucumber.utils.SqsUtils.parseMessageBody;
 public class PnEcQueuePoller extends QueuePoller {
 
     private final ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    private final ConcurrentHashMap<String, List<String>> rawDetailsMap = new ConcurrentHashMap<>();
 
     public PnEcQueuePoller() {
         super(System.getProperty("pn.ec.notifiche.esterne.queue.name"));
@@ -49,6 +52,8 @@ public class PnEcQueuePoller extends QueuePoller {
                     requestId = analogMail.getRequestId();
                     status = analogMail.getStatusCode();
                 }
+
+                this.rawDetailsMap.computeIfAbsent(requestId, key -> new CopyOnWriteArrayList<>()).add(messageBodyDto.getDetail());
 
                 if (!this.messageMap.containsKey(requestId))
                     this.messageMap.put(requestId, new HashSet<>(List.of(status)));
@@ -84,6 +89,10 @@ public class PnEcQueuePoller extends QueuePoller {
         log.debug("Messages collected so far: {}", this.messageMap);
         log.debug("Statuses found for the request under check: {}", statusesFound);
         return check;
+    }
+
+    public List<String> getRawDetails(String requestId) {
+        return List.copyOf(this.rawDetailsMap.getOrDefault(requestId, List.of()));
     }
 
     public boolean hasStatuses(String requestId, List<String> statusesToCheck) {
