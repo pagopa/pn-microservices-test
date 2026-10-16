@@ -1,6 +1,7 @@
 package it.pagopa.pn.cucumber.steps;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.AfterAll;
@@ -417,7 +418,7 @@ public class EcStepDefinitions {
             oResp = SafeStorageUtils.getDocument(sKey);
             iRC = oResp.getStatusCode();
             if (iRC == 200) {
-                ObjectMapper objectMapper = new ObjectMapper();
+                ObjectMapper objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 DocumentResponse oFDR = objectMapper.readValue(oResp.getBody().asString(), DocumentResponse.class);
                 DocumentResponseDocument document = oFDR.getDocument();
                 assert document != null;
@@ -760,6 +761,84 @@ public class EcStepDefinitions {
                 throw new Exception("Record non trovato");
 
             Assertions.assertTrue(result);
+        }
+    }
+
+    @Then("the stored digital event with status {string} has a sanitized errorDetails not containing {string}")
+    public void checkDigitalEventErrorDetails(String status, String forbiddenValue) {
+        String errorDetails = waitForStoredEventErrorDetails("digProgrStatus", "status", status);
+        String forbidden = getValueIfTagged(forbiddenValue);
+        Assertions.assertFalse(errorDetails.isBlank(), "errorDetails vuoto");
+        Assertions.assertTrue(errorDetails.length() <= 1000, "errorDetails oltre 1000 caratteri: " + errorDetails.length());
+        Assertions.assertTrue(errorDetails.contains("Exception in"), "errorDetails senza 'Exception in': " + errorDetails);
+        Assertions.assertFalse(errorDetails.contains("\tat ") || errorDetails.contains("at it.pagopa"), "errorDetails con stacktrace: " + errorDetails);
+        Assertions.assertFalse(errorDetails.contains(forbidden), "errorDetails con il valore in chiaro: " + errorDetails);
+        int atIndex = forbidden.indexOf('@');
+        if (atIndex > 0) {
+            Assertions.assertFalse(errorDetails.contains(forbidden.substring(0, atIndex)), "errorDetails con la parte locale dell'indirizzo in chiaro: " + errorDetails);
+        }
+    }
+
+    @Then("the stored paper event with statusCode {string} has errorDetails containing {string} and {string}")
+    public void checkPaperEventErrorDetails(String statusCode, String firstFragment, String secondFragment) {
+        String errorDetails = waitForStoredEventErrorDetails("paperProgrStatus", "statusCode", statusCode);
+        Assertions.assertTrue(errorDetails.contains(firstFragment), "errorDetails senza '" + firstFragment + "': " + errorDetails);
+        Assertions.assertTrue(errorDetails.contains(secondFragment), "errorDetails senza '" + secondFragment + "': " + errorDetails);
+    }
+
+    @And("the errorDetails of the stored paper event with statusCode {string} do not contain the following values:")
+    public void checkPaperEventErrorDetailsDoNotContain(String statusCode, DataTable dataTable) {
+        String errorDetails = waitForStoredEventErrorDetails("paperProgrStatus", "statusCode", statusCode);
+        dataTable.asList().forEach(value -> {
+            String forbidden = getValueIfTagged(value);
+            Assertions.assertFalse(errorDetails.contains(forbidden), "errorDetails con il valore '" + forbidden + "': " + errorDetails);
+        });
+    }
+
+    @Then("the external events of the request do not contain errorDetails")
+    public void checkExternalEventsWithoutErrorDetails() {
+        List<String> rawDetails = queuePoller.getRawDetails(requestId);
+        Assertions.assertFalse(rawDetails.isEmpty(), "Nessun evento esterno raccolto per " + requestId);
+        rawDetails.forEach(detail -> Assertions.assertFalse(detail.contains("errorDetails"), "Evento esterno con errorDetails: " + detail));
+    }
+
+    @And("the paper pull response of the request does not contain errorDetails")
+    public void checkPaperPullWithoutErrorDetails() {
+        Response pullResponse = ExternalChannelUtils.getPaperByRequestId(clientId, requestId);
+        Assertions.assertEquals(200, pullResponse.getStatusCode());
+        Assertions.assertFalse(pullResponse.asString().contains("errorDetails"), "Pull API con errorDetails: " + pullResponse.asString());
+    }
+
+    private String waitForStoredEventErrorDetails(String eventKey, String statusKey, String expectedStatus) {
+        String concatRequestId = ExternalChannelUtils.concatRequestId(this.clientId, this.requestId);
+        long pollingInterval = Long.parseLong(System.getProperty("pn.ec.sqs.lookup.interval.millis"));
+        Instant timeLimit = Instant.now().plusMillis(Long.parseLong(System.getProperty("pn.ec.sqs.lookup.timeout.millis")));
+        while (true) {
+            QueryResponse queryResponse = dynamoDbService.queryByRequestId(System.getProperty("pn.ec.richieste-metadati.table.name"), concatRequestId);
+            Optional<Map<String, AttributeValue>> storedEvent = queryResponse.items().stream()
+                    .filter(item -> item.get("requestId").s().equals(concatRequestId))
+                    .findFirst()
+                    .map(item -> item.get("eventsList").l())
+                    .flatMap(events -> events.stream()
+                            .map(AttributeValue::m)
+                            .filter(event -> event.containsKey(eventKey))
+                            .map(event -> event.get(eventKey).m())
+                            .filter(event -> expectedStatus.equals(readString(event, statusKey)))
+                            .findFirst());
+            if (storedEvent.isPresent()) {
+                String errorDetails = readString(storedEvent.get(), "errorDetails");
+                Assertions.assertNotNull(errorDetails, String.format("Evento %s senza errorDetails per %s: %s", expectedStatus, concatRequestId, storedEvent.get()));
+                return errorDetails;
+            }
+            if (!Instant.now().isBefore(timeLimit)) {
+                throw new AssertionError(String.format("Nessun evento con %s %s in pn-EcRichiesteMetadati per %s", statusKey, expectedStatus, concatRequestId));
+            }
+            try {
+                Thread.sleep(pollingInterval);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new AssertionError("Attesa interrotta per " + concatRequestId, e);
+            }
         }
     }
 
