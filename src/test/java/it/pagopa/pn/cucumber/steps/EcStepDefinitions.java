@@ -36,9 +36,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -366,17 +364,10 @@ public class EcStepDefinitions {
 
     @And("waiting for scheduling")
     public void waitingForScheduling() {
-        LocalDateTime now = LocalDateTime.now();
-        int newMinute = (now.getMinute() / 5 + 1) * 5 + 1;
-        LocalDateTime nextSchedule;
-        if (newMinute < 60) {
-            nextSchedule = now.withMinute((now.getMinute() / 5 + 1) * 5).withSecond(0).withNano(0);
-        } else {
-            nextSchedule = now.plusHours(1).withMinute(0).withSecond(0).withNano(0);
-        }
-        Duration duration = Duration.between(now, nextSchedule);
+        long batchDelay = Long.parseLong(System.getProperty("pn.ec.batch.delay.millis"));
+        long batchMargin = Long.parseLong(System.getProperty("pn.ec.batch.margin.millis"));
         try {
-            Thread.sleep(duration.toMillis() + 5000);
+            Thread.sleep(batchDelay + batchMargin);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
