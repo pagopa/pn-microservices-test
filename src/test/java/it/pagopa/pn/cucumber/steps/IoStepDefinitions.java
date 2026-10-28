@@ -8,6 +8,7 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.response.Response;
 import it.pagopa.pn.configuration.Config;
+import it.pagopa.pn.cucumber.utils.IoActivationUtils;
 import it.pagopa.pn.cucumber.utils.IoMessageUtils;
 import lombok.CustomLog;
 import org.slf4j.MDC;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static it.pagopa.pn.configuration.TestVariablesConfiguration.getValueIfTagged;
 import static it.pagopa.pn.cucumber.utils.LogUtils.MDC_CORR_ID_KEY;
@@ -38,6 +40,8 @@ public class IoStepDefinitions {
     private String sentSubject;
     private String sentMarkdown;
     private String sentFirstFileKey;
+    private Map<String, String> activationHeaders;
+    private String sentFiscalCode;
 
     private final Set<String> intentionallyAbsentFields = new HashSet<>();
 
@@ -56,6 +60,8 @@ public class IoStepDefinitions {
         this.sentSubject = null;
         this.sentMarkdown = null;
         this.sentFirstFileKey = null;
+        this.activationHeaders = null;
+        this.sentFiscalCode = null;
         this.intentionallyAbsentFields.clear();
         // cxId non resettato: viene reimpostato dal Background di ogni feature
     }
@@ -474,6 +480,125 @@ public class IoStepDefinitions {
                 "Il campo 'category' del primo allegato non è 'DOCUMENT'");
         assertEquals("application/pdf", first.get("content_type"),
                 "Il campo 'content_type' del primo allegato non è 'application/pdf'");
+    }
+
+    @Given("un utente auth-fleet con cxType {string} e uid generato")
+    public void anAuthFleetUserWithGeneratedUid(String cxType) {
+        String uid = UUID.randomUUID().toString();
+        this.activationHeaders = IoActivationUtils.buildAuthFleetHeaders(uid, cxType, cxType + "-" + uid);
+        log.info("Auth-fleet user: uid={} cxType={}", uid, cxType);
+    }
+
+    @Given("una richiesta di attivazione IO con fiscal_code {string} e status {string}")
+    public void anIoActivationRequest(String fiscalCode, String status) {
+        this.sentFiscalCode = getValueIfTagged(fiscalCode);
+        this.requestBody = IoActivationUtils.buildActivationPayload(sentFiscalCode, status);
+        log.info("Prepared IO activation request: status={}", status);
+    }
+
+    @Given("una richiesta di attivazione IO senza il campo {string}")
+    public void anIoActivationRequestMissingField(String field) {
+        this.requestBody = IoActivationUtils.buildActivationPayload(
+                getValueIfTagged("@io.activation.fiscalCode.notWhitelisted"), "ACTIVE");
+        this.requestBody.remove(field);
+        log.info("Removed field '{}' from IO activation request", field);
+    }
+
+    @Given("una richiesta di lettura attivazione IO con fiscal_code {string}")
+    public void anIoActivationReadRequest(String fiscalCode) {
+        this.sentFiscalCode = getValueIfTagged(fiscalCode);
+        this.requestBody = IoActivationUtils.buildFiscalCodePayload(sentFiscalCode);
+        log.info("Prepared IO activation read request");
+    }
+
+    @Given("una richiesta di lettura attivazione IO senza fiscal_code")
+    public void anIoActivationReadRequestWithoutFiscalCode() {
+        this.requestBody = new HashMap<>();
+        log.info("Prepared IO activation read request without fiscal_code");
+    }
+
+    @When("invio la richiesta di attivazione IO")
+    public void sendIoActivation() {
+        this.response = IoActivationUtils.upsertIoActivation(requestBody, activationHeaders);
+        log.info("PUT /io-connector/activations httpStatus={}", response.getStatusCode());
+    }
+
+    @When("invio la richiesta di attivazione IO senza l'header {string}")
+    public void sendIoActivationWithoutHeader(String header) {
+        Map<String, String> headers = new HashMap<>(activationHeaders);
+        headers.remove(header);
+        this.response = IoActivationUtils.upsertIoActivation(requestBody, headers);
+        log.info("PUT /io-connector/activations WITHOUT header {} httpStatus={}", header, response.getStatusCode());
+    }
+
+    @When("invio la richiesta di lettura attivazione IO")
+    public void sendIoActivationRead() {
+        this.response = IoActivationUtils.getIoActivation(requestBody);
+        log.info("POST /io-connector/activations httpStatus={}", response.getStatusCode());
+    }
+
+    @And("lo status dell'attivazione è {string}")
+    public void activationStatusIs(String expectedStatus) {
+        String actualStatus = response.jsonPath().getString("status");
+        assertEquals(expectedStatus, actualStatus,
+                "Status attivazione atteso '" + expectedStatus + "' ma ricevuto '" + actualStatus + "'");
+    }
+
+    @And("il fiscal_code nella risposta corrisponde a quello inviato")
+    public void fiscalCodeInResponseMatchesSent() {
+        assertEquals(sentFiscalCode, response.jsonPath().getString("fiscal_code"),
+                "Il campo 'fiscal_code' nella risposta non corrisponde a quello inviato");
+    }
+
+    @And("la risposta contiene il codice di errore {string}")
+    public void responseContainsErrorCode(String expectedCode) {
+        assertEquals(expectedCode, response.jsonPath().getString("errors[0].code"),
+                "Codice di errore inatteso. Body: " + response.getBody().asString());
+    }
+
+    @Before("@ioActivation")
+    public void registerUserConsentsMock() {
+        if (IoActivationUtils.isMockServerEnabled()) {
+            Response expectation = IoActivationUtils.registerUserConsentsExpectation();
+            assertEquals(201, expectation.getStatusCode(),
+                    "Registrazione mock consensi su MockServer fallita. Body: " + expectation.getBody().asString());
+        }
+    }
+
+    @And("il consenso {string} dell'utente risulta accettato nella versione attesa")
+    public void userConsentIsAcceptedWithExpectedVersion(String consentType) {
+        String expectedVersion = getValueIfTagged("@io.activation.expectedConsentVersion");
+        if (IoActivationUtils.isMockServerEnabled()) {
+            Response verify = IoActivationUtils.verifyUserConsentAccepted(
+                    activationHeaders.get(IoActivationUtils.HEADER_UID), consentType, expectedVersion, Map.of("atLeast", 1));
+            assertEquals(202, verify.getStatusCode(),
+                    "Nessuna accettazione del consenso " + consentType + " versione " + expectedVersion + " ricevuta dal mock. Body: " + verify.getBody().asString());
+            return;
+        }
+        Response consent = IoActivationUtils.getUserConsentByType(activationHeaders, consentType, expectedVersion);
+        assertEquals(200, consent.getStatusCode(), "GET consenso " + consentType + " fallita. Body: " + consent.getBody().asString());
+        assertTrue(consent.jsonPath().getBoolean("accepted"),
+                "Il consenso " + consentType + " versione " + expectedVersion + " non risulta accettato. Body: " + consent.getBody().asString());
+        assertEquals(expectedVersion, consent.jsonPath().getString("consentVersion"),
+                "Versione del consenso " + consentType + " inattesa");
+    }
+
+    @And("il consenso {string} dell'utente non risulta registrato")
+    public void userConsentIsNotRegistered(String consentType) {
+        String expectedVersion = getValueIfTagged("@io.activation.expectedConsentVersion");
+        if (IoActivationUtils.isMockServerEnabled()) {
+            Response verify = IoActivationUtils.verifyUserConsentAccepted(
+                    activationHeaders.get(IoActivationUtils.HEADER_UID), consentType, expectedVersion, Map.of("atMost", 0));
+            assertEquals(202, verify.getStatusCode(),
+                    "Il mock ha ricevuto un'accettazione del consenso " + consentType + " non attesa. Body: " + verify.getBody().asString());
+            return;
+        }
+        Response consent = IoActivationUtils.getUserConsentByType(activationHeaders, consentType, expectedVersion);
+        assertEquals(200, consent.getStatusCode(), "GET consenso " + consentType + " fallita. Body: " + consent.getBody().asString());
+        assertFalse(consent.jsonPath().getBoolean("accepted"),
+                "Il consenso " + consentType + " risulta accettato ma non doveva essere registrato");
+        assertTrue(consent.jsonPath().getBoolean("isFirstAccept"),
+                "Per il consenso " + consentType + " esiste gia' una registrazione. Body: " + consent.getBody().asString());
     }
 
     private String resolveCxId() {
