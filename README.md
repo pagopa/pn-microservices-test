@@ -51,8 +51,8 @@ nel file di properties: è un dato sensibile e va fornita dall'esterno tramite l
 apiKey-cons=${APIKEY_CONS_TEST}
 ```
 
-- La variabile va impostata **solo** per l'esecuzione con il profilo `test`. Con il profilo `dev` la
-  chiave è definita in `application-dev.properties` e la variabile non viene letta.
+- La variabile va impostata **solo** per l'esecuzione con il profilo `test`. Con i profili `dev` e
+  `uat` la chiave è definita nel rispettivo file di properties e la variabile non viene letta.
 - Con il profilo `test`, se la variabile non è impostata o è vuota, il caricamento della configurazione
   fallisce e gli scenari terminano con l'errore
   `La property apiKey-cons richiede la variabile d'ambiente APIKEY_CONS_TEST, che non è impostata`.
