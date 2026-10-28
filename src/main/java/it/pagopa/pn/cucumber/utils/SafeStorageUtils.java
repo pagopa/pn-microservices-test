@@ -8,7 +8,6 @@ import io.restassured.specification.RequestSpecification;
 import it.pagopa.pn.cucumber.dto.pojo.Checksum;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.AdditionalFileTagsMassiveUpdateRequest;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.AdditionalFileTagsUpdateRequest;
-import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.DocumentChanges;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.FileCreationRequest;
 import it.pagopa.pn.safestorage.generated.openapi.server.v1.dto.UpdateFileMetadataRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -101,7 +100,7 @@ public class SafeStorageUtils {
 		return CommonUtils.myGet(oReq, SAFESTORAGE_INTERNAL_DOCUMENTS_GET_ENDPOINT,PN_SS);
 	}
 
-	public static Response patchDocument(String sCxId, String sAPIKey, String sFileKey, DocumentChanges documentChanges) {
+	public static Response patchDocument(String sCxId, String sAPIKey, String sFileKey, Object documentChanges) {
 		RequestSpecification oReq = stdReq()
 				.body(documentChanges)
 				.header(X_PAGOPA_SAFE_STORAGE_CX_ID, sCxId)
