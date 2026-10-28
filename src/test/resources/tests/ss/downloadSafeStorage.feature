@@ -36,8 +36,8 @@ Feature: Download SafeStorage
     When request a presigned url to download the file
     Then I get "<statusCode>" statusCode
     Examples:
-      | clientId        | APIKey        | statusCode |
-      | @clientId-pn-cn | @apiKey-pn_cn | 403        |
+      | clientId                  | APIKey                  | statusCode |
+      | @clientId-na-unauthorized | @apiKey-na-unauthorized | 403        |
 
 
     # I test seguenti sono specifici su risorse già esistenti a sistema. Per questo sono esclusi dalla run di test globale.

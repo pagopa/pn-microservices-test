@@ -60,7 +60,7 @@ Feature: Update metadata
     When request a presigned url to upload the file
     And upload that file
     And it's available_ss
-    And "@clientId-pn-cn" authenticated by "@apiKey-pn_cn" try to update the document with:
+    And "@clientId-na-unauthorized" authenticated by "@apiKey-na-unauthorized" try to update the document with:
       | status         | ATTACHED |
       | retentionUntil | today+30 |
     Then i get the response status "403"
