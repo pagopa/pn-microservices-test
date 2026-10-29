@@ -1,5 +1,6 @@
 package it.pagopa.pn.cucumber.steps;
 
+import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.BeforeAll;
 import io.cucumber.java.en.And;
@@ -27,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @CustomLog
 public class IoStepDefinitions {
@@ -41,6 +43,7 @@ public class IoStepDefinitions {
     private String sentMarkdown;
     private String sentFirstFileKey;
     private Map<String, String> activationHeaders;
+    private String mockIoFiscalCode;
     private String sentFiscalCode;
 
     private final Set<String> intentionallyAbsentFields = new HashSet<>();
@@ -599,6 +602,80 @@ public class IoStepDefinitions {
                 "Il consenso " + consentType + " risulta accettato ma non doveva essere registrato");
         assertTrue(consent.jsonPath().getBoolean("isFirstAccept"),
                 "Per il consenso " + consentType + " esiste gia' una registrazione. Body: " + consent.getBody().asString());
+    }
+
+    @Before(value = "@ioActivationMockIo", order = 1)
+    public void requireIoMock() {
+        assumeTrue(IoActivationUtils.isMockServerEnabled(),
+                "Scenario eseguibile solo con il MockServer di pn-localdev al posto di IO (profilo local)");
+        this.mockIoFiscalCode = getValueIfTagged("@io.activation.fiscalCode.whitelisted");
+        IoActivationUtils.clearIoActivationMocks(mockIoFiscalCode);
+    }
+
+    @After("@ioActivationMockIo")
+    public void clearIoMock() {
+        if (IoActivationUtils.isMockServerEnabled() && mockIoFiscalCode != null) {
+            IoActivationUtils.clearIoActivationMocks(mockIoFiscalCode);
+        }
+    }
+
+    @Given("IO risponde all'aggiornamento dell'attivazione con status {string}")
+    public void ioRespondsToUpsertWithStatus(String status) {
+        assertMockRegistered(IoActivationUtils.registerIoActivationResponse(
+                IoActivationUtils.IO_METHOD_UPSERT, mockIoFiscalCode, status));
+    }
+
+    @Given("IO risponde all'aggiornamento dell'attivazione con errore {int}")
+    public void ioRespondsToUpsertWithError(int statusCode) {
+        assertMockRegistered(IoActivationUtils.registerIoActivationError(
+                IoActivationUtils.IO_METHOD_UPSERT, mockIoFiscalCode, statusCode));
+    }
+
+    @Given("IO risponde alla lettura dell'attivazione con status {string}")
+    public void ioRespondsToReadWithStatus(String status) {
+        assertMockRegistered(IoActivationUtils.registerIoActivationResponse(
+                IoActivationUtils.IO_METHOD_READ, mockIoFiscalCode, status));
+    }
+
+    @Given("IO risponde alla lettura dell'attivazione con errore {int}")
+    public void ioRespondsToReadWithError(int statusCode) {
+        assertMockRegistered(IoActivationUtils.registerIoActivationError(
+                IoActivationUtils.IO_METHOD_READ, mockIoFiscalCode, statusCode));
+    }
+
+    @And("la version dell'attivazione è {int}")
+    public void activationVersionIs(int expectedVersion) {
+        assertEquals(expectedVersion, response.jsonPath().getInt("version"),
+                "Version dell'attivazione inattesa. Body: " + response.getBody().asString());
+    }
+
+    @And("IO ha ricevuto la richiesta di aggiornamento dell'attivazione con status {string}")
+    public void ioReceivedUpsert(String status) {
+        Response verify = IoActivationUtils.verifyIoActivationRequest(
+                IoActivationUtils.IO_METHOD_UPSERT, mockIoFiscalCode, status, Map.of("atLeast", 1, "atMost", 1));
+        assertEquals(202, verify.getStatusCode(),
+                "IO non ha ricevuto esattamente una richiesta di aggiornamento con status " + status + ". Body: " + verify.getBody().asString());
+    }
+
+    @And("IO ha ricevuto la richiesta di lettura dell'attivazione")
+    public void ioReceivedRead() {
+        Response verify = IoActivationUtils.verifyIoActivationRequest(
+                IoActivationUtils.IO_METHOD_READ, mockIoFiscalCode, null, Map.of("atLeast", 1, "atMost", 1));
+        assertEquals(202, verify.getStatusCode(),
+                "IO non ha ricevuto esattamente una richiesta di lettura. Body: " + verify.getBody().asString());
+    }
+
+    @And("IO non ha ricevuto richieste di lettura dell'attivazione")
+    public void ioReceivedNoRead() {
+        Response verify = IoActivationUtils.verifyIoActivationRequest(
+                IoActivationUtils.IO_METHOD_READ, mockIoFiscalCode, null, Map.of("atMost", 0));
+        assertEquals(202, verify.getStatusCode(),
+                "IO ha ricevuto una richiesta di lettura non attesa. Body: " + verify.getBody().asString());
+    }
+
+    private void assertMockRegistered(Response expectation) {
+        assertEquals(201, expectation.getStatusCode(),
+                "Registrazione mock IO su MockServer fallita. Body: " + expectation.getBody().asString());
     }
 
     private String resolveCxId() {
