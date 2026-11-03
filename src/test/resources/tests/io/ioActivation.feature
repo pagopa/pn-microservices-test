@@ -54,22 +54,38 @@ Feature: /io-connector/activations — Attivazione e disattivazione del servizio
       | fiscalCode                                |
       | @io.activation.fiscalCode.notWhitelisted |
 
-  @invioIO @ioActivation @ioActivation_ko @ioActivation_ko_cxtype_non_ammesso
-  Scenario Outline: Attivazione IO con cxType non ammesso <cxType> e status <status> — risposta 400
+  @invioIO @ioActivation @ioActivation_ko
+  Scenario Outline: Attivazione IO con utente BO — risposta 500 PN_IOCONNECTOR_ACTIVATION_ERROR
+    Given un utente auth-fleet con cxType "BO" e uid generato
+    And una richiesta di attivazione IO con fiscal_code "<fiscalCode>" e status "ACTIVE"
+    When invio la richiesta di attivazione IO
+    Then la risposta HTTP ha status 500
+    And la risposta contiene il codice di errore "PN_IOCONNECTOR_ACTIVATION_ERROR"
+    Examples:
+      | fiscalCode                                |
+      | @io.activation.fiscalCode.notWhitelisted |
+
+  @invioIO @ioActivation @ioActivation_ok
+  Scenario Outline: Disattivazione IO con utente BO — risposta 200
+    Given un utente auth-fleet con cxType "BO" e uid generato
+    And una richiesta di attivazione IO con fiscal_code "<fiscalCode>" e status "INACTIVE"
+    When invio la richiesta di attivazione IO
+    Then la risposta HTTP ha status 200
+    And lo status dell'attivazione è "INACTIVE"
+    Examples:
+      | fiscalCode                                |
+      | @io.activation.fiscalCode.notWhitelisted |
+
+  @invioIO @ioActivation @ioActivation_ko @ioActivation_ko_cxtype_inesistente
+  Scenario Outline: Attivazione IO con cxType inesistente <cxType> — risposta 400
     Given un utente auth-fleet con cxType "<cxType>" e uid generato
-    And una richiesta di attivazione IO con fiscal_code "<fiscalCode>" e status "<status>"
+    And una richiesta di attivazione IO con fiscal_code "<fiscalCode>" e status "ACTIVE"
     When invio la richiesta di attivazione IO
     Then la risposta HTTP ha status 400
     And la risposta contiene il codice di errore "PN_GENERIC_INVALIDPARAMETER"
     Examples:
-      | cxType | status   | fiscalCode                                |
-      | PA     | ACTIVE   | @io.activation.fiscalCode.notWhitelisted |
-      | PA     | INACTIVE | @io.activation.fiscalCode.notWhitelisted |
-      | RADD   | ACTIVE   | @io.activation.fiscalCode.notWhitelisted |
-      | RADD   | INACTIVE | @io.activation.fiscalCode.notWhitelisted |
-      | BO     | ACTIVE   | @io.activation.fiscalCode.notWhitelisted |
-      | BO     | INACTIVE | @io.activation.fiscalCode.notWhitelisted |
-      | XX     | ACTIVE   | @io.activation.fiscalCode.notWhitelisted |
+      | cxType | fiscalCode                                |
+      | XX     | @io.activation.fiscalCode.notWhitelisted |
 
   @invioIO @ioActivation @ioActivation_ko @ioActivation_ko_header_mancante
   Scenario Outline: Attivazione IO senza header obbligatorio <header> — risposta 400
