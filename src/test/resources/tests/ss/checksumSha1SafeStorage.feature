@@ -6,8 +6,8 @@ Feature: Calcolo e salvataggio dello SHA-1 dei documenti SafeStorage
     When request a presigned url to upload the file
     And upload that file
     And it's available_ss
-    Then the document checkSumSha1 matches the SHA-1 of the uploaded file
-    And the document checkSumSha1 matches the SHA-1 of the stored file
+    Then the document checksumSha1 matches the SHA-1 of the uploaded file
+    And the document checksumSha1 matches the SHA-1 of the stored file
 
     Examples:
       | clientId           | APIKey            | documentType                       | fileName                    | MIMEType        |
@@ -20,7 +20,7 @@ Feature: Calcolo e salvataggio dello SHA-1 dei documenti SafeStorage
     When request a presigned url to upload the file
     And upload that file
     And it's available_ss
-    Then the document checkSumSha1 matches the SHA-1 of the stored file
+    Then the document checksumSha1 matches the SHA-1 of the stored file
 
     Examples:
       | clientId       | APIKey       | documentType                     | fileName                    | MIMEType        |
@@ -33,8 +33,8 @@ Feature: Calcolo e salvataggio dello SHA-1 dei documenti SafeStorage
     When request a presigned url to upload the file
     And upload that file
     And it's available_ss
-    Then the document checkSumSha1 matches the SHA-1 of the uploaded file
-    And the document checkSumSha1 is not exposed by SafeStorage
+    Then the document checksumSha1 matches the SHA-1 of the uploaded file
+    And the document checksumSha1 is not exposed by SafeStorage
 
   @Sha1GetFileRace
   Scenario: Una getFile prima dell'elaborazione dell'upload non fa perdere lo SHA-1
@@ -42,7 +42,7 @@ Feature: Calcolo e salvataggio dello SHA-1 dei documenti SafeStorage
     When request a presigned url to upload the file
     And upload that file
     And the file is requested for download before SafeStorage processes the upload
-    Then the checkSumSha1 of the uploaded file is saved when SafeStorage processes the upload
+    Then the checksumSha1 of the uploaded file is saved when SafeStorage processes the upload
     And the document state and status change timestamp are unchanged
 
   @Sha1OutdatedPatch
@@ -51,6 +51,6 @@ Feature: Calcolo e salvataggio dello SHA-1 dei documenti SafeStorage
     When request a presigned url to upload the file
     And upload that file
     And it's available_ss
-    And an outdated patch with checkSumSha1 "qUqP5cyxm6YcTAhz05Hph5gvu9M=" is sent for the document
-    Then the document checkSumSha1 matches the SHA-1 of the uploaded file
+    And an outdated patch with checksumSha1 "qUqP5cyxm6YcTAhz05Hph5gvu9M=" is sent for the document
+    Then the document checksumSha1 matches the SHA-1 of the uploaded file
     And the outdated patch did not change the document
