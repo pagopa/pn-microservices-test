@@ -87,7 +87,7 @@ public class SsStepDefinitions {
     private static final LocalTime END_OF_DAY = LocalTime.of(23, 59, 59);
     private static final String TODAY = "today";
     private static final String YESTERDAY = "yesterday";
-    private static final String CHECKSUM_SHA1 = "checkSumSha1";
+    private static final String CHECKSUM_SHA1 = "checksumSha1";
     private final ObjectMapper uploadResponseMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     private final Map<String, String> fileKeysByAlias = new HashMap<>();
     private final Map<String, Map<String, String>> tagValuesByAlias = new HashMap<>();
@@ -996,12 +996,12 @@ public class SsStepDefinitions {
         Assertions.assertEquals(instantOf(retention).truncatedTo(ChronoUnit.SECONDS), getRegisteredRetention());
     }
 
-    @Then("the document checkSumSha1 matches the SHA-1 of the uploaded file")
+    @Then("the document checksumSha1 matches the SHA-1 of the uploaded file")
     public void checksum_sha1_matches_uploaded_file() {
-        Assertions.assertEquals(sSHA1, getStoredChecksumSha1(), "Wrong checkSumSha1 for document " + sKey);
+        Assertions.assertEquals(sSHA1, getStoredChecksumSha1(), "Wrong checksumSha1 for document " + sKey);
     }
 
-    @Then("the document checkSumSha1 matches the SHA-1 of the stored file")
+    @Then("the document checksumSha1 matches the SHA-1 of the stored file")
     public void checksum_sha1_matches_stored_file() throws IOException, NoSuchAlgorithmException {
         Response response = SafeStorageUtils.getPresignedURLDownload(sPNClient, sPNClient_AK, sKey, false);
         Assertions.assertEquals(200, response.getStatusCode());
@@ -1011,18 +1011,18 @@ public class SsStepDefinitions {
         try (InputStream inputStream = URI.create(download.getDownload().getUrl()).toURL().openStream()) {
             storedFile = inputStream.readAllBytes();
         }
-        Assertions.assertEquals(sha1Of(storedFile), getStoredChecksumSha1(), "Wrong checkSumSha1 for document " + sKey);
+        Assertions.assertEquals(sha1Of(storedFile), getStoredChecksumSha1(), "Wrong checksumSha1 for document " + sKey);
     }
 
-    @Then("the document checkSumSha1 is not exposed by SafeStorage")
+    @Then("the document checksumSha1 is not exposed by SafeStorage")
     public void checksum_sha1_is_not_exposed() {
         Response metadata = SafeStorageUtils.getObjectMetadata(sPNClient, sPNClient_AK, sKey);
         Assertions.assertEquals(200, metadata.getStatusCode());
-        Assertions.assertFalse(metadata.getBody().asString().contains(CHECKSUM_SHA1), "checkSumSha1 exposed by the file metadata of document " + sKey);
+        Assertions.assertFalse(metadata.getBody().asString().contains(CHECKSUM_SHA1), "checksumSha1 exposed by the file metadata of document " + sKey);
 
         Response internalDocument = SafeStorageUtils.getDocument(sKey);
         Assertions.assertEquals(200, internalDocument.getStatusCode());
-        Assertions.assertFalse(internalDocument.getBody().asString().contains(CHECKSUM_SHA1), "checkSumSha1 exposed by the internal document of " + sKey);
+        Assertions.assertFalse(internalDocument.getBody().asString().contains(CHECKSUM_SHA1), "checksumSha1 exposed by the internal document of " + sKey);
     }
 
     @When("the file is requested for download before SafeStorage processes the upload")
@@ -1038,20 +1038,20 @@ public class SsStepDefinitions {
         Assertions.assertEquals("available", documentRecordSnapshot.get("documentState").s(), "The getFile did not make document " + sKey + " available");
     }
 
-    @Then("the checkSumSha1 of the uploaded file is saved when SafeStorage processes the upload")
+    @Then("the checksumSha1 of the uploaded file is saved when SafeStorage processes the upload")
     public void the_checksum_sha1_is_saved_when_the_upload_is_processed() throws InterruptedException {
         Instant timeLimit = Instant.now().plusMillis(Long.parseLong(System.getProperty("pn.ss.document.availability.timeout.millis")));
         AttributeValue checksumSha1 = getDocumentRecord().get(CHECKSUM_SHA1);
         while (checksumSha1 == null && Instant.now().isBefore(timeLimit)) {
-            log.debug("Waiting for the checkSumSha1 of document {}", sKey);
+            log.debug("Waiting for the checksumSha1 of document {}", sKey);
             Thread.sleep(Long.parseLong(System.getProperty("pn.ss.document.availability.interval.millis")));
             checksumSha1 = getDocumentRecord().get(CHECKSUM_SHA1);
         }
-        Assertions.assertNotNull(checksumSha1, "checkSumSha1 not saved on document " + sKey);
-        Assertions.assertEquals(sSHA1, checksumSha1.s(), "Wrong checkSumSha1 for document " + sKey);
+        Assertions.assertNotNull(checksumSha1, "checksumSha1 not saved on document " + sKey);
+        Assertions.assertEquals(sSHA1, checksumSha1.s(), "Wrong checksumSha1 for document " + sKey);
     }
 
-    @When("an outdated patch with checkSumSha1 {string} is sent for the document")
+    @When("an outdated patch with checksumSha1 {string} is sent for the document")
     public void an_outdated_patch_with_checksum_sha1_is_sent(String checksumSha1) {
         documentRecordSnapshot = getDocumentRecord();
         OffsetDateTime lastStatusChangeTimestamp = OffsetDateTime.parse(documentRecordSnapshot.get("lastStatusChangeTimestamp").s());
@@ -1080,7 +1080,7 @@ public class SsStepDefinitions {
 
     private String getStoredChecksumSha1() {
         AttributeValue checksumSha1 = getDocumentRecord().get(CHECKSUM_SHA1);
-        Assertions.assertNotNull(checksumSha1, "No checkSumSha1 on document " + sKey);
+        Assertions.assertNotNull(checksumSha1, "No checksumSha1 on document " + sKey);
         return checksumSha1.s();
     }
 
