@@ -81,6 +81,7 @@ La suite raggiunge i microservizi su `localhost`: l'URL di ogni chiamata è comp
 |---|---|---|
 | pn-ec, pn-ss, pn-statemachinemanager | `pn.ec.port`, `pn.ss.port`, `pn.sm.port` | `8080` |
 | pn-pdfraster | `pn.pdfraster.port` | `8081` |
+| pn-io-connector, pn-user-attributes | `pn.io.port`, `pn.userattributes.port` | `8080` |
 
 `pn-pdfraster` è esposto su una **porta dedicata**, quindi non è raggiungibile attraverso il tunnel
 usato per gli altri microservizi: serve una seconda sessione SSM che inoltri quella porta.
@@ -118,6 +119,7 @@ Puoi eseguire singolarmente le suite principali:
 - `EcCucumberTest` – suite per i test del microservizio EC
 - `SsCucumberTest` – suite per i test del microservizio SS
 - `PdfRasterCucumberTest` – suite per i test del microservizio PDFRaster (richiede entrambi i tunnel, vedi sopra)
+- `IoCucumberTest` – suite per i test del microservizio pn-io-connector. Gli scenari `@ioActivation` verificano i consensi su pn-user-attributes e richiedono un codice fiscale fuori dalla whitelist legale (`io.activation.fiscalCode.notWhitelisted`). Nel profilo `local` pn-user-attributes non e' disponibile: i consensi sono verificati sulle richieste ricevute dal MockServer di pn-localdev (`pn.mockserver.port`). Gli scenari `@ioActivationMockIo` usano un codice fiscale in whitelist (`io.activation.fiscalCode.whitelisted`) e fanno rispondere il MockServer al posto di IO: girano solo nel profilo `local` (negli altri profili risultano skipped) e uno alla volta, perche' condividono lo stesso codice fiscale. Oggi sono esclusi con `@ignore` in attesa dell'aggiornamento di pn-io-connector (WI 9 della SRS)
 
 Questo può essere fatto da un IDE come IntelliJ IDEA o Eclipse cliccando sul test JUnit, oppure via terminale con Maven:
 
