@@ -266,6 +266,17 @@ public class EcStepDefinitions {
         response = ExternalChannelUtils.getRequestMetadataByMessageId(this.sentMessageId);
     }
 
+    @When("a SES bounce event of type {string} and subtype {string} is published for the sent message")
+    public void publishSesBounceEventForSentMessage(String bounceType, String bounceSubType) {
+        Response requestResponse = ExternalChannelUtils.getRequest(clientId, requestId);
+        Assertions.assertEquals(200, requestResponse.getStatusCode(),
+                "Unable to retrieve request " + requestId + ": " + requestResponse.getBody().asString());
+        String sesMessageId = requestResponse.jsonPath().getString("messageId");
+        Assertions.assertNotNull(sesMessageId, "No SES messageId stored for request " + requestId);
+        log.info("Injecting SES bounce {}/{} for requestId={} sesMessageId={}", bounceType, bounceSubType, requestId, sesMessageId);
+        ExternalChannelUtils.publishSesBounceEvent(sesMessageId, receiver, bounceType, bounceSubType);
+    }
+
     //AND
     @And("I prepare the following paper progress status event attachments:")
     public void iPrepareTheFollowingPaperProgressStatusEventAttachments(DataTable dataTable) {
