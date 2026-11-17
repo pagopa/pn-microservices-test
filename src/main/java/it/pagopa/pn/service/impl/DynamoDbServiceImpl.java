@@ -2,7 +2,9 @@ package it.pagopa.pn.service.impl;
 
 import it.pagopa.pn.service.DynamoDbService;
 
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -19,8 +21,15 @@ public class DynamoDbServiceImpl implements DynamoDbService {
     private final DynamoDbClient dynamoDbClient;
 
     public DynamoDbServiceImpl() {
+        this(null);
+    }
+
+    public DynamoDbServiceImpl(String awsProfile) {
         Region region = Region.of(System.getProperty("aws.region"));
-        DynamoDbClientBuilder builder = DynamoDbClient.builder().region(region).credentialsProvider(DefaultCredentialsProvider.create());
+        AwsCredentialsProvider credentialsProvider = awsProfile == null || awsProfile.isBlank()
+                ? DefaultCredentialsProvider.create()
+                : ProfileCredentialsProvider.create(awsProfile);
+        DynamoDbClientBuilder builder = DynamoDbClient.builder().region(region).credentialsProvider(credentialsProvider);
         String testAwsEndpoint = System.getProperty("test.aws.s3.endpoint");
         if (testAwsEndpoint != null) {
             builder.endpointOverride(URI.create(testAwsEndpoint));
