@@ -101,5 +101,33 @@ public class RequestTemplate {
         clientConfigurationDto.setPecReplyTo("");
         return clientConfigurationDto;
     }
+    
+    protected static Map<String, Object> createSesBounceEvent(String messageId, String receiver, String bounceType, String bounceSubType) {
+        String timestamp = Instant.now().toString();
+        boolean isTransient = "Transient".equalsIgnoreCase(bounceType);
+
+        Map<String, Object> mail = new LinkedHashMap<>();
+        mail.put("messageId", messageId);
+        mail.put("timestamp", timestamp);
+        mail.put("destination", List.of(receiver));
+
+        Map<String, Object> bouncedRecipient = new LinkedHashMap<>();
+        bouncedRecipient.put("emailAddress", receiver);
+        bouncedRecipient.put("status", isTransient ? "4.0.0" : "5.0.0");
+        bouncedRecipient.put("diagnosticCode", String.format("smtp; %s cucumber injected %s/%s bounce",
+                isTransient ? "450 4.0.0" : "550 5.0.0", bounceType, bounceSubType));
+
+        Map<String, Object> bounce = new LinkedHashMap<>();
+        bounce.put("bounceType", bounceType);
+        bounce.put("bounceSubType", bounceSubType);
+        bounce.put("bouncedRecipients", List.of(bouncedRecipient));
+        bounce.put("timestamp", timestamp);
+
+        Map<String, Object> event = new LinkedHashMap<>();
+        event.put("eventType", "Bounce");
+        event.put("mail", mail);
+        event.put("bounce", bounce);
+        return event;
+    }
 
 }

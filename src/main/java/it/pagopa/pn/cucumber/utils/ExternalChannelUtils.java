@@ -11,8 +11,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.util.Base64Utils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import it.pagopa.pn.service.impl.SqsServiceImpl;
+import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
+
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static it.pagopa.pn.cucumber.utils.RequestEndpoint.GET_REQUEST_METADATA_BY_MESSAGEID_ENDPOINT;
@@ -304,6 +309,18 @@ public class ExternalChannelUtils extends RequestTemplate {
 
     public static String concatRequestId(String clientId, String requestId) {
         return (String.format("%s%s%s", clientId, SEPARATORE, requestId));
+    }
+
+    public static void publishSesBounceEvent(String messageId, String receiver, String bounceType, String bounceSubType) {
+        String queueName = System.getProperty("pn.ec.email.ses.events.queue.name");
+        Map<String, Object> event = createSesBounceEvent(messageId, receiver, bounceType, bounceSubType);
+        try {
+            SendMessageResponse sendMessageResponse = new SqsServiceImpl().send(queueName, event);
+            log.info("Published SES Bounce event {}/{} for messageId={} on queue {} (sqsMessageId={})",
+                    bounceType, bounceSubType, messageId, queueName, sendMessageResponse.messageId());
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Unable to serialize SES bounce event", e);
+        }
     }
 
 }
