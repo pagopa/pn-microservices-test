@@ -25,6 +25,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import it.pagopa.pn.service.DynamoDbService;
+import it.pagopa.pn.service.impl.DynamoDbServiceImpl;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
+import java.time.Duration;
 
 @CustomLog
 public class IoStepDefinitions {
@@ -38,6 +43,12 @@ public class IoStepDefinitions {
     private String sentSubject;
     private String sentMarkdown;
     private String sentFirstFileKey;
+    private Instant legalSendInstant;
+
+    private static final String OPTIN_PK = "pk";
+    private static final Duration OPTIN_CLOCK_SKEW = Duration.ofSeconds(5);
+
+    private final DynamoDbService dynamoDbService = new DynamoDbServiceImpl(System.getProperty("io.aws.profile"));
 
     private final Set<String> intentionallyAbsentFields = new HashSet<>();
 
@@ -56,6 +67,7 @@ public class IoStepDefinitions {
         this.sentSubject = null;
         this.sentMarkdown = null;
         this.sentFirstFileKey = null;
+        this.legalSendInstant = null;
         this.intentionallyAbsentFields.clear();
         // cxId non resettato: viene reimpostato dal Background di ogni feature
     }
@@ -475,7 +487,77 @@ public class IoStepDefinitions {
         assertEquals("application/pdf", first.get("content_type"),
                 "Il campo 'content_type' del primo allegato non è 'application/pdf'");
     }
+    @Given("una richiesta di invio messaggio legale IO valida per il destinatario {string}")
+    public void aValidLegalIoMessageRequest(String recipientTaxId) {
+        this.storedRecipientTaxId = getValueIfTagged(recipientTaxId);
+        this.requestBody = IoMessageUtils.buildLegalSendMessageRequest(
+                this.storedRecipientTaxId,
+                getValueIfTagged("@io.legal.senderDenomination")
+        );
+        log.info("Prepared legal IO message: iun={} requestId={}", requestBody.get("iun"), requestBody.get("requestId"));
+    }
 
+    @When("invio il messaggio legale IO")
+    public void sendLegalIoMessage() {
+        this.sentRequestId = (String) requestBody.get("requestId");
+        this.legalSendInstant = Instant.now();
+        MDC.put(MDC_CORR_ID_KEY, sentRequestId != null ? sentRequestId : String.valueOf(requestBody.get("iun")));
+        this.response = IoMessageUtils.sendLegalIoMessage(requestBody);
+        log.info("Legal IO message sent: requestId={} iun={} httpStatus={} body={}",
+                sentRequestId, requestBody.get("iun"), response.getStatusCode(), response.getBody().asString());
+    }
+
+    @And("l'esito dell'invio è {string}")
+    public void legalSendResultIs(String expectedResult) {
+        String actualResult = response.jsonPath().getString("result");
+        assertEquals(expectedResult, actualResult,
+                "Esito invio atteso '" + expectedResult + "' ma ricevuto '" + actualResult
+                        + "'. Body: " + response.getBody().asString());
+    }
+
+    @And("la risposta contiene l'id del messaggio IO")
+    public void responseContainsIoMessageId() {
+        String id = response.jsonPath().getString("id");
+        assertNotNull(id, "Il campo 'id' è assente nella risposta");
+        assertFalse(id.isBlank(), "Il campo 'id' è vuoto nella risposta");
+    }
+
+    @And("nella tabella opt-in esiste il record del destinatario aggiornato dopo l'invio")
+    public void optInRecordUpdatedAfterSend() {
+        GetItemResponse item = dynamoDbService.getItemByKey(getValueIfTagged("@io.legal.optin.table.name"), OPTIN_PK,
+                IoMessageUtils.hashTaxId(storedRecipientTaxId));
+        assertTrue(item.hasItem() && !item.item().isEmpty(), "Record opt-in del destinatario assente in DynamoDB");
+        AttributeValue lastModified = item.item().get("lastModified");
+        assertNotNull(lastModified, "Attributo 'lastModified' assente nel record opt-in");
+        Instant lastModifiedInstant = Instant.parse(lastModified.s());
+        // tolleranza per il disallineamento di clock tra macchina di test e servizio
+        assertFalse(lastModifiedInstant.isBefore(legalSendInstant.minus(OPTIN_CLOCK_SKEW)),
+                "lastModified " + lastModifiedInstant + " precedente all'invio " + legalSendInstant);
+        assertNotNull(item.item().get("i_ttl"), "Attributo 'i_ttl' assente nel record opt-in");
+    }
+
+    @Given("una richiesta di stato utente IO per il codice fiscale {string}")
+    public void aUserStatusRequest(String taxId) {
+        this.storedRecipientTaxId = getValueIfTagged(taxId);
+        this.requestBody = IoMessageUtils.buildUserStatusRequest(storedRecipientTaxId);
+    }
+
+    @Given("una richiesta di stato utente IO senza taxId")
+    public void aUserStatusRequestWithoutTaxId() {
+        this.requestBody = new HashMap<>();
+    }
+
+    @When("richiedo lo stato utente IO")
+    public void requestIoUserStatus() {
+        this.response = IoMessageUtils.getIoUserStatus(requestBody);
+        log.info("IO user status request sent: httpStatus={} body={}", response.getStatusCode(), response.getBody().asString());
+    }
+
+    @And("il taxId nella risposta corrisponde a quello richiesto")
+    public void taxIdInResponseMatchesRequested() {
+        assertEquals(storedRecipientTaxId, response.jsonPath().getString("taxId"),
+                "Il taxId nella risposta non corrisponde a quello richiesto");
+    }
     private String resolveCxId() {
         return cxId != null ? cxId : System.getProperty("clientId-delivery-push", "pn-delivery-push");
     }
