@@ -85,6 +85,24 @@ Feature: Send Digital Message Ec
       | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.bounce          | M005          |
       | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.hard.bounce     | M005          |
       | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.complaint       | M006          |
+      #bounce transient -> M005
+      | @clientId-test      | @apiKey_test      | @channel_email | @email.receiver.digital.address.ooto            | M005          |
+
+  @PnEcSendMessage @invioEMAIL @complete_ses_events @ses_bounce_types
+  Scenario Outline: invio email e verifica bounce SES per tipo
+    Given a "<clientId>" and "<channel>" to send on
+    When try to send a digital message to "<receiver>"
+    Then wait for the message to be sent
+    When a SES bounce event of type "<bounceType>" and subtype "<bounceSubType>" is published for the sent message
+    Then wait for the request to have status "<expectedEvent>"
+    Examples:
+      | clientId       | channel        | receiver                                | bounceType   | bounceSubType      | expectedEvent |
+      | @clientId-test | @channel_email | @email.receiver.digital.address.success | Transient    | General            | M005          |
+      | @clientId-test | @channel_email | @email.receiver.digital.address.success | Transient    | MailboxFull        | M005          |
+      | @clientId-test | @channel_email | @email.receiver.digital.address.success | Transient    | MessageTooLarge    | M005          |
+      | @clientId-test | @channel_email | @email.receiver.digital.address.success | Transient    | ContentRejected    | M005          |
+      | @clientId-test | @channel_email | @email.receiver.digital.address.success | Transient    | AttachmentRejected | M005          |
+      | @clientId-test | @channel_email | @email.receiver.digital.address.success | Undetermined | Undetermined       | M005          |
 
   @PnEcSendMessage @invioEMAIL @email_ses_filtered
   Scenario Outline: invio email e verifica che un evento SES non abilitato non venga inoltrato
