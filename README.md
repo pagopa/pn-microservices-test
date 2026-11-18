@@ -182,14 +182,7 @@ vuota per `local`). Il profilo deve esistere in `~/.aws/config` con una sessione
 
 #### Accesso ad App IO con un utente di test
 
-Per controllare o cambiare lo stato di un CF su SEND e vedere i messaggi ricevuti:
-
-1. Apri l'app IO. Nella schermata di login seleziona l'icona di info (con il punto esclamativo).
-2. Tocca 5 volte la versione dell'app.
-3. Scegli una qualsiasi tra "Continua con l'accesso rapido" ed "Entra con SPID o CIE ogni 30 giorni".
-4. Se accedi con un utente di test, inserisci il codice fiscale come username e la password
-   `***RIMOSSA***` (ad esempio CF `EEEEEE00E00E000C`, password `***RIMOSSA***`).
-5. Vai al Profilo e in basso tocca 5 volte la versione: compare il menu sviluppatori.
+Esiste una procedura dedicata per fare il login con un'utenza di test.
 
 Dopo l'invio:
 
