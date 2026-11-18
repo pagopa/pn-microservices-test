@@ -151,8 +151,6 @@ sono esattamente quelli attesi dai test.
 | `io.legal.taxId.pnActive` | `EEEEEE00E00E000C` | attivo | `SENT_COURTESY` |
 | `io.legal.taxId.pnNotActive` | `EEEEEE00E00E000D` | disattivato | `SENT_OPTIN` |
 
->Nei profili `local`, `test` e `uat` `pnActive` e `pnNotActive` puntano ancora allo stesso CF: lì i due
->scenari non possono passare nella stessa esecuzione finché non si configurano due CF distinti.
 
 Se si ottiene un esito diverso da quello atteso, è perché qualcuno ha cambiato lo stato SEND del CF
 (ad esempio attivando o disattivando il servizio dall'App IO, vedi sotto). Va riportato nello stato
