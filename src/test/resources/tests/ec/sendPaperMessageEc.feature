@@ -16,7 +16,7 @@ Feature: Send Paper Message Ec
   @PnEcSendMessage @PAPER @invioCartaceo @raster @testOk
   Scenario Outline: Invio di un messaggio cartaceo con allegati da rasterizzare, verifica della pubblicazione del messaggio nella coda di debug e verifica dello stato di avanzamento
     Given a "<clientId>" and "<channel>" to send on
-    When "<clientId>" authenticated by "<apiKey>" uploads the following attachments:
+    When "@clientId-delivery" authenticated by "@delivery_api_key" uploads the following attachments:
       | documentType        | fileName                           | mimeType        |
       | @doc_type_to_raster | src/test/resources/test-raster.pdf | application/pdf |
     When it's available ec
@@ -27,8 +27,8 @@ Feature: Send Paper Message Ec
     * waiting for scheduling
     Then wait for the message to be sent
     Examples:
-      | clientId           | apiKey            | channel        | receiver                        |
-      | @clientId-delivery | @delivery_api_key | @channel_paper | @paper.receiver.digital.address |
+      | clientId       | channel        | receiver                        |
+      | @clientId-cons | @channel_paper | @paper.receiver.digital.address |
 
   @PnEcSendMessage @PAPER @invioCartaceo @raster @testFlagRasterization
   Scenario Outline: Invio di un messaggio cartaceo con allegati da rasterizzare, verifica della pubblicazione del messaggio nella coda di debug e verifica dello stato di avanzamento per soli flag attivi
